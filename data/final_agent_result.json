@@ -72,7 +72,7 @@
     ],
     "sandbox_enabled": true,
     "sandbox_message": "当前为四强阶段，可假设任一半决赛结果，推演可能决赛对阵和夺冠概率变化。",
-    "last_updated": "2026-07-13T12:37:51.734119"
+    "last_updated": "2026-07-13T15:03:57.357673"
   },
   "bracket_payload": {
     "round_of_32": [
@@ -564,7 +564,7 @@
     "is_verified": false,
     "needs_review": false,
     "fixtures_count": 104,
-    "last_updated": "2026-07-13T12:33:25.758633",
+    "last_updated": "2026-07-13T14:59:29.178762",
     "user_message": "比赛数据已更新。"
   },
   "model_status": {
@@ -742,5 +742,5 @@
   "simulation_count": 10000,
   "data_source": "比赛数据已更新。",
   "historical_samples": 6000,
-  "generated_at": "2026-07-13T12:37:51.734119"
+  "generated_at": "2026-07-13T15:03:57.357673"
 }

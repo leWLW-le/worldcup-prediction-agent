@@ -1182,7 +1182,15 @@ def _format_sandbox_explanation(text: str) -> str:
 
 
 def display_scenario_sandbox(data: Dict):
-    """冠军路径沙盘模块 — 阶段感知，支持禁用/过期/新结构"""
+    """冠军路径沙盘模块 — 交互式推演，仅按钮点击后展示结果"""
+
+    # ── 交互式沙盘状态管理 ──
+    if "scenario_result_visible" not in st.session_state:
+        st.session_state["scenario_result_visible"] = False
+    if "scenario_result" not in st.session_state:
+        st.session_state["scenario_result"] = None
+    if "scenario_last_run_key" not in st.session_state:
+        st.session_state["scenario_last_run_key"] = None
 
     # ─ 获取阶段感知的比赛列表 ─
     pending_response = fetch_scenario_pending_matches()
@@ -1191,16 +1199,15 @@ def display_scenario_sandbox(data: Dict):
     pending_matches = pending_response.get("matches", [])
     stage_label = pending_response.get("stage_label", "")
 
+    # 仅从 session_state 读取（按钮点击后写入），不自动加载 API 缓存
     scenario = st.session_state.get("scenario_result")
-    if not scenario:
-        scenario = fetch_scenario_latest()
 
     # ── 检查过期提示 ──
     stale_message = st.session_state.pop("scenario_stale_message", None)
 
     # ── 标题 HTML（根据阶段动态） ─
     if sandbox_enabled:
-        subtitle = "选择一场未开始比赛，假设某队晋级，观察冠军概率如何变化。"
+        subtitle = '选择一场未开始的半决赛，并假设其中一队晋级。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
         badge_text = "假设推演"
     else:
         subtitle = sandbox_message or "当前阶段沙盘推演已关闭。"
@@ -1369,24 +1376,39 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             st.markdown('<div style="margin-top:1.55rem;"></div>', unsafe_allow_html=True)
             run_clicked = st.button("开始推演", use_container_width=True, key="scenario_run_btn")
 
+        # ─ 选择变化检测：切换比赛或晋级队后隐藏旧结果 ──
+        _current_key = f"{match_id}:{forced_winner}"
+        if st.session_state.get("scenario_last_run_key") != _current_key:
+            st.session_state["scenario_result_visible"] = False
+
+        # 轻提示：条件已更改
+        if st.session_state.get("scenario_result") and not st.session_state.get("scenario_result_visible"):
+            st.info('已更改假设条件，请点击"开始推演"查看新结果。', icon="ℹ️")
+
         # ── 推演按钮逻辑 ──
         if run_clicked:
             if not match_id or not forced_winner:
                 st.warning("请选择比赛和假设晋级队。")
             else:
-                with st.spinner("正在运行沙盘推演（10000 次模拟）..."):
+                with st.spinner("正在进行沙盘推演（10000 次模拟）..."):
                     result = call_scenario_simulate(match_id, forced_winner)
                 if result and result.get("success"):
                     st.session_state["scenario_result"] = result
+                    st.session_state["scenario_result_visible"] = True
+                    st.session_state["scenario_last_run_key"] = f"{match_id}:{forced_winner}"
                     st.rerun()
                 elif result:
+                    st.session_state["scenario_result_visible"] = False
                     if result.get("scenario_scope") == "disabled":
                         st.warning(result.get("message", "沙盘推演已关闭。"))
                     else:
                         st.error(f"推演失败: {result.get('error', '未知错误')}")
+                else:
+                    st.session_state["scenario_result_visible"] = False
+                    st.error("沙盘推演请求失败，请稍后重试。")
 
-        # ── 结果内容 ──
-        if scenario:
+        # ─ 结果内容（仅按钮推演成功后展示） ──
+        if st.session_state.get("scenario_result_visible") and scenario:
             sc = scenario.get("scenario", {})
             forced_winner_name = sc.get("forced_winner", "")
             forced_loser_name = sc.get("forced_loser", "")
@@ -1599,6 +1621,9 @@ def main():
                 if res and res.get("success"):
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
+                    st.session_state.pop("scenario_result", None)
+                    st.session_state["scenario_result_visible"] = False
+                    st.session_state["scenario_last_run_key"] = None
                     st.success(f"全量刷新完成！阶段: {stage}，存活球队: {len(surviving)} 支")
                     st.rerun()
                 else:
@@ -1631,6 +1656,8 @@ def main():
                 if res:
                     st.session_state.pop("final_result", None)
                     st.session_state.pop("scenario_result", None)
+                    st.session_state["scenario_result_visible"] = False
+                    st.session_state["scenario_last_run_key"] = None
                     st.cache_data.clear()
                     final = fetch_final_result()
                     if final:
@@ -1647,6 +1674,8 @@ def main():
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
                     st.session_state.pop("scenario_result", None)
+                    st.session_state["scenario_result_visible"] = False
+                    st.session_state["scenario_last_run_key"] = None
                     st.success(f"全量刷新完成！阶段: {stage}，存活球队: {len(surviving)} 支")
                     st.rerun()
                 else:

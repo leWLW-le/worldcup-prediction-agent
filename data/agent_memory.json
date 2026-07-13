@@ -1,346 +1,6 @@
 {
   "prediction_history": [
     {
-      "timestamp": "2026-07-13T02:52:53.799105",
-      "season": 2026,
-      "mode": "llm_planner_safe",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.83,
-      "knockout_count": 31,
-      "tool_trace_summary": {
-        "get_cached_fixtures": {
-          "success": 1,
-          "fail": 0
-        },
-        "get_worldcup_teams": {
-          "success": 0,
-          "fail": 2
-        },
-        "load_historical_matches": {
-          "success": 1,
-          "fail": 0
-        },
-        "check_data_quality": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_team_features": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_group_stage": {
-          "success": 2,
-          "fail": 0
-        },
-        "predict_knockout_bracket": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_visualization_payload": {
-          "success": 1,
-          "fail": 0
-        },
-        "generate_final_explanation": {
-          "success": 1,
-          "fail": 0
-        }
-      },
-      "errors": [],
-      "warnings": [
-        "Step 2: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新",
-        "Step 3: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:05:50.030723",
-      "season": 2026,
-      "mode": "llm_planner_safe",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.83,
-      "knockout_count": 31,
-      "tool_trace_summary": {
-        "get_cached_fixtures": {
-          "success": 1,
-          "fail": 0
-        },
-        "get_worldcup_teams": {
-          "success": 0,
-          "fail": 2
-        },
-        "load_historical_matches": {
-          "success": 1,
-          "fail": 0
-        },
-        "check_data_quality": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_team_features": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_group_stage": {
-          "success": 2,
-          "fail": 0
-        },
-        "predict_knockout_bracket": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_visualization_payload": {
-          "success": 1,
-          "fail": 0
-        },
-        "generate_final_explanation": {
-          "success": 1,
-          "fail": 0
-        }
-      },
-      "errors": [],
-      "warnings": [
-        "Step 2: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新",
-        "Step 3: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:07:41.607999",
-      "season": 2026,
-      "mode": "llm_planner_safe",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.83,
-      "knockout_count": 31,
-      "tool_trace_summary": {
-        "get_cached_fixtures": {
-          "success": 1,
-          "fail": 0
-        },
-        "get_worldcup_teams": {
-          "success": 0,
-          "fail": 2
-        },
-        "load_historical_matches": {
-          "success": 1,
-          "fail": 0
-        },
-        "check_data_quality": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_team_features": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_group_stage": {
-          "success": 2,
-          "fail": 0
-        },
-        "predict_knockout_bracket": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_visualization_payload": {
-          "success": 1,
-          "fail": 0
-        },
-        "generate_final_explanation": {
-          "success": 1,
-          "fail": 0
-        }
-      },
-      "errors": [],
-      "warnings": [
-        "Step 2: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新",
-        "Step 3: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:10:15.571859",
-      "season": 2026,
-      "mode": "llm_planner_strict",
-      "predicted_champion": "France",
-      "status": "completed",
-      "data_quality_score": 0.83,
-      "knockout_count": 31,
-      "tool_trace_summary": {
-        "get_cached_fixtures": {
-          "success": 1,
-          "fail": 0
-        },
-        "get_worldcup_teams": {
-          "success": 0,
-          "fail": 2
-        },
-        "load_historical_matches": {
-          "success": 1,
-          "fail": 0
-        },
-        "check_data_quality": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_team_features": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_group_stage": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_knockout_bracket": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_visualization_payload": {
-          "success": 1,
-          "fail": 0
-        },
-        "generate_final_explanation": {
-          "success": 1,
-          "fail": 0
-        }
-      },
-      "errors": [],
-      "warnings": [
-        "Step 2: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新",
-        "Step 3: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:10:58.588013",
-      "season": 2026,
-      "mode": "workflow",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.76,
-      "knockout_count": 31,
-      "tool_trace_summary": {},
-      "errors": [],
-      "warnings": [
-        "缺少球队近期战绩数据",
-        "使用默认数据: 缺少 2026 世界杯赛程数据",
-        "使用默认数据: 缺少参赛球队数据"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:11:43.656338",
-      "season": 2026,
-      "mode": "workflow",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.76,
-      "knockout_count": 31,
-      "tool_trace_summary": {},
-      "errors": [],
-      "warnings": [
-        "缺少球队近期战绩数据",
-        "使用默认数据: 缺少 2026 世界杯赛程数据",
-        "使用默认数据: 缺少参赛球队数据"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:12:24.305226",
-      "season": 2026,
-      "mode": "workflow",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.76,
-      "knockout_count": 31,
-      "tool_trace_summary": {},
-      "errors": [],
-      "warnings": [
-        "缺少球队近期战绩数据",
-        "使用默认数据: 缺少 2026 世界杯赛程数据",
-        "使用默认数据: 缺少参赛球队数据"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:27:30.535773",
-      "season": 2026,
-      "mode": "llm_planner_strict",
-      "predicted_champion": "France",
-      "status": "completed",
-      "data_quality_score": 0.83,
-      "knockout_count": 31,
-      "tool_trace_summary": {
-        "get_cached_fixtures": {
-          "success": 1,
-          "fail": 0
-        },
-        "get_worldcup_teams": {
-          "success": 0,
-          "fail": 2
-        },
-        "load_historical_matches": {
-          "success": 1,
-          "fail": 0
-        },
-        "check_data_quality": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_team_features": {
-          "success": 1,
-          "fail": 0
-        },
-        "predict_group_stage": {
-          "success": 2,
-          "fail": 0
-        },
-        "predict_knockout_bracket": {
-          "success": 1,
-          "fail": 0
-        },
-        "build_visualization_payload": {
-          "success": 1,
-          "fail": 0
-        },
-        "generate_final_explanation": {
-          "success": 1,
-          "fail": 0
-        }
-      },
-      "errors": [],
-      "warnings": [
-        "Step 2: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新",
-        "Step 3: get_worldcup_teams failed - API 返回 0 支球队，数据可能尚未更新"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:28:27.331289",
-      "season": 2026,
-      "mode": "workflow",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.76,
-      "knockout_count": 31,
-      "tool_trace_summary": {},
-      "errors": [],
-      "warnings": [
-        "缺少球队近期战绩数据",
-        "使用默认数据: 缺少 2026 世界杯赛程数据",
-        "使用默认数据: 缺少参赛球队数据"
-      ]
-    },
-    {
-      "timestamp": "2026-07-13T03:29:14.258784",
-      "season": 2026,
-      "mode": "workflow",
-      "predicted_champion": "France",
-      "status": "degraded_completed",
-      "data_quality_score": 0.76,
-      "knockout_count": 31,
-      "tool_trace_summary": {},
-      "errors": [],
-      "warnings": [
-        "缺少球队近期战绩数据",
-        "使用默认数据: 缺少 2026 世界杯赛程数据",
-        "使用默认数据: 缺少参赛球队数据"
-      ]
-    },
-    {
       "timestamp": "2026-07-13T03:30:05.225010",
       "season": 2026,
       "mode": "workflow",
@@ -1219,25 +879,248 @@
         "使用默认数据: 缺少 2026 世界杯赛程数据",
         "使用默认数据: 缺少参赛球队数据"
       ]
+    },
+    {
+      "timestamp": "2026-07-13T22:31:18.718961",
+      "season": 2026,
+      "mode": "llm_planner_strict",
+      "predicted_champion": "France",
+      "status": "completed",
+      "data_quality_score": 0.83,
+      "knockout_count": 31,
+      "tool_trace_summary": {
+        "get_cached_fixtures": {
+          "success": 1,
+          "fail": 0
+        },
+        "get_worldcup_teams": {
+          "success": 0,
+          "fail": 2
+        },
+        "load_historical_matches": {
+          "success": 1,
+          "fail": 0
+        },
+        "check_data_quality": {
+          "success": 1,
+          "fail": 0
+        },
+        "build_team_features": {
+          "success": 1,
+          "fail": 0
+        },
+        "predict_group_stage": {
+          "success": 1,
+          "fail": 0
+        },
+        "predict_knockout_bracket": {
+          "success": 1,
+          "fail": 0
+        },
+        "build_visualization_payload": {
+          "success": 1,
+          "fail": 0
+        },
+        "generate_final_explanation": {
+          "success": 1,
+          "fail": 0
+        }
+      },
+      "errors": [],
+      "warnings": [
+        "Step 2: get_worldcup_teams failed - ",
+        "Step 3: get_worldcup_teams failed - "
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:32:04.649021",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:32:47.278959",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:33:28.270814",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:36:24.180249",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:37:04.996243",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T22:37:51.992326",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T23:02:24.660006",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T23:03:12.690494",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
+    },
+    {
+      "timestamp": "2026-07-13T23:03:56.901004",
+      "season": 2026,
+      "mode": "workflow",
+      "predicted_champion": "France",
+      "status": "degraded_completed",
+      "data_quality_score": 0.76,
+      "knockout_count": 31,
+      "tool_trace_summary": {},
+      "errors": [
+        "赛程获取失败: None",
+        "球队获取失败: None"
+      ],
+      "warnings": [
+        "缺少球队近期战绩数据",
+        "使用默认数据: 缺少 2026 世界杯赛程数据",
+        "使用默认数据: 缺少参赛球队数据"
+      ]
     }
   ],
   "tool_reliability": {
     "get_cached_fixtures": {
-      "total": 43,
-      "success": 43,
+      "total": 44,
+      "success": 44,
       "failures": [],
       "last_status": "success"
     },
     "get_worldcup_teams": {
-      "total": 86,
+      "total": 88,
       "success": 0,
       "failures": [
         "empty_data",
         "empty_data",
         "empty_data",
         "empty_data",
-        "empty_data",
-        "empty_data",
+        "api_error",
+        "api_error",
         "api_error",
         "api_error",
         "api_error",
@@ -1246,44 +1129,44 @@
       "last_status": "failed"
     },
     "load_historical_matches": {
-      "total": 43,
-      "success": 43,
-      "failures": [],
-      "last_status": "success"
-    },
-    "check_data_quality": {
-      "total": 43,
-      "success": 43,
-      "failures": [],
-      "last_status": "success"
-    },
-    "build_team_features": {
-      "total": 74,
-      "success": 74,
-      "failures": [],
-      "last_status": "success"
-    },
-    "predict_group_stage": {
-      "total": 96,
-      "success": 96,
-      "failures": [],
-      "last_status": "success"
-    },
-    "predict_knockout_bracket": {
       "total": 44,
       "success": 44,
       "failures": [],
       "last_status": "success"
     },
+    "check_data_quality": {
+      "total": 44,
+      "success": 44,
+      "failures": [],
+      "last_status": "success"
+    },
+    "build_team_features": {
+      "total": 75,
+      "success": 75,
+      "failures": [],
+      "last_status": "success"
+    },
+    "predict_group_stage": {
+      "total": 97,
+      "success": 97,
+      "failures": [],
+      "last_status": "success"
+    },
+    "predict_knockout_bracket": {
+      "total": 45,
+      "success": 45,
+      "failures": [],
+      "last_status": "success"
+    },
     "build_visualization_payload": {
-      "total": 54,
-      "success": 54,
+      "total": 55,
+      "success": 55,
       "failures": [],
       "last_status": "success"
     },
     "generate_final_explanation": {
-      "total": 43,
-      "success": 43,
+      "total": 44,
+      "success": 44,
       "failures": [],
       "last_status": "success"
     }

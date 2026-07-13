@@ -1,6 +1,6 @@
 {
   "success": true,
-  "created_at": "2026-07-13T12:33:05.403350",
+  "created_at": "2026-07-13T15:08:00.517491",
   "scenario_scope": "conditional_champion_probability",
   "stage_at_creation": "semi_finals",
   "is_stale": false,
@@ -8,11 +8,11 @@
     "match_id": "fd_537387",
     "match": "France vs Spain",
     "stage": "semi_finals",
-    "forced_winner": "Spain",
-    "forced_loser": "France",
+    "forced_winner": "France",
+    "forced_loser": "Spain",
     "note": "假设结果，不影响真实赛果"
   },
-  "simulation_count": 2000,
+  "simulation_count": 10000,
   "official_prediction": {
     "champion": "Argentina",
     "probability": 0.4774,
@@ -36,26 +36,26 @@
     ]
   },
   "scenario_prediction": {
-    "champion": "Spain",
-    "probability": 0.401,
+    "champion": "France",
+    "probability": 0.5328,
     "top_candidates": [
       {
-        "name": "Spain",
-        "probability": 0.401,
-        "count": 802
-      },
-      {
-        "name": "England",
-        "probability": 0.302,
-        "count": 604
+        "name": "France",
+        "probability": 0.5328,
+        "count": 5328
       },
       {
         "name": "Argentina",
-        "probability": 0.297,
-        "count": 594
+        "probability": 0.3351,
+        "count": 3351
       },
       {
-        "name": "France",
+        "name": "England",
+        "probability": 0.1321,
+        "count": 1321
+      },
+      {
+        "name": "Spain",
         "probability": 0.0,
         "count": 0
       }
@@ -63,96 +63,96 @@
   },
   "final_matchup_distribution": [
     {
-      "matchup": "Spain vs England",
-      "count": 1006,
-      "probability": 0.503
+      "matchup": "France vs England",
+      "count": 5028,
+      "probability": 0.5028
     },
     {
-      "matchup": "Spain vs Argentina",
-      "count": 994,
-      "probability": 0.497
+      "matchup": "France vs Argentina",
+      "count": 4972,
+      "probability": 0.4972
     }
   ],
   "finalist_distribution": [
     {
-      "name": "Spain",
+      "name": "France",
       "finalist_probability": 1.0,
-      "count": 2000
+      "count": 10000
     },
     {
       "name": "England",
-      "finalist_probability": 0.503,
-      "count": 1006
+      "finalist_probability": 0.5028,
+      "count": 5028
     },
     {
       "name": "Argentina",
-      "finalist_probability": 0.497,
-      "count": 994
+      "finalist_probability": 0.4972,
+      "count": 4972
     },
     {
-      "name": "France",
+      "name": "Spain",
       "finalist_probability": 0.0,
       "count": 0
     }
   ],
   "champion_distribution": [
     {
-      "name": "Spain",
-      "count": 802,
-      "probability": 0.401
-    },
-    {
-      "name": "England",
-      "count": 604,
-      "probability": 0.302
+      "name": "France",
+      "count": 5328,
+      "probability": 0.5328
     },
     {
       "name": "Argentina",
-      "count": 594,
-      "probability": 0.297
+      "count": 3351,
+      "probability": 0.3351
     },
     {
-      "name": "France",
+      "name": "England",
+      "count": 1321,
+      "probability": 0.1321
+    },
+    {
+      "name": "Spain",
       "count": 0,
       "probability": 0.0
     }
   ],
   "comparison": [
     {
-      "name": "Spain",
-      "official_probability": 0.1107,
-      "scenario_probability": 0.401,
-      "delta": 0.2903,
-      "trend": "up"
-    },
-    {
-      "name": "England",
-      "official_probability": 0.1521,
-      "scenario_probability": 0.302,
-      "delta": 0.1499,
+      "name": "France",
+      "official_probability": 0.2598,
+      "scenario_probability": 0.5328,
+      "delta": 0.273,
       "trend": "up"
     },
     {
       "name": "Argentina",
       "official_probability": 0.4774,
-      "scenario_probability": 0.297,
-      "delta": -0.1804,
+      "scenario_probability": 0.3351,
+      "delta": -0.1423,
       "trend": "down"
     },
     {
-      "name": "France",
-      "official_probability": 0.2598,
+      "name": "England",
+      "official_probability": 0.1521,
+      "scenario_probability": 0.1321,
+      "delta": -0.02,
+      "trend": "down"
+    },
+    {
+      "name": "Spain",
+      "official_probability": 0.1107,
       "scenario_probability": 0.0,
-      "delta": -0.2598,
+      "delta": -0.1107,
       "trend": "eliminated"
     }
   ],
   "impact_summary": {
     "official_champion_before": "Argentina",
-    "scenario_champion": "Spain",
-    "eliminated_team": "France",
+    "scenario_champion": "France",
+    "eliminated_team": "Spain",
     "biggest_beneficiary": "England",
-    "biggest_loser": "France"
+    "biggest_loser": "Spain"
   },
-  "explanation": "**沙盘假设：France vs Spain，Spain 晋级**\n\n在该假设下，France 在半决赛阶段被淘汰，Spain 晋级后续赛程。\n\n**可能决赛对阵：**\n- Spain vs England：50.3%\n- Spain vs Argentina：49.7%\n\n**新的夺冠格局：**\n- Spain：40.1%\n- England：30.2%\n- Argentina：29.7%\n- France：0.0%（淘汰）\n\n**影响分析：** 由于 France 被淘汰，冠军竞争格局发生变化，Spain 成为该假设下最有可能夺冠的球队。\n\n该结果仅为条件推演，不影响正式冠军预测。"
+  "explanation": "**沙盘假设：France vs Spain，France 晋级**\n\n在该假设下，Spain 在半决赛阶段被淘汰，France 晋级后续赛程。\n\n**可能决赛对阵：**\n- France vs England：50.3%\n- France vs Argentina：49.7%\n\n**新的夺冠格局：**\n- France：53.3%\n- Argentina：33.5%\n- England：13.2%\n- Spain：0.0%（淘汰）\n\n**影响分析：** 由于 Spain 被淘汰，冠军竞争格局发生变化，France 成为该假设下最有可能夺冠的球队。\n\n该结果仅为条件推演，不影响正式冠军预测。"
 }
