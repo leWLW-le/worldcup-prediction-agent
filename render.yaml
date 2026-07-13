@@ -1,0 +1,36 @@
+services:
+  # ── Backend: FastAPI ──
+  - type: web
+    name: worldcup-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: FOOTBALL_DATA_API
+        sync: false
+      - key: API_FOOTBALL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://open.bigmodel.cn/api/paas/v4
+      - key: OPENAI_MODEL
+        value: glm-4-flash
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:///./data/worldcup.db
+
+  # ── Frontend: Streamlit Dashboard ──
+  - type: web
+    name: worldcup-frontend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run debug_dashboard.py --server.address 0.0.0.0 --server.port $PORT
+    envVars:
+      - key: BACKEND_URL
+        value: https://worldcup-backend.onrender.com
