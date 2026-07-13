@@ -1,0 +1,5147 @@
+{
+  "objective": "åºäº 2026 ä¸çæ¯ç°æçå®æ°æ®åè¿å¾çå®æ¯èµæ°æ®ï¼é¢æµä¸çæ¯å åå¹¶è§£éæ¨çè¿ç¨",
+  "season": 2026,
+  "mode": "workflow",
+  "data_plan": [
+    "ä¸çæ¯èµç¨ (API-Sports /fixtures?league=1&season=2026)",
+    "åèµçé (API-Sports /teams?league=1&season=2026)",
+    "å°ç»ç§¯åæ¦ (API-Sports /standings?league=1&season=2026)",
+    "å®æ¶æ¯å (API-Sports /fixtures?live=all)",
+    "åå²å½å®¶éæ¯èµ (æ¬å° CSV)",
+    "çéè¡¥åä¿¡æ¯ (ç¬è«ï¼å¯é)"
+  ],
+  "collected_data": {
+    "fixtures": null,
+    "teams": null,
+    "standings": null,
+    "live": null,
+    "historical": {
+      "total": 67,
+      "matches": [
+        {
+          "date": "2022-12-18",
+          "home_team": "Argentina",
+          "away_team": "France",
+          "home_score": 3,
+          "away_score": 3,
+          "tournament": "FIFA World Cup",
+          "city": "Lusail",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-17",
+          "home_team": "Croatia",
+          "away_team": "Morocco",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Al Rayyan",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-14",
+          "home_team": "Argentina",
+          "away_team": "Croatia",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "FIFA World Cup",
+          "city": "Lusail",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-15",
+          "home_team": "France",
+          "away_team": "Morocco",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "FIFA World Cup",
+          "city": "Al Bayt",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-10",
+          "home_team": "Croatia",
+          "away_team": "Brazil",
+          "home_score": 1,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Al Rayyan",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-10",
+          "home_team": "Morocco",
+          "away_team": "Portugal",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "FIFA World Cup",
+          "city": "Doha",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-10",
+          "home_team": "England",
+          "away_team": "France",
+          "home_score": 1,
+          "away_score": 2,
+          "tournament": "FIFA World Cup",
+          "city": "Al Bayt",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-09",
+          "home_team": "Netherlands",
+          "away_team": "Argentina",
+          "home_score": 2,
+          "away_score": 2,
+          "tournament": "FIFA World Cup",
+          "city": "Lusail",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-06",
+          "home_team": "Morocco",
+          "away_team": "Spain",
+          "home_score": 0,
+          "away_score": 0,
+          "tournament": "FIFA World Cup",
+          "city": "Doha",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-06",
+          "home_team": "Portugal",
+          "away_team": "Switzerland",
+          "home_score": 6,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Lusail",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-05",
+          "home_team": "Japan",
+          "away_team": "Croatia",
+          "home_score": 1,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Al Janoub",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-05",
+          "home_team": "Brazil",
+          "away_team": "South Korea",
+          "home_score": 4,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Doha",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-04",
+          "home_team": "England",
+          "away_team": "Senegal",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "FIFA World Cup",
+          "city": "Al Bayt",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-04",
+          "home_team": "France",
+          "away_team": "Poland",
+          "home_score": 3,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Al Thumama",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-03",
+          "home_team": "Netherlands",
+          "away_team": "USA",
+          "home_score": 3,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Khalifa",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2022-12-03",
+          "home_team": "Argentina",
+          "away_team": "Australia",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "FIFA World Cup",
+          "city": "Ahmad bin Ali",
+          "country": "Qatar",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-03-24",
+          "home_team": "Argentina",
+          "away_team": "Panama",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "Friendly",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-03-25",
+          "home_team": "France",
+          "away_team": "Netherlands",
+          "home_score": 4,
+          "away_score": 0,
+          "tournament": "UEFA Euro Qualifier",
+          "city": "Paris",
+          "country": "France",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-03-26",
+          "home_team": "Brazil",
+          "away_team": "Morocco",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "Tangier",
+          "country": "Morocco",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-03-26",
+          "home_team": "England",
+          "away_team": "Italy",
+          "home_score": 1,
+          "away_score": 2,
+          "tournament": "UEFA Euro Qualifier",
+          "city": "Naples",
+          "country": "Italy",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-06-16",
+          "home_team": "Spain",
+          "away_team": "Italy",
+          "home_score": 0,
+          "away_score": 0,
+          "tournament": "UEFA Nations League",
+          "city": "Enschede",
+          "country": "Netherlands",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-06-18",
+          "home_team": "Portugal",
+          "away_team": "Iceland",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "UEFA Euro Qualifier",
+          "city": "Reykjavik",
+          "country": "Iceland",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-09-08",
+          "home_team": "Germany",
+          "away_team": "Japan",
+          "home_score": 1,
+          "away_score": 4,
+          "tournament": "Friendly",
+          "city": "Wolfsburg",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-09-09",
+          "home_team": "Brazil",
+          "away_team": "Bolivia",
+          "home_score": 5,
+          "away_score": 1,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Belem",
+          "country": "Brazil",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-09-12",
+          "home_team": "France",
+          "away_team": "Belgium",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "Friendly",
+          "city": "Dortmund",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-10-13",
+          "home_team": "Argentina",
+          "away_team": "Paraguay",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-10-14",
+          "home_team": "Spain",
+          "away_team": "Georgia",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "UEFA Euro Qualifier",
+          "city": "Tbilisi",
+          "country": "Georgia",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2023-10-17",
+          "home_team": "England",
+          "away_team": "Italy",
+          "home_score": 3,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "London",
+          "country": "England",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-11-17",
+          "home_team": "Argentina",
+          "away_team": "Uruguay",
+          "home_score": 0,
+          "away_score": 2,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2023-11-21",
+          "home_team": "Brazil",
+          "away_team": "Colombia",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Rio de Janeiro",
+          "country": "Brazil",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-03-23",
+          "home_team": "England",
+          "away_team": "Brazil",
+          "home_score": 0,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "London",
+          "country": "England",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-03-23",
+          "home_team": "Spain",
+          "away_team": "Colombia",
+          "home_score": 0,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "Madrid",
+          "country": "Spain",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-03-26",
+          "home_team": "France",
+          "away_team": "Germany",
+          "home_score": 0,
+          "away_score": 2,
+          "tournament": "Friendly",
+          "city": "Marseille",
+          "country": "France",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-03-26",
+          "home_team": "Argentina",
+          "away_team": "Costa Rica",
+          "home_score": 3,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "Houston",
+          "country": "USA",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-05",
+          "home_team": "Portugal",
+          "away_team": "Finland",
+          "home_score": 4,
+          "away_score": 2,
+          "tournament": "Friendly",
+          "city": "Lisbon",
+          "country": "Portugal",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-06-07",
+          "home_team": "Germany",
+          "away_team": "Greece",
+          "home_score": 5,
+          "away_score": 1,
+          "tournament": "Friendly",
+          "city": "Monchengladbach",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-06-08",
+          "home_team": "Brazil",
+          "away_team": "Mexico",
+          "home_score": 3,
+          "away_score": 2,
+          "tournament": "Friendly",
+          "city": "Orlando",
+          "country": "USA",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-14",
+          "home_team": "Germany",
+          "away_team": "Scotland",
+          "home_score": 5,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Munich",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-06-15",
+          "home_team": "Argentina",
+          "away_team": "Canada",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "Copa America",
+          "city": "Atlanta",
+          "country": "USA",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-16",
+          "home_team": "Spain",
+          "away_team": "Croatia",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Berlin",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-20",
+          "home_team": "Spain",
+          "away_team": "Italy",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Gelsenkirchen",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-24",
+          "home_team": "Argentina",
+          "away_team": "Chile",
+          "home_score": 0,
+          "away_score": 0,
+          "tournament": "Copa America",
+          "city": "East Rutherford",
+          "country": "USA",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-25",
+          "home_team": "France",
+          "away_team": "Poland",
+          "home_score": 1,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Dortmund",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-26",
+          "home_team": "England",
+          "away_team": "Slovenia",
+          "home_score": 0,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Cologne",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-06-30",
+          "home_team": "Germany",
+          "away_team": "Denmark",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Dortmund",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-07-01",
+          "home_team": "France",
+          "away_team": "Belgium",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Dusseldorf",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-07-05",
+          "home_team": "Portugal",
+          "away_team": "France",
+          "home_score": 0,
+          "away_score": 0,
+          "tournament": "UEFA Euro",
+          "city": "Hamburg",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-07-06",
+          "home_team": "Spain",
+          "away_team": "Germany",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Berlin",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-07-09",
+          "home_team": "Spain",
+          "away_team": "France",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Munich",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-07-10",
+          "home_team": "England",
+          "away_team": "Netherlands",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Dortmund",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-07-14",
+          "home_team": "Spain",
+          "away_team": "England",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "UEFA Euro",
+          "city": "Berlin",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-09-05",
+          "home_team": "Argentina",
+          "away_team": "Chile",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-09-06",
+          "home_team": "France",
+          "away_team": "Italy",
+          "home_score": 1,
+          "away_score": 3,
+          "tournament": "UEFA Nations League",
+          "city": "Paris",
+          "country": "France",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-09-07",
+          "home_team": "Germany",
+          "away_team": "Hungary",
+          "home_score": 5,
+          "away_score": 0,
+          "tournament": "UEFA Nations League",
+          "city": "Dusseldorf",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-09-08",
+          "home_team": "Brazil",
+          "away_team": "Ecuador",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Sao Paulo",
+          "country": "Brazil",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-10-10",
+          "home_team": "Spain",
+          "away_team": "Serbia",
+          "home_score": 3,
+          "away_score": 0,
+          "tournament": "UEFA Nations League",
+          "city": "Murcia",
+          "country": "Spain",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-10-11",
+          "home_team": "Argentina",
+          "away_team": "Ecuador",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-10-15",
+          "home_team": "Germany",
+          "away_team": "Netherlands",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "UEFA Nations League",
+          "city": "Munich",
+          "country": "Germany",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-11-14",
+          "home_team": "Brazil",
+          "away_team": "Venezuela",
+          "home_score": 1,
+          "away_score": 1,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Sao Paulo",
+          "country": "Brazil",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2024-11-15",
+          "home_team": "Spain",
+          "away_team": "Switzerland",
+          "home_score": 3,
+          "away_score": 2,
+          "tournament": "UEFA Nations League",
+          "city": "Zurich",
+          "country": "Switzerland",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2024-11-19",
+          "home_team": "Argentina",
+          "away_team": "Peru",
+          "home_score": 1,
+          "away_score": 0,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2025-03-21",
+          "home_team": "France",
+          "away_team": "Germany",
+          "home_score": 2,
+          "away_score": 0,
+          "tournament": "UEFA Nations League",
+          "city": "Lyon",
+          "country": "France",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2025-03-22",
+          "home_team": "Brazil",
+          "away_team": "England",
+          "home_score": 1,
+          "away_score": 2,
+          "tournament": "Friendly",
+          "city": "London",
+          "country": "England",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2025-03-25",
+          "home_team": "Spain",
+          "away_team": "Netherlands",
+          "home_score": 3,
+          "away_score": 1,
+          "tournament": "UEFA Nations League",
+          "city": "Madrid",
+          "country": "Spain",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2025-06-04",
+          "home_team": "Argentina",
+          "away_team": "Uruguay",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "FIFA World Cup Qualifier",
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "neutral": "FALSE"
+        },
+        {
+          "date": "2025-06-06",
+          "home_team": "France",
+          "away_team": "Spain",
+          "home_score": 2,
+          "away_score": 1,
+          "tournament": "UEFA Nations League Final",
+          "city": "Munich",
+          "country": "Germany",
+          "neutral": "TRUE"
+        },
+        {
+          "date": "2025-06-08",
+          "home_team": "Germany",
+          "away_team": "Portugal",
+          "home_score": 3,
+          "away_score": 2,
+          "tournament": "UEFA Nations League",
+          "city": "Munich",
+          "country": "Germany",
+          "neutral": "FALSE"
+        }
+      ]
+    },
+    "scraper": {}
+  },
+  "data_quality_report": {
+    "is_usable": true,
+    "score": 0.25,
+    "missing_data": [],
+    "warnings": [
+      "ç¼ºå°çéè¿ææç»©æ°æ®",
+      "åå²æ¯èµæ°æ®åå°ï¼67 åºï¼å»ºè®® â¥100ï¼",
+      "ææ å®æ¶æ¯åæ°æ®ï¼éå³é®ï¼",
+      "ä½¿ç¨é»è®¤èµç¨æ°æ®ï¼API éæµï¼éçº§è¿è¡ï¼",
+      "ä½¿ç¨é»è®¤ 48 æ¯çéåç»ï¼API éæµï¼éçº§è¿è¡ï¼"
+    ],
+    "blocking_errors": [],
+    "fallback_used": true
+  },
+  "team_features": {
+    "Mexico": {
+      "team_name": "Mexico",
+      "api_team_id": null,
+      "elo_rating": 1830.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.534,
+      "data_confidence": 0.2
+    },
+    "South Africa": {
+      "team_name": "South Africa",
+      "api_team_id": null,
+      "elo_rating": 1620.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4421,
+      "data_confidence": 0.2
+    },
+    "South Korea": {
+      "team_name": "South Korea",
+      "api_team_id": null,
+      "elo_rating": 1700.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4771,
+      "data_confidence": 0.2
+    },
+    "Czech Republic": {
+      "team_name": "Czech Republic",
+      "api_team_id": null,
+      "elo_rating": 1650.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4552,
+      "data_confidence": 0.2
+    },
+    "Canada": {
+      "team_name": "Canada",
+      "api_team_id": null,
+      "elo_rating": 1710.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4815,
+      "data_confidence": 0.2
+    },
+    "Bosnia": {
+      "team_name": "Bosnia",
+      "api_team_id": null,
+      "elo_rating": 1640.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4508,
+      "data_confidence": 0.2
+    },
+    "Qatar": {
+      "team_name": "Qatar",
+      "api_team_id": null,
+      "elo_rating": 1500.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3896,
+      "data_confidence": 0.2
+    },
+    "Switzerland": {
+      "team_name": "Switzerland",
+      "api_team_id": null,
+      "elo_rating": 1860.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5471,
+      "data_confidence": 0.2
+    },
+    "Brazil": {
+      "team_name": "Brazil",
+      "api_team_id": null,
+      "elo_rating": 2060.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6346,
+      "data_confidence": 0.2
+    },
+    "Morocco": {
+      "team_name": "Morocco",
+      "api_team_id": null,
+      "elo_rating": 1820.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5296,
+      "data_confidence": 0.2
+    },
+    "Haiti": {
+      "team_name": "Haiti",
+      "api_team_id": null,
+      "elo_rating": 1480.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3808,
+      "data_confidence": 0.2
+    },
+    "Scotland": {
+      "team_name": "Scotland",
+      "api_team_id": null,
+      "elo_rating": 1690.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4727,
+      "data_confidence": 0.2
+    },
+    "USA": {
+      "team_name": "USA",
+      "api_team_id": null,
+      "elo_rating": 1780.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5121,
+      "data_confidence": 0.2
+    },
+    "Paraguay": {
+      "team_name": "Paraguay",
+      "api_team_id": null,
+      "elo_rating": 1650.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4552,
+      "data_confidence": 0.2
+    },
+    "Australia": {
+      "team_name": "Australia",
+      "api_team_id": null,
+      "elo_rating": 1700.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4771,
+      "data_confidence": 0.2
+    },
+    "Turkey": {
+      "team_name": "Turkey",
+      "api_team_id": null,
+      "elo_rating": 1720.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4858,
+      "data_confidence": 0.2
+    },
+    "Germany": {
+      "team_name": "Germany",
+      "api_team_id": null,
+      "elo_rating": 2000.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6083,
+      "data_confidence": 0.2
+    },
+    "Curacao": {
+      "team_name": "Curacao",
+      "api_team_id": null,
+      "elo_rating": 1420.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3546,
+      "data_confidence": 0.2
+    },
+    "Ivory Coast": {
+      "team_name": "Ivory Coast",
+      "api_team_id": null,
+      "elo_rating": 1660.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4596,
+      "data_confidence": 0.2
+    },
+    "Ecuador": {
+      "team_name": "Ecuador",
+      "api_team_id": null,
+      "elo_rating": 1740.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4946,
+      "data_confidence": 0.2
+    },
+    "Netherlands": {
+      "team_name": "Netherlands",
+      "api_team_id": null,
+      "elo_rating": 1960.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5908,
+      "data_confidence": 0.2
+    },
+    "Japan": {
+      "team_name": "Japan",
+      "api_team_id": null,
+      "elo_rating": 1750.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.499,
+      "data_confidence": 0.2
+    },
+    "Sweden": {
+      "team_name": "Sweden",
+      "api_team_id": null,
+      "elo_rating": 1770.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5077,
+      "data_confidence": 0.2
+    },
+    "Tunisia": {
+      "team_name": "Tunisia",
+      "api_team_id": null,
+      "elo_rating": 1610.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4377,
+      "data_confidence": 0.2
+    },
+    "Belgium": {
+      "team_name": "Belgium",
+      "api_team_id": null,
+      "elo_rating": 1880.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5558,
+      "data_confidence": 0.2
+    },
+    "Egypt": {
+      "team_name": "Egypt",
+      "api_team_id": null,
+      "elo_rating": 1680.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4683,
+      "data_confidence": 0.2
+    },
+    "Iran": {
+      "team_name": "Iran",
+      "api_team_id": null,
+      "elo_rating": 1650.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4552,
+      "data_confidence": 0.2
+    },
+    "New Zealand": {
+      "team_name": "New Zealand",
+      "api_team_id": null,
+      "elo_rating": 1530.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4027,
+      "data_confidence": 0.2
+    },
+    "Spain": {
+      "team_name": "Spain",
+      "api_team_id": null,
+      "elo_rating": 2080.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6433,
+      "data_confidence": 0.2
+    },
+    "Cape Verde": {
+      "team_name": "Cape Verde",
+      "api_team_id": null,
+      "elo_rating": 1520.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3983,
+      "data_confidence": 0.2
+    },
+    "Saudi Arabia": {
+      "team_name": "Saudi Arabia",
+      "api_team_id": null,
+      "elo_rating": 1560.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4158,
+      "data_confidence": 0.2
+    },
+    "Uruguay": {
+      "team_name": "Uruguay",
+      "api_team_id": null,
+      "elo_rating": 1820.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5296,
+      "data_confidence": 0.2
+    },
+    "France": {
+      "team_name": "France",
+      "api_team_id": null,
+      "elo_rating": 2100.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6521,
+      "data_confidence": 0.2
+    },
+    "Senegal": {
+      "team_name": "Senegal",
+      "api_team_id": null,
+      "elo_rating": 1720.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4858,
+      "data_confidence": 0.2
+    },
+    "Iraq": {
+      "team_name": "Iraq",
+      "api_team_id": null,
+      "elo_rating": 1480.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3808,
+      "data_confidence": 0.2
+    },
+    "Norway": {
+      "team_name": "Norway",
+      "api_team_id": null,
+      "elo_rating": 1800.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5208,
+      "data_confidence": 0.2
+    },
+    "Argentina": {
+      "team_name": "Argentina",
+      "api_team_id": null,
+      "elo_rating": 2050.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6302,
+      "data_confidence": 0.2
+    },
+    "Algeria": {
+      "team_name": "Algeria",
+      "api_team_id": null,
+      "elo_rating": 1600.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4333,
+      "data_confidence": 0.2
+    },
+    "Austria": {
+      "team_name": "Austria",
+      "api_team_id": null,
+      "elo_rating": 1750.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.499,
+      "data_confidence": 0.2
+    },
+    "Jordan": {
+      "team_name": "Jordan",
+      "api_team_id": null,
+      "elo_rating": 1440.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3633,
+      "data_confidence": 0.2
+    },
+    "Portugal": {
+      "team_name": "Portugal",
+      "api_team_id": null,
+      "elo_rating": 1980.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5996,
+      "data_confidence": 0.2
+    },
+    "DR Congo": {
+      "team_name": "DR Congo",
+      "api_team_id": null,
+      "elo_rating": 1460.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.3721,
+      "data_confidence": 0.2
+    },
+    "Uzbekistan": {
+      "team_name": "Uzbekistan",
+      "api_team_id": null,
+      "elo_rating": 1580.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4246,
+      "data_confidence": 0.2
+    },
+    "Colombia": {
+      "team_name": "Colombia",
+      "api_team_id": null,
+      "elo_rating": 1840.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5383,
+      "data_confidence": 0.2
+    },
+    "England": {
+      "team_name": "England",
+      "api_team_id": null,
+      "elo_rating": 2040.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.6258,
+      "data_confidence": 0.2
+    },
+    "Croatia": {
+      "team_name": "Croatia",
+      "api_team_id": null,
+      "elo_rating": 1860.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.5471,
+      "data_confidence": 0.2
+    },
+    "Ghana": {
+      "team_name": "Ghana",
+      "api_team_id": null,
+      "elo_rating": 1640.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4508,
+      "data_confidence": 0.2
+    },
+    "Panama": {
+      "team_name": "Panama",
+      "api_team_id": null,
+      "elo_rating": 1600.0,
+      "fifa_rank": null,
+      "recent_form": "",
+      "recent_win_rate": 0.4,
+      "recent_goals_for_avg": 1.2,
+      "recent_goals_against_avg": 1.0,
+      "attack_score": 0.4,
+      "defense_score": 0.667,
+      "form_score": 0.4,
+      "power_score": 0.4333,
+      "data_confidence": 0.2
+    }
+  },
+  "group_predictions": [
+    {
+      "group_name": "Group A",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 1,
+          "team_name": "Mexico",
+          "played": 3,
+          "wins": 3,
+          "draws": 0,
+          "losses": 0,
+          "goals_for": 6,
+          "goals_against": 0,
+          "goal_difference": 6,
+          "points": 9,
+          "elo_rating": 1830.0
+        },
+        {
+          "rank": 2,
+          "team_id": 2,
+          "team_name": "South Africa",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 2,
+          "goals_against": 3,
+          "goal_difference": -1,
+          "points": 4,
+          "elo_rating": 1620.0
+        },
+        {
+          "rank": 3,
+          "team_id": 3,
+          "team_name": "South Korea",
+          "played": 3,
+          "wins": 1,
+          "draws": 0,
+          "losses": 2,
+          "goals_for": 2,
+          "goals_against": 3,
+          "goal_difference": -1,
+          "points": 3,
+          "elo_rating": 1700.0
+        },
+        {
+          "rank": 4,
+          "team_id": 4,
+          "team_name": "Czech Republic",
+          "played": 3,
+          "wins": 0,
+          "draws": 1,
+          "losses": 2,
+          "goals_for": 2,
+          "goals_against": 6,
+          "goal_difference": -4,
+          "points": 1,
+          "elo_rating": 1650.0
+        }
+      ],
+      "qualified_teams": [
+        1,
+        2
+      ],
+      "matches": [
+        {
+          "home_team": "Mexico",
+          "away_team": "South Africa",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6477,
+          "draw_prob": 0.2303,
+          "away_win_prob": 0.1219,
+          "predicted_winner": "Mexico",
+          "confidence": 0.6477,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Mexico",
+          "away_team": "South Korea",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5571,
+          "draw_prob": 0.2602,
+          "away_win_prob": 0.1827,
+          "predicted_winner": "Mexico",
+          "confidence": 0.5571,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Mexico",
+          "away_team": "Czech Republic",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6143,
+          "draw_prob": 0.2424,
+          "away_win_prob": 0.1433,
+          "predicted_winner": "Mexico",
+          "confidence": 0.6143,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "South Africa",
+          "away_team": "South Korea",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3152,
+          "draw_prob": 0.2928,
+          "away_win_prob": 0.3921,
+          "predicted_winner": "South Korea",
+          "confidence": 0.3921,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "South Africa",
+          "away_team": "Czech Republic",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3711,
+          "draw_prob": 0.292,
+          "away_win_prob": 0.3368,
+          "predicted_winner": "South Africa",
+          "confidence": 0.3711,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "South Korea",
+          "away_team": "Czech Republic",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4637,
+          "draw_prob": 0.2814,
+          "away_win_prob": 0.2548,
+          "predicted_winner": "South Korea",
+          "confidence": 0.4637,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group B",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 5,
+          "team_name": "Switzerland",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 7,
+          "goals_against": 3,
+          "goal_difference": 4,
+          "points": 7,
+          "elo_rating": 1860.0
+        },
+        {
+          "rank": 2,
+          "team_id": 6,
+          "team_name": "Canada",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 8,
+          "goals_against": 3,
+          "goal_difference": 5,
+          "points": 4,
+          "elo_rating": 1710.0
+        },
+        {
+          "rank": 3,
+          "team_id": 7,
+          "team_name": "Bosnia",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 5,
+          "goals_against": 6,
+          "goal_difference": -1,
+          "points": 4,
+          "elo_rating": 1640.0
+        },
+        {
+          "rank": 4,
+          "team_id": 8,
+          "team_name": "Qatar",
+          "played": 3,
+          "wins": 0,
+          "draws": 1,
+          "losses": 2,
+          "goals_for": 2,
+          "goals_against": 10,
+          "goal_difference": -8,
+          "points": 1,
+          "elo_rating": 1500.0
+        }
+      ],
+      "qualified_teams": [
+        5,
+        6
+      ],
+      "matches": [
+        {
+          "home_team": "Switzerland",
+          "away_team": "Canada",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5801,
+          "draw_prob": 0.2535,
+          "away_win_prob": 0.1664,
+          "predicted_winner": "Switzerland",
+          "confidence": 0.5801,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Switzerland",
+          "away_team": "Bosnia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6587,
+          "draw_prob": 0.2261,
+          "away_win_prob": 0.1152,
+          "predicted_winner": "Switzerland",
+          "confidence": 0.6587,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Switzerland",
+          "away_team": "Qatar",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7997,
+          "draw_prob": 0.1599,
+          "away_win_prob": 0.0404,
+          "predicted_winner": "Switzerland",
+          "confidence": 0.7997,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Canada",
+          "away_team": "Bosnia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4872,
+          "draw_prob": 0.277,
+          "away_win_prob": 0.2358,
+          "predicted_winner": "Canada",
+          "confidence": 0.4872,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "Canada",
+          "away_team": "Qatar",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6477,
+          "draw_prob": 0.2303,
+          "away_win_prob": 0.1219,
+          "predicted_winner": "Canada",
+          "confidence": 0.6477,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Bosnia",
+          "away_team": "Qatar",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5687,
+          "draw_prob": 0.2569,
+          "away_win_prob": 0.1745,
+          "predicted_winner": "Bosnia",
+          "confidence": 0.5687,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group C",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 9,
+          "team_name": "Brazil",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 7,
+          "goals_against": 1,
+          "goal_difference": 6,
+          "points": 7,
+          "elo_rating": 2060.0
+        },
+        {
+          "rank": 2,
+          "team_id": 10,
+          "team_name": "Morocco",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 6,
+          "goals_against": 3,
+          "goal_difference": 3,
+          "points": 7,
+          "elo_rating": 1820.0
+        },
+        {
+          "rank": 3,
+          "team_id": 11,
+          "team_name": "Scotland",
+          "played": 3,
+          "wins": 1,
+          "draws": 0,
+          "losses": 2,
+          "goals_for": 1,
+          "goals_against": 4,
+          "goal_difference": -3,
+          "points": 3,
+          "elo_rating": 1690.0
+        },
+        {
+          "rank": 4,
+          "team_id": 12,
+          "team_name": "Haiti",
+          "played": 3,
+          "wins": 0,
+          "draws": 0,
+          "losses": 3,
+          "goals_for": 2,
+          "goals_against": 8,
+          "goal_difference": -6,
+          "points": 0,
+          "elo_rating": 1480.0
+        }
+      ],
+      "qualified_teams": [
+        9,
+        10
+      ],
+      "matches": [
+        {
+          "home_team": "Brazil",
+          "away_team": "Morocco",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6804,
+          "draw_prob": 0.2174,
+          "away_win_prob": 0.1022,
+          "predicted_winner": "Brazil",
+          "confidence": 0.6804,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Brazil",
+          "away_team": "Scotland",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8087,
+          "draw_prob": 0.1549,
+          "away_win_prob": 0.0364,
+          "predicted_winner": "Brazil",
+          "confidence": 0.8087,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Brazil",
+          "away_team": "Haiti",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.9054,
+          "draw_prob": 0.0865,
+          "away_win_prob": 0.0081,
+          "predicted_winner": "Brazil",
+          "confidence": 0.9054,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Morocco",
+          "away_team": "Scotland",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5571,
+          "draw_prob": 0.2602,
+          "away_win_prob": 0.1827,
+          "predicted_winner": "Morocco",
+          "confidence": 0.5571,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Morocco",
+          "away_team": "Haiti",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7812,
+          "draw_prob": 0.1699,
+          "away_win_prob": 0.0488,
+          "predicted_winner": "Morocco",
+          "confidence": 0.7812,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Scotland",
+          "away_team": "Haiti",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6477,
+          "draw_prob": 0.2303,
+          "away_win_prob": 0.1219,
+          "predicted_winner": "Scotland",
+          "confidence": 0.6477,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group D",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 13,
+          "team_name": "USA",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 8,
+          "goals_against": 4,
+          "goal_difference": 4,
+          "points": 6,
+          "elo_rating": 1780.0
+        },
+        {
+          "rank": 2,
+          "team_id": 14,
+          "team_name": "Australia",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 2,
+          "goals_against": 2,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1700.0
+        },
+        {
+          "rank": 3,
+          "team_id": 15,
+          "team_name": "Paraguay",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 2,
+          "goals_against": 4,
+          "goal_difference": -2,
+          "points": 4,
+          "elo_rating": 1650.0
+        },
+        {
+          "rank": 4,
+          "team_id": 16,
+          "team_name": "Turkey",
+          "played": 3,
+          "wins": 1,
+          "draws": 0,
+          "losses": 2,
+          "goals_for": 3,
+          "goals_against": 5,
+          "goal_difference": -2,
+          "points": 3,
+          "elo_rating": 1720.0
+        }
+      ],
+      "qualified_teams": [
+        13,
+        14
+      ],
+      "matches": [
+        {
+          "home_team": "USA",
+          "away_team": "Australia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4989,
+          "draw_prob": 0.2746,
+          "away_win_prob": 0.2265,
+          "predicted_winner": "USA",
+          "confidence": 0.4989,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "USA",
+          "away_team": "Paraguay",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5571,
+          "draw_prob": 0.2602,
+          "away_win_prob": 0.1827,
+          "predicted_winner": "USA",
+          "confidence": 0.5571,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "USA",
+          "away_team": "Turkey",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4754,
+          "draw_prob": 0.2793,
+          "away_win_prob": 0.2452,
+          "predicted_winner": "USA",
+          "confidence": 0.4754,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "Australia",
+          "away_team": "Paraguay",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4637,
+          "draw_prob": 0.2814,
+          "away_win_prob": 0.2548,
+          "predicted_winner": "Australia",
+          "confidence": 0.4637,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "Australia",
+          "away_team": "Turkey",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3825,
+          "draw_prob": 0.2913,
+          "away_win_prob": 0.3261,
+          "predicted_winner": "Australia",
+          "confidence": 0.3825,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "Paraguay",
+          "away_team": "Turkey",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3262,
+          "draw_prob": 0.293,
+          "away_win_prob": 0.3808,
+          "predicted_winner": "Turkey",
+          "confidence": 0.3808,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group E",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 17,
+          "team_name": "Germany",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 10,
+          "goals_against": 4,
+          "goal_difference": 6,
+          "points": 6,
+          "elo_rating": 2000.0
+        },
+        {
+          "rank": 2,
+          "team_id": 18,
+          "team_name": "Ivory Coast",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 4,
+          "goals_against": 2,
+          "goal_difference": 2,
+          "points": 6,
+          "elo_rating": 1660.0
+        },
+        {
+          "rank": 3,
+          "team_id": 19,
+          "team_name": "Ecuador",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 3,
+          "goals_against": 3,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1740.0
+        },
+        {
+          "rank": 4,
+          "team_id": 20,
+          "team_name": "Curacao",
+          "played": 3,
+          "wins": 0,
+          "draws": 1,
+          "losses": 2,
+          "goals_for": 2,
+          "goals_against": 10,
+          "goal_difference": -8,
+          "points": 1,
+          "elo_rating": 1420.0
+        }
+      ],
+      "qualified_teams": [
+        17,
+        18
+      ],
+      "matches": [
+        {
+          "home_team": "Germany",
+          "away_team": "Ivory Coast",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7812,
+          "draw_prob": 0.1699,
+          "away_win_prob": 0.0488,
+          "predicted_winner": "Germany",
+          "confidence": 0.7812,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Germany",
+          "away_team": "Ecuador",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7016,
+          "draw_prob": 0.2084,
+          "away_win_prob": 0.09,
+          "predicted_winner": "Germany",
+          "confidence": 0.7016,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Germany",
+          "away_team": "Curacao",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.9054,
+          "draw_prob": 0.0865,
+          "away_win_prob": 0.0081,
+          "predicted_winner": "Germany",
+          "confidence": 0.9054,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Ivory Coast",
+          "away_team": "Ecuador",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3152,
+          "draw_prob": 0.2928,
+          "away_win_prob": 0.3921,
+          "predicted_winner": "Ecuador",
+          "confidence": 0.3921,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "Ivory Coast",
+          "away_team": "Curacao",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6804,
+          "draw_prob": 0.2174,
+          "away_win_prob": 0.1022,
+          "predicted_winner": "Ivory Coast",
+          "confidence": 0.6804,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Ecuador",
+          "away_team": "Curacao",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7622,
+          "draw_prob": 0.1798,
+          "away_win_prob": 0.058,
+          "predicted_winner": "Ecuador",
+          "confidence": 0.7622,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group F",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 21,
+          "team_name": "Netherlands",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 7,
+          "goals_against": 3,
+          "goal_difference": 4,
+          "points": 7,
+          "elo_rating": 1960.0
+        },
+        {
+          "rank": 2,
+          "team_id": 22,
+          "team_name": "Japan",
+          "played": 3,
+          "wins": 1,
+          "draws": 2,
+          "losses": 0,
+          "goals_for": 6,
+          "goals_against": 2,
+          "goal_difference": 4,
+          "points": 5,
+          "elo_rating": 1750.0
+        },
+        {
+          "rank": 3,
+          "team_id": 23,
+          "team_name": "Sweden",
+          "played": 3,
+          "wins": 1,
+          "draws": 0,
+          "losses": 2,
+          "goals_for": 6,
+          "goals_against": 6,
+          "goal_difference": 0,
+          "points": 3,
+          "elo_rating": 1770.0
+        },
+        {
+          "rank": 4,
+          "team_id": 24,
+          "team_name": "Tunisia",
+          "played": 3,
+          "wins": 0,
+          "draws": 0,
+          "losses": 3,
+          "goals_for": 1,
+          "goals_against": 9,
+          "goal_difference": -8,
+          "points": 0,
+          "elo_rating": 1610.0
+        }
+      ],
+      "qualified_teams": [
+        21,
+        22
+      ],
+      "matches": [
+        {
+          "home_team": "Netherlands",
+          "away_team": "Japan",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6477,
+          "draw_prob": 0.2303,
+          "away_win_prob": 0.1219,
+          "predicted_winner": "Netherlands",
+          "confidence": 0.6477,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Netherlands",
+          "away_team": "Sweden",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6255,
+          "draw_prob": 0.2385,
+          "away_win_prob": 0.136,
+          "predicted_winner": "Netherlands",
+          "confidence": 0.6255,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Netherlands",
+          "away_team": "Tunisia",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7905,
+          "draw_prob": 0.1649,
+          "away_win_prob": 0.0445,
+          "predicted_winner": "Netherlands",
+          "confidence": 0.7905,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Japan",
+          "away_team": "Sweden",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3825,
+          "draw_prob": 0.2913,
+          "away_win_prob": 0.3261,
+          "predicted_winner": "Japan",
+          "confidence": 0.3825,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "Japan",
+          "away_team": "Tunisia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5687,
+          "draw_prob": 0.2569,
+          "away_win_prob": 0.1745,
+          "predicted_winner": "Japan",
+          "confidence": 0.5687,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Sweden",
+          "away_team": "Tunisia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5916,
+          "draw_prob": 0.2499,
+          "away_win_prob": 0.1585,
+          "predicted_winner": "Sweden",
+          "confidence": 0.5916,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group G",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 25,
+          "team_name": "Belgium",
+          "played": 3,
+          "wins": 1,
+          "draws": 2,
+          "losses": 0,
+          "goals_for": 4,
+          "goals_against": 3,
+          "goal_difference": 1,
+          "points": 5,
+          "elo_rating": 1880.0
+        },
+        {
+          "rank": 2,
+          "team_id": 26,
+          "team_name": "Egypt",
+          "played": 3,
+          "wins": 1,
+          "draws": 2,
+          "losses": 0,
+          "goals_for": 3,
+          "goals_against": 2,
+          "goal_difference": 1,
+          "points": 5,
+          "elo_rating": 1680.0
+        },
+        {
+          "rank": 3,
+          "team_id": 27,
+          "team_name": "Iran",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 3,
+          "goals_against": 3,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1650.0
+        },
+        {
+          "rank": 4,
+          "team_id": 28,
+          "team_name": "New Zealand",
+          "played": 3,
+          "wins": 0,
+          "draws": 1,
+          "losses": 2,
+          "goals_for": 2,
+          "goals_against": 4,
+          "goal_difference": -2,
+          "points": 1,
+          "elo_rating": 1530.0
+        }
+      ],
+      "qualified_teams": [
+        25,
+        26
+      ],
+      "matches": [
+        {
+          "home_team": "Belgium",
+          "away_team": "Egypt",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6367,
+          "draw_prob": 0.2345,
+          "away_win_prob": 0.1289,
+          "predicted_winner": "Belgium",
+          "confidence": 0.6367,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Belgium",
+          "away_team": "Iran",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6696,
+          "draw_prob": 0.2218,
+          "away_win_prob": 0.1086,
+          "predicted_winner": "Belgium",
+          "confidence": 0.6696,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Belgium",
+          "away_team": "New Zealand",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7905,
+          "draw_prob": 0.1649,
+          "away_win_prob": 0.0445,
+          "predicted_winner": "Belgium",
+          "confidence": 0.7905,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Egypt",
+          "away_team": "Iran",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4404,
+          "draw_prob": 0.2851,
+          "away_win_prob": 0.2745,
+          "predicted_winner": "Egypt",
+          "confidence": 0.4404,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "Egypt",
+          "away_team": "New Zealand",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5801,
+          "draw_prob": 0.2535,
+          "away_win_prob": 0.1664,
+          "predicted_winner": "Egypt",
+          "confidence": 0.5801,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Iran",
+          "away_team": "New Zealand",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5455,
+          "draw_prob": 0.2634,
+          "away_win_prob": 0.1911,
+          "predicted_winner": "Iran",
+          "confidence": 0.5455,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group H",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 29,
+          "team_name": "Spain",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 6,
+          "goals_against": 1,
+          "goal_difference": 5,
+          "points": 7,
+          "elo_rating": 2080.0
+        },
+        {
+          "rank": 2,
+          "team_id": 30,
+          "team_name": "Cape Verde",
+          "played": 3,
+          "wins": 0,
+          "draws": 3,
+          "losses": 0,
+          "goals_for": 2,
+          "goals_against": 2,
+          "goal_difference": 0,
+          "points": 3,
+          "elo_rating": 1520.0
+        },
+        {
+          "rank": 3,
+          "team_id": 31,
+          "team_name": "Saudi Arabia",
+          "played": 3,
+          "wins": 0,
+          "draws": 2,
+          "losses": 1,
+          "goals_for": 2,
+          "goals_against": 5,
+          "goal_difference": -3,
+          "points": 2,
+          "elo_rating": 1560.0
+        },
+        {
+          "rank": 4,
+          "team_id": 32,
+          "team_name": "Uruguay",
+          "played": 3,
+          "wins": 0,
+          "draws": 2,
+          "losses": 1,
+          "goals_for": 2,
+          "goals_against": 4,
+          "goal_difference": -2,
+          "points": 2,
+          "elo_rating": 1820.0
+        }
+      ],
+      "qualified_teams": [
+        29,
+        30
+      ],
+      "matches": [
+        {
+          "home_team": "Spain",
+          "away_team": "Cape Verde",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.9012,
+          "draw_prob": 0.0903,
+          "away_win_prob": 0.0085,
+          "predicted_winner": "Spain",
+          "confidence": 0.9012,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Spain",
+          "away_team": "Saudi Arabia",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8921,
+          "draw_prob": 0.0986,
+          "away_win_prob": 0.0093,
+          "predicted_winner": "Spain",
+          "confidence": 0.8921,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Spain",
+          "away_team": "Uruguay",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7016,
+          "draw_prob": 0.2084,
+          "away_win_prob": 0.09,
+          "predicted_winner": "Spain",
+          "confidence": 0.7016,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Cape Verde",
+          "away_team": "Saudi Arabia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.3598,
+          "draw_prob": 0.2926,
+          "away_win_prob": 0.3477,
+          "predicted_winner": "Cape Verde",
+          "confidence": 0.3598,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        },
+        {
+          "home_team": "Cape Verde",
+          "away_team": "Uruguay",
+          "predicted_home_score": 0,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.1077,
+          "draw_prob": 0.2409,
+          "away_win_prob": 0.6513,
+          "predicted_winner": "Uruguay",
+          "confidence": 0.6513,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Saudi Arabia",
+          "away_team": "Uruguay",
+          "predicted_home_score": 0,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.1393,
+          "draw_prob": 0.2566,
+          "away_win_prob": 0.6041,
+          "predicted_winner": "Uruguay",
+          "confidence": 0.6041,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group I",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 33,
+          "team_name": "France",
+          "played": 3,
+          "wins": 3,
+          "draws": 0,
+          "losses": 0,
+          "goals_for": 8,
+          "goals_against": 1,
+          "goal_difference": 7,
+          "points": 9,
+          "elo_rating": 2100.0
+        },
+        {
+          "rank": 2,
+          "team_id": 34,
+          "team_name": "Norway",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 6,
+          "goals_against": 3,
+          "goal_difference": 3,
+          "points": 6,
+          "elo_rating": 1800.0
+        },
+        {
+          "rank": 3,
+          "team_id": 35,
+          "team_name": "Senegal",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 5,
+          "goals_against": 3,
+          "goal_difference": 2,
+          "points": 6,
+          "elo_rating": 1720.0
+        },
+        {
+          "rank": 4,
+          "team_id": 36,
+          "team_name": "Iraq",
+          "played": 3,
+          "wins": 0,
+          "draws": 0,
+          "losses": 3,
+          "goals_for": 1,
+          "goals_against": 9,
+          "goal_difference": -8,
+          "points": 0,
+          "elo_rating": 1480.0
+        }
+      ],
+      "qualified_teams": [
+        33,
+        34
+      ],
+      "matches": [
+        {
+          "home_team": "France",
+          "away_team": "Norway",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7425,
+          "draw_prob": 0.1895,
+          "away_win_prob": 0.0679,
+          "predicted_winner": "France",
+          "confidence": 0.7425,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "France",
+          "away_team": "Senegal",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8175,
+          "draw_prob": 0.1499,
+          "away_win_prob": 0.0326,
+          "predicted_winner": "France",
+          "confidence": 0.8175,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "France",
+          "away_team": "Iraq",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.9134,
+          "draw_prob": 0.0792,
+          "away_win_prob": 0.0074,
+          "predicted_winner": "France",
+          "confidence": 0.9134,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Norway",
+          "away_team": "Senegal",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4989,
+          "draw_prob": 0.2746,
+          "away_win_prob": 0.2265,
+          "predicted_winner": "Norway",
+          "confidence": 0.4989,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE"
+          ]
+        },
+        {
+          "home_team": "Norway",
+          "away_team": "Iraq",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7622,
+          "draw_prob": 0.1798,
+          "away_win_prob": 0.058,
+          "predicted_winner": "Norway",
+          "confidence": 0.7622,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Senegal",
+          "away_team": "Iraq",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6804,
+          "draw_prob": 0.2174,
+          "away_win_prob": 0.1022,
+          "predicted_winner": "Senegal",
+          "confidence": 0.6804,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group J",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 37,
+          "team_name": "Argentina",
+          "played": 3,
+          "wins": 3,
+          "draws": 0,
+          "losses": 0,
+          "goals_for": 9,
+          "goals_against": 1,
+          "goal_difference": 8,
+          "points": 9,
+          "elo_rating": 2050.0
+        },
+        {
+          "rank": 2,
+          "team_id": 38,
+          "team_name": "Austria",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 4,
+          "goals_against": 4,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1750.0
+        },
+        {
+          "rank": 3,
+          "team_id": 39,
+          "team_name": "Algeria",
+          "played": 3,
+          "wins": 0,
+          "draws": 1,
+          "losses": 2,
+          "goals_for": 4,
+          "goals_against": 7,
+          "goal_difference": -3,
+          "points": 1,
+          "elo_rating": 1600.0
+        },
+        {
+          "rank": 4,
+          "team_id": 40,
+          "team_name": "Jordan",
+          "played": 3,
+          "wins": 0,
+          "draws": 0,
+          "losses": 3,
+          "goals_for": 1,
+          "goals_against": 6,
+          "goal_difference": -5,
+          "points": 0,
+          "elo_rating": 1440.0
+        }
+      ],
+      "qualified_teams": [
+        37,
+        38
+      ],
+      "matches": [
+        {
+          "home_team": "Argentina",
+          "away_team": "Austria",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7425,
+          "draw_prob": 0.1895,
+          "away_win_prob": 0.0679,
+          "predicted_winner": "Argentina",
+          "confidence": 0.7425,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Argentina",
+          "away_team": "Algeria",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8742,
+          "draw_prob": 0.1149,
+          "away_win_prob": 0.0109,
+          "predicted_winner": "Argentina",
+          "confidence": 0.8742,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Argentina",
+          "away_team": "Jordan",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.9115,
+          "draw_prob": 0.081,
+          "away_win_prob": 0.0075,
+          "predicted_winner": "Argentina",
+          "confidence": 0.9115,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Austria",
+          "away_team": "Algeria",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5801,
+          "draw_prob": 0.2535,
+          "away_win_prob": 0.1664,
+          "predicted_winner": "Austria",
+          "confidence": 0.5801,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Austria",
+          "away_team": "Jordan",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7524,
+          "draw_prob": 0.1847,
+          "away_win_prob": 0.0629,
+          "predicted_winner": "Austria",
+          "confidence": 0.7524,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Algeria",
+          "away_team": "Jordan",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.5916,
+          "draw_prob": 0.2499,
+          "away_win_prob": 0.1585,
+          "predicted_winner": "Algeria",
+          "confidence": 0.5916,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group K",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 41,
+          "team_name": "Colombia",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 5,
+          "goals_against": 3,
+          "goal_difference": 2,
+          "points": 6,
+          "elo_rating": 1840.0
+        },
+        {
+          "rank": 2,
+          "team_id": 42,
+          "team_name": "Portugal",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 3,
+          "goals_against": 3,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1980.0
+        },
+        {
+          "rank": 3,
+          "team_id": 43,
+          "team_name": "DR Congo",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 3,
+          "goals_against": 4,
+          "goal_difference": -1,
+          "points": 4,
+          "elo_rating": 1460.0
+        },
+        {
+          "rank": 4,
+          "team_id": 44,
+          "team_name": "Uzbekistan",
+          "played": 3,
+          "wins": 1,
+          "draws": 0,
+          "losses": 2,
+          "goals_for": 3,
+          "goals_against": 4,
+          "goal_difference": -1,
+          "points": 3,
+          "elo_rating": 1580.0
+        }
+      ],
+      "qualified_teams": [
+        41,
+        42
+      ],
+      "matches": [
+        {
+          "home_team": "Colombia",
+          "away_team": "Portugal",
+          "predicted_home_score": 0,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.2513,
+          "draw_prob": 0.2873,
+          "away_win_prob": 0.4613,
+          "predicted_winner": "Portugal",
+          "confidence": 0.4613,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Colombia",
+          "away_team": "DR Congo",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8175,
+          "draw_prob": 0.1499,
+          "away_win_prob": 0.0326,
+          "predicted_winner": "Colombia",
+          "confidence": 0.8175,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Colombia",
+          "away_team": "Uzbekistan",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7016,
+          "draw_prob": 0.2084,
+          "away_win_prob": 0.09,
+          "predicted_winner": "Colombia",
+          "confidence": 0.7016,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Portugal",
+          "away_team": "DR Congo",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8921,
+          "draw_prob": 0.0986,
+          "away_win_prob": 0.0093,
+          "predicted_winner": "Portugal",
+          "confidence": 0.8921,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Portugal",
+          "away_team": "Uzbekistan",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8346,
+          "draw_prob": 0.1398,
+          "away_win_prob": 0.0256,
+          "predicted_winner": "Portugal",
+          "confidence": 0.8346,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "DR Congo",
+          "away_team": "Uzbekistan",
+          "predicted_home_score": 0,
+          "predicted_away_score": 1,
+          "home_win_prob": 0.2721,
+          "draw_prob": 0.2899,
+          "away_win_prob": 0.438,
+          "predicted_winner": "Uzbekistan",
+          "confidence": 0.438,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        }
+      ]
+    },
+    {
+      "group_name": "Group L",
+      "standings": [
+        {
+          "rank": 1,
+          "team_id": 45,
+          "team_name": "England",
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goals_for": 5,
+          "goals_against": 2,
+          "goal_difference": 3,
+          "points": 7,
+          "elo_rating": 2040.0
+        },
+        {
+          "rank": 2,
+          "team_id": 46,
+          "team_name": "Croatia",
+          "played": 3,
+          "wins": 2,
+          "draws": 0,
+          "losses": 1,
+          "goals_for": 4,
+          "goals_against": 3,
+          "goal_difference": 1,
+          "points": 6,
+          "elo_rating": 1860.0
+        },
+        {
+          "rank": 3,
+          "team_id": 47,
+          "team_name": "Ghana",
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goals_for": 3,
+          "goals_against": 3,
+          "goal_difference": 0,
+          "points": 4,
+          "elo_rating": 1640.0
+        },
+        {
+          "rank": 4,
+          "team_id": 48,
+          "team_name": "Panama",
+          "played": 3,
+          "wins": 0,
+          "draws": 0,
+          "losses": 3,
+          "goals_for": 1,
+          "goals_against": 5,
+          "goal_difference": -4,
+          "points": 0,
+          "elo_rating": 1600.0
+        }
+      ],
+      "qualified_teams": [
+        45,
+        46
+      ],
+      "matches": [
+        {
+          "home_team": "England",
+          "away_team": "Croatia",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6143,
+          "draw_prob": 0.2424,
+          "away_win_prob": 0.1433,
+          "predicted_winner": "England",
+          "confidence": 0.6143,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "England",
+          "away_team": "Ghana",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8346,
+          "draw_prob": 0.1398,
+          "away_win_prob": 0.0256,
+          "predicted_winner": "England",
+          "confidence": 0.8346,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "England",
+          "away_team": "Panama",
+          "predicted_home_score": 2,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.8667,
+          "draw_prob": 0.1198,
+          "away_win_prob": 0.0135,
+          "predicted_winner": "England",
+          "confidence": 0.8667,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Croatia",
+          "away_team": "Ghana",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.6587,
+          "draw_prob": 0.2261,
+          "away_win_prob": 0.1152,
+          "predicted_winner": "Croatia",
+          "confidence": 0.6587,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Croatia",
+          "away_team": "Panama",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.7016,
+          "draw_prob": 0.2084,
+          "away_win_prob": 0.09,
+          "predicted_winner": "Croatia",
+          "confidence": 0.7016,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "ELO_ADVANTAGE",
+            "POWER_SCORE_DIFF"
+          ]
+        },
+        {
+          "home_team": "Ghana",
+          "away_team": "Panama",
+          "predicted_home_score": 1,
+          "predicted_away_score": 0,
+          "home_win_prob": 0.4521,
+          "draw_prob": 0.2834,
+          "away_win_prob": 0.2646,
+          "predicted_winner": "Ghana",
+          "confidence": 0.4521,
+          "is_penalty_shootout": false,
+          "source": "real_data",
+          "reason_codes": [
+            "EVEN_MATCH"
+          ]
+        }
+      ]
+    }
+  ],
+  "group_standings": {
+    "Group A": [
+      {
+        "rank": 1,
+        "team_id": 1,
+        "team_name": "Mexico",
+        "played": 3,
+        "wins": 3,
+        "draws": 0,
+        "losses": 0,
+        "goals_for": 6,
+        "goals_against": 0,
+        "goal_difference": 6,
+        "points": 9,
+        "elo_rating": 1830.0
+      },
+      {
+        "rank": 2,
+        "team_id": 2,
+        "team_name": "South Africa",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 2,
+        "goals_against": 3,
+        "goal_difference": -1,
+        "points": 4,
+        "elo_rating": 1620.0
+      },
+      {
+        "rank": 3,
+        "team_id": 3,
+        "team_name": "South Korea",
+        "played": 3,
+        "wins": 1,
+        "draws": 0,
+        "losses": 2,
+        "goals_for": 2,
+        "goals_against": 3,
+        "goal_difference": -1,
+        "points": 3,
+        "elo_rating": 1700.0
+      },
+      {
+        "rank": 4,
+        "team_id": 4,
+        "team_name": "Czech Republic",
+        "played": 3,
+        "wins": 0,
+        "draws": 1,
+        "losses": 2,
+        "goals_for": 2,
+        "goals_against": 6,
+        "goal_difference": -4,
+        "points": 1,
+        "elo_rating": 1650.0
+      }
+    ],
+    "Group B": [
+      {
+        "rank": 1,
+        "team_id": 5,
+        "team_name": "Switzerland",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 7,
+        "goals_against": 3,
+        "goal_difference": 4,
+        "points": 7,
+        "elo_rating": 1860.0
+      },
+      {
+        "rank": 2,
+        "team_id": 6,
+        "team_name": "Canada",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 8,
+        "goals_against": 3,
+        "goal_difference": 5,
+        "points": 4,
+        "elo_rating": 1710.0
+      },
+      {
+        "rank": 3,
+        "team_id": 7,
+        "team_name": "Bosnia",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 5,
+        "goals_against": 6,
+        "goal_difference": -1,
+        "points": 4,
+        "elo_rating": 1640.0
+      },
+      {
+        "rank": 4,
+        "team_id": 8,
+        "team_name": "Qatar",
+        "played": 3,
+        "wins": 0,
+        "draws": 1,
+        "losses": 2,
+        "goals_for": 2,
+        "goals_against": 10,
+        "goal_difference": -8,
+        "points": 1,
+        "elo_rating": 1500.0
+      }
+    ],
+    "Group C": [
+      {
+        "rank": 1,
+        "team_id": 9,
+        "team_name": "Brazil",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 7,
+        "goals_against": 1,
+        "goal_difference": 6,
+        "points": 7,
+        "elo_rating": 2060.0
+      },
+      {
+        "rank": 2,
+        "team_id": 10,
+        "team_name": "Morocco",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 6,
+        "goals_against": 3,
+        "goal_difference": 3,
+        "points": 7,
+        "elo_rating": 1820.0
+      },
+      {
+        "rank": 3,
+        "team_id": 11,
+        "team_name": "Scotland",
+        "played": 3,
+        "wins": 1,
+        "draws": 0,
+        "losses": 2,
+        "goals_for": 1,
+        "goals_against": 4,
+        "goal_difference": -3,
+        "points": 3,
+        "elo_rating": 1690.0
+      },
+      {
+        "rank": 4,
+        "team_id": 12,
+        "team_name": "Haiti",
+        "played": 3,
+        "wins": 0,
+        "draws": 0,
+        "losses": 3,
+        "goals_for": 2,
+        "goals_against": 8,
+        "goal_difference": -6,
+        "points": 0,
+        "elo_rating": 1480.0
+      }
+    ],
+    "Group D": [
+      {
+        "rank": 1,
+        "team_id": 13,
+        "team_name": "USA",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 8,
+        "goals_against": 4,
+        "goal_difference": 4,
+        "points": 6,
+        "elo_rating": 1780.0
+      },
+      {
+        "rank": 2,
+        "team_id": 14,
+        "team_name": "Australia",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 2,
+        "goals_against": 2,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1700.0
+      },
+      {
+        "rank": 3,
+        "team_id": 15,
+        "team_name": "Paraguay",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 2,
+        "goals_against": 4,
+        "goal_difference": -2,
+        "points": 4,
+        "elo_rating": 1650.0
+      },
+      {
+        "rank": 4,
+        "team_id": 16,
+        "team_name": "Turkey",
+        "played": 3,
+        "wins": 1,
+        "draws": 0,
+        "losses": 2,
+        "goals_for": 3,
+        "goals_against": 5,
+        "goal_difference": -2,
+        "points": 3,
+        "elo_rating": 1720.0
+      }
+    ],
+    "Group E": [
+      {
+        "rank": 1,
+        "team_id": 17,
+        "team_name": "Germany",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 10,
+        "goals_against": 4,
+        "goal_difference": 6,
+        "points": 6,
+        "elo_rating": 2000.0
+      },
+      {
+        "rank": 2,
+        "team_id": 18,
+        "team_name": "Ivory Coast",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 4,
+        "goals_against": 2,
+        "goal_difference": 2,
+        "points": 6,
+        "elo_rating": 1660.0
+      },
+      {
+        "rank": 3,
+        "team_id": 19,
+        "team_name": "Ecuador",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 3,
+        "goals_against": 3,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1740.0
+      },
+      {
+        "rank": 4,
+        "team_id": 20,
+        "team_name": "Curacao",
+        "played": 3,
+        "wins": 0,
+        "draws": 1,
+        "losses": 2,
+        "goals_for": 2,
+        "goals_against": 10,
+        "goal_difference": -8,
+        "points": 1,
+        "elo_rating": 1420.0
+      }
+    ],
+    "Group F": [
+      {
+        "rank": 1,
+        "team_id": 21,
+        "team_name": "Netherlands",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 7,
+        "goals_against": 3,
+        "goal_difference": 4,
+        "points": 7,
+        "elo_rating": 1960.0
+      },
+      {
+        "rank": 2,
+        "team_id": 22,
+        "team_name": "Japan",
+        "played": 3,
+        "wins": 1,
+        "draws": 2,
+        "losses": 0,
+        "goals_for": 6,
+        "goals_against": 2,
+        "goal_difference": 4,
+        "points": 5,
+        "elo_rating": 1750.0
+      },
+      {
+        "rank": 3,
+        "team_id": 23,
+        "team_name": "Sweden",
+        "played": 3,
+        "wins": 1,
+        "draws": 0,
+        "losses": 2,
+        "goals_for": 6,
+        "goals_against": 6,
+        "goal_difference": 0,
+        "points": 3,
+        "elo_rating": 1770.0
+      },
+      {
+        "rank": 4,
+        "team_id": 24,
+        "team_name": "Tunisia",
+        "played": 3,
+        "wins": 0,
+        "draws": 0,
+        "losses": 3,
+        "goals_for": 1,
+        "goals_against": 9,
+        "goal_difference": -8,
+        "points": 0,
+        "elo_rating": 1610.0
+      }
+    ],
+    "Group G": [
+      {
+        "rank": 1,
+        "team_id": 25,
+        "team_name": "Belgium",
+        "played": 3,
+        "wins": 1,
+        "draws": 2,
+        "losses": 0,
+        "goals_for": 4,
+        "goals_against": 3,
+        "goal_difference": 1,
+        "points": 5,
+        "elo_rating": 1880.0
+      },
+      {
+        "rank": 2,
+        "team_id": 26,
+        "team_name": "Egypt",
+        "played": 3,
+        "wins": 1,
+        "draws": 2,
+        "losses": 0,
+        "goals_for": 3,
+        "goals_against": 2,
+        "goal_difference": 1,
+        "points": 5,
+        "elo_rating": 1680.0
+      },
+      {
+        "rank": 3,
+        "team_id": 27,
+        "team_name": "Iran",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 3,
+        "goals_against": 3,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1650.0
+      },
+      {
+        "rank": 4,
+        "team_id": 28,
+        "team_name": "New Zealand",
+        "played": 3,
+        "wins": 0,
+        "draws": 1,
+        "losses": 2,
+        "goals_for": 2,
+        "goals_against": 4,
+        "goal_difference": -2,
+        "points": 1,
+        "elo_rating": 1530.0
+      }
+    ],
+    "Group H": [
+      {
+        "rank": 1,
+        "team_id": 29,
+        "team_name": "Spain",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 6,
+        "goals_against": 1,
+        "goal_difference": 5,
+        "points": 7,
+        "elo_rating": 2080.0
+      },
+      {
+        "rank": 2,
+        "team_id": 30,
+        "team_name": "Cape Verde",
+        "played": 3,
+        "wins": 0,
+        "draws": 3,
+        "losses": 0,
+        "goals_for": 2,
+        "goals_against": 2,
+        "goal_difference": 0,
+        "points": 3,
+        "elo_rating": 1520.0
+      },
+      {
+        "rank": 3,
+        "team_id": 31,
+        "team_name": "Saudi Arabia",
+        "played": 3,
+        "wins": 0,
+        "draws": 2,
+        "losses": 1,
+        "goals_for": 2,
+        "goals_against": 5,
+        "goal_difference": -3,
+        "points": 2,
+        "elo_rating": 1560.0
+      },
+      {
+        "rank": 4,
+        "team_id": 32,
+        "team_name": "Uruguay",
+        "played": 3,
+        "wins": 0,
+        "draws": 2,
+        "losses": 1,
+        "goals_for": 2,
+        "goals_against": 4,
+        "goal_difference": -2,
+        "points": 2,
+        "elo_rating": 1820.0
+      }
+    ],
+    "Group I": [
+      {
+        "rank": 1,
+        "team_id": 33,
+        "team_name": "France",
+        "played": 3,
+        "wins": 3,
+        "draws": 0,
+        "losses": 0,
+        "goals_for": 8,
+        "goals_against": 1,
+        "goal_difference": 7,
+        "points": 9,
+        "elo_rating": 2100.0
+      },
+      {
+        "rank": 2,
+        "team_id": 34,
+        "team_name": "Norway",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 6,
+        "goals_against": 3,
+        "goal_difference": 3,
+        "points": 6,
+        "elo_rating": 1800.0
+      },
+      {
+        "rank": 3,
+        "team_id": 35,
+        "team_name": "Senegal",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 5,
+        "goals_against": 3,
+        "goal_difference": 2,
+        "points": 6,
+        "elo_rating": 1720.0
+      },
+      {
+        "rank": 4,
+        "team_id": 36,
+        "team_name": "Iraq",
+        "played": 3,
+        "wins": 0,
+        "draws": 0,
+        "losses": 3,
+        "goals_for": 1,
+        "goals_against": 9,
+        "goal_difference": -8,
+        "points": 0,
+        "elo_rating": 1480.0
+      }
+    ],
+    "Group J": [
+      {
+        "rank": 1,
+        "team_id": 37,
+        "team_name": "Argentina",
+        "played": 3,
+        "wins": 3,
+        "draws": 0,
+        "losses": 0,
+        "goals_for": 9,
+        "goals_against": 1,
+        "goal_difference": 8,
+        "points": 9,
+        "elo_rating": 2050.0
+      },
+      {
+        "rank": 2,
+        "team_id": 38,
+        "team_name": "Austria",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 4,
+        "goals_against": 4,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1750.0
+      },
+      {
+        "rank": 3,
+        "team_id": 39,
+        "team_name": "Algeria",
+        "played": 3,
+        "wins": 0,
+        "draws": 1,
+        "losses": 2,
+        "goals_for": 4,
+        "goals_against": 7,
+        "goal_difference": -3,
+        "points": 1,
+        "elo_rating": 1600.0
+      },
+      {
+        "rank": 4,
+        "team_id": 40,
+        "team_name": "Jordan",
+        "played": 3,
+        "wins": 0,
+        "draws": 0,
+        "losses": 3,
+        "goals_for": 1,
+        "goals_against": 6,
+        "goal_difference": -5,
+        "points": 0,
+        "elo_rating": 1440.0
+      }
+    ],
+    "Group K": [
+      {
+        "rank": 1,
+        "team_id": 41,
+        "team_name": "Colombia",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 5,
+        "goals_against": 3,
+        "goal_difference": 2,
+        "points": 6,
+        "elo_rating": 1840.0
+      },
+      {
+        "rank": 2,
+        "team_id": 42,
+        "team_name": "Portugal",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 3,
+        "goals_against": 3,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1980.0
+      },
+      {
+        "rank": 3,
+        "team_id": 43,
+        "team_name": "DR Congo",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 3,
+        "goals_against": 4,
+        "goal_difference": -1,
+        "points": 4,
+        "elo_rating": 1460.0
+      },
+      {
+        "rank": 4,
+        "team_id": 44,
+        "team_name": "Uzbekistan",
+        "played": 3,
+        "wins": 1,
+        "draws": 0,
+        "losses": 2,
+        "goals_for": 3,
+        "goals_against": 4,
+        "goal_difference": -1,
+        "points": 3,
+        "elo_rating": 1580.0
+      }
+    ],
+    "Group L": [
+      {
+        "rank": 1,
+        "team_id": 45,
+        "team_name": "England",
+        "played": 3,
+        "wins": 2,
+        "draws": 1,
+        "losses": 0,
+        "goals_for": 5,
+        "goals_against": 2,
+        "goal_difference": 3,
+        "points": 7,
+        "elo_rating": 2040.0
+      },
+      {
+        "rank": 2,
+        "team_id": 46,
+        "team_name": "Croatia",
+        "played": 3,
+        "wins": 2,
+        "draws": 0,
+        "losses": 1,
+        "goals_for": 4,
+        "goals_against": 3,
+        "goal_difference": 1,
+        "points": 6,
+        "elo_rating": 1860.0
+      },
+      {
+        "rank": 3,
+        "team_id": 47,
+        "team_name": "Ghana",
+        "played": 3,
+        "wins": 1,
+        "draws": 1,
+        "losses": 1,
+        "goals_for": 3,
+        "goals_against": 3,
+        "goal_difference": 0,
+        "points": 4,
+        "elo_rating": 1640.0
+      },
+      {
+        "rank": 4,
+        "team_id": 48,
+        "team_name": "Panama",
+        "played": 3,
+        "wins": 0,
+        "draws": 0,
+        "losses": 3,
+        "goals_for": 1,
+        "goals_against": 5,
+        "goal_difference": -4,
+        "points": 0,
+        "elo_rating": 1600.0
+      }
+    ]
+  },
+  "qualified_teams": [
+    1,
+    2,
+    5,
+    6,
+    9,
+    10,
+    13,
+    14,
+    17,
+    18,
+    21,
+    22,
+    25,
+    26,
+    29,
+    30,
+    33,
+    34,
+    37,
+    38,
+    41,
+    42,
+    45,
+    46
+  ],
+  "knockout_predictions": [
+    {
+      "round": "round_of_32",
+      "home_team": "South Africa",
+      "away_team": "Canada",
+      "predicted_score": "0-1",
+      "predicted_home_score": 0,
+      "predicted_away_score": 1,
+      "winner": "Canada",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Brazil",
+      "away_team": "Japan",
+      "predicted_score": "2-1",
+      "predicted_home_score": 2,
+      "predicted_away_score": 1,
+      "winner": "Brazil",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Germany",
+      "away_team": "Paraguay",
+      "predicted_score": "1-1",
+      "predicted_home_score": 1,
+      "predicted_away_score": 1,
+      "winner": "Paraguay",
+      "is_penalty_shootout": true,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Netherlands",
+      "away_team": "Morocco",
+      "predicted_score": "1-1",
+      "predicted_home_score": 1,
+      "predicted_away_score": 1,
+      "winner": "Morocco",
+      "is_penalty_shootout": true,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Ivory Coast",
+      "away_team": "Norway",
+      "predicted_score": "1-2",
+      "predicted_home_score": 1,
+      "predicted_away_score": 2,
+      "winner": "Norway",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "France",
+      "away_team": "Sweden",
+      "predicted_score": "3-0",
+      "predicted_home_score": 3,
+      "predicted_away_score": 0,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Mexico",
+      "away_team": "Ecuador",
+      "predicted_score": "2-0",
+      "predicted_home_score": 2,
+      "predicted_away_score": 0,
+      "winner": "Mexico",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "England",
+      "away_team": "DR Congo",
+      "predicted_score": "2-1",
+      "predicted_home_score": 2,
+      "predicted_away_score": 1,
+      "winner": "England",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Belgium",
+      "away_team": "Senegal",
+      "predicted_score": "3-2",
+      "predicted_home_score": 3,
+      "predicted_away_score": 2,
+      "winner": "Belgium",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "USA",
+      "away_team": "Bosnia",
+      "predicted_score": "2-0",
+      "predicted_home_score": 2,
+      "predicted_away_score": 0,
+      "winner": "USA",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Spain",
+      "away_team": "Austria",
+      "predicted_score": "3-0",
+      "predicted_home_score": 3,
+      "predicted_away_score": 0,
+      "winner": "Spain",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Portugal",
+      "away_team": "Croatia",
+      "predicted_score": "2-1",
+      "predicted_home_score": 2,
+      "predicted_away_score": 1,
+      "winner": "Portugal",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Switzerland",
+      "away_team": "Algeria",
+      "predicted_score": "2-0",
+      "predicted_home_score": 2,
+      "predicted_away_score": 0,
+      "winner": "Switzerland",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Australia",
+      "away_team": "Egypt",
+      "predicted_score": "0-0",
+      "predicted_home_score": 0,
+      "predicted_away_score": 0,
+      "winner": "Egypt",
+      "is_penalty_shootout": true,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Argentina",
+      "away_team": "Cape Verde",
+      "predicted_score": "3-2",
+      "predicted_home_score": 3,
+      "predicted_away_score": 2,
+      "winner": "Argentina",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_32",
+      "home_team": "Colombia",
+      "away_team": "Ghana",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "Colombia",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Canada",
+      "away_team": "Morocco",
+      "predicted_score": "0-3",
+      "predicted_home_score": 0,
+      "predicted_away_score": 3,
+      "winner": "Morocco",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "France",
+      "away_team": "Paraguay",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Brazil",
+      "away_team": "Norway",
+      "predicted_score": "1-2",
+      "predicted_home_score": 1,
+      "predicted_away_score": 2,
+      "winner": "Norway",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Mexico",
+      "away_team": "England",
+      "predicted_score": "2-3",
+      "predicted_home_score": 2,
+      "predicted_away_score": 3,
+      "winner": "England",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Portugal",
+      "away_team": "Spain",
+      "predicted_score": "0-1",
+      "predicted_home_score": 0,
+      "predicted_away_score": 1,
+      "winner": "Spain",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "USA",
+      "away_team": "Belgium",
+      "predicted_score": "1-4",
+      "predicted_home_score": 1,
+      "predicted_away_score": 4,
+      "winner": "Belgium",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Argentina",
+      "away_team": "Egypt",
+      "predicted_score": "3-2",
+      "predicted_home_score": 3,
+      "predicted_away_score": 2,
+      "winner": "Argentina",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "round_of_16",
+      "home_team": "Switzerland",
+      "away_team": "Colombia",
+      "predicted_score": "0-0",
+      "predicted_home_score": 0,
+      "predicted_away_score": 0,
+      "winner": "Switzerland",
+      "is_penalty_shootout": true,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "real_result"
+      ]
+    },
+    {
+      "round": "quarter_finals",
+      "home_team": "Morocco",
+      "away_team": "France",
+      "predicted_score": "0-1",
+      "predicted_home_score": 0,
+      "predicted_away_score": 1,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "ELO_ADVANTAGE",
+        "POWER_SCORE_DIFF"
+      ]
+    },
+    {
+      "round": "quarter_finals",
+      "home_team": "Norway",
+      "away_team": "England",
+      "predicted_score": "0-1",
+      "predicted_home_score": 0,
+      "predicted_away_score": 1,
+      "winner": "England",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "ELO_ADVANTAGE",
+        "POWER_SCORE_DIFF"
+      ]
+    },
+    {
+      "round": "quarter_finals",
+      "home_team": "Spain",
+      "away_team": "Belgium",
+      "predicted_score": "2-0",
+      "predicted_home_score": 2,
+      "predicted_away_score": 0,
+      "winner": "Spain",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "ELO_ADVANTAGE",
+        "POWER_SCORE_DIFF"
+      ]
+    },
+    {
+      "round": "quarter_finals",
+      "home_team": "Argentina",
+      "away_team": "Switzerland",
+      "predicted_score": "2-0",
+      "predicted_home_score": 2,
+      "predicted_away_score": 0,
+      "winner": "Argentina",
+      "is_penalty_shootout": false,
+      "source": "real_data",
+      "confidence": 1.0,
+      "reason_codes": [
+        "ELO_ADVANTAGE",
+        "POWER_SCORE_DIFF"
+      ]
+    },
+    {
+      "round": "semi_finals",
+      "home_team": "France",
+      "away_team": "England",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "agent_prediction",
+      "confidence": 0.4754,
+      "reason_codes": [
+        "ELO_ADVANTAGE"
+      ]
+    },
+    {
+      "round": "semi_finals",
+      "home_team": "Spain",
+      "away_team": "Argentina",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "Spain",
+      "is_penalty_shootout": false,
+      "source": "agent_prediction",
+      "confidence": 0.4404,
+      "reason_codes": [
+        "EVEN_MATCH"
+      ]
+    },
+    {
+      "round": "final",
+      "home_team": "France",
+      "away_team": "Spain",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "agent_prediction",
+      "confidence": 0.4287,
+      "reason_codes": [
+        "EVEN_MATCH"
+      ]
+    }
+  ],
+  "predicted_champion": "France",
+  "predicted_runner_up": "Spain",
+  "final_match": {
+    "round": "final",
+    "home_team": "France",
+    "away_team": "Spain",
+    "predicted_score": "1-0",
+    "predicted_home_score": 1,
+    "predicted_away_score": 0,
+    "winner": "France",
+    "is_penalty_shootout": false,
+    "source": "agent_prediction",
+    "confidence": 0.4287,
+    "reason_codes": [
+      "EVEN_MATCH"
+    ]
+  },
+  "reasoning_steps": [
+    "Agent å¼å§ä»»å¡ï¼é¢æµ 2026 ä¸çæ¯å å",
+    "å¶å®æ°æ®æ¶éè®¡åï¼èµç¨ãçéãå®æ¶æ¯åãåå²æ¯èµãè¿æç¶æãæåæ°æ®",
+    "è°ç¨ API-Sports è·åä¸çæ¯èµç¨",
+    "è°ç¨ API-Sports è·ååèµçé",
+    "è°ç¨ API-Sports è·åå®æ¶æ¯èµç¶æ",
+    "å è½½åå²å½å®¶éæ¯èµæ°æ®",
+    "å°è¯è·åç¬è«è¡¥åæ°æ®ï¼å¯éï¼",
+    "æ§è¡æ°æ®è´¨éæ£æ¥",
+    "æ°æ®è´¨éæ£æ¥ï¼ä½¿ç¨æ¬å° fallback æ°æ®éçº§è¿è¡",
+    "æå»ºçéå®åç¹å¾",
+    "é¢æµå°ç»èµç»æ",
+    "å°ç»èµé¢æµå®æï¼24 æ¯çéæçº§",
+    "æ ¹æ®å°ç»æåçææ·æ±°èµå¯¹éµ",
+    "éè½®é¢æµæ·æ±°èµ",
+    "æ£æµå°çå®æ·æ±°èµæ°æ®ï¼ä½¿ç¨çå®ç»æ + æ¨¡æå©ä½æ¯èµ",
+    "æ·æ±°èµæ¨æ¼å®æï¼å± 31 åºæ¯èµ",
+    "é¢æµå åä¸º France",
+    "é¢æµäºåä¸º Spain",
+    "çæå åè·¯å¾è§£é",
+    "Agent task completed (mode=workflow)"
+  ],
+  "final_explanation": "=== 2026 ä¸çæ¯å åé¢æµï¼France ===\n\né¢æµå åï¼France\n  - Elo è¯åï¼2100.0\n  - ç»¼åå®åï¼0.6521\n  - è¿ææç»©ï¼\n  - æ°æ®ç½®ä¿¡åº¦ï¼0.2\n\né¢æµäºåï¼Spain\n  - Elo è¯åï¼2080.0\n  - ç»¼åå®åï¼0.6433\n\nå åæçº§è·¯å¾ï¼\n  round_of_32: France 3-0 Sweden â France æçº§\n  round_of_16: France 1-0 Paraguay â France æçº§\n  quarter_finals: Morocco 0-1 France â France æçº§\n  semi_finals: France 1-0 England â France æçº§\n  final: France 1-0 Spain â France æçº§\n\nLLM ææ¯åæï¼\nãææ¯åæãæ³å½éå¨å¯¹éµè¥¿ç­ççæ¯èµä¸­ä»¥1:0è·èï¼è¿ä¸ç»æå¯ä»¥ä»å¤ä¸ªææ¯è§åº¦è¿è¡è§£éãæ³å½éä»¥å¶èº«ä½ç´ è´¨åææ¯å¹¶éçææ¯é£æ ¼èç§°ï¼æé¿å¿«éè½¬æ¢è¿æ»ãä»ä»¬ççåä¸ªä½è½åå¼ºï¼åå»éåº¦å¿«ï¼ä¸éµå®¹æ·±åº¦åï¼è¿ä½¿å¾ä»ä»¬å¨é¢å¯¹è¥¿ç­ççä¼ æ§è¶³çæ¶è½å¤ä¿æè¶³å¤çå¨èãå°½ç®¡æ³å½éææ¶å¨ææ¯æ§è¡åä¸å­å¨é®é¢ï¼ä»¥ååé¨å¢ç»é®é¢ï¼ä½ä»ä»¬å¨å³é®çåå¦å§å·´ä½©ãæ ¼åå¹æ¼åæ¥é¿æ¢å°¼çå¸¦é¢ä¸ï¼å±ç°åºäºå¼ºå¤§çä¸ªäººè½ååå¢éåä½ã\nãå³é®çåãå§å·´ä½©å¨æ¯èµä¸­åæ¥äºå³é®ä½ç¨ï¼ä»çéåº¦åçªç ´è½åå¯¹è¥¿ç­ççé²çº¿ææäºå·¨å¤§å¨èãæ ¼åå¹æ¼çè¿çè½åä¹æ¯æ³å½éè·èçå³é®å ç´ ä¹ä¸ãèæ¥é¿æ¢å°¼å¨é²å®ç«¯çç¨³å®è¡¨ç°ï¼å¸®å©æ³å½éæµæ¡äºè¥¿ç­ççè¿æ»ã\nãåå²èæ¯ãå°½ç®¡æ³å½åè¥¿ç­çå¨åå²ä¸æ²¡æäº¤éè®°å½ï¼ä½ä¸¤éé½æ¥æä¸°å¯çè¶³çä¼ ç»åä¸ççº§çåãæ³å½éä½ä¸ºå«åå åï¼æ¥æå¼ºå¤§çå¿çä¼å¿åææ¯çµæ´»æ§ãèè¥¿ç­çéä»¥å¶ä¼ æ§è¶³çé»åï¼ä½å¨é¢å¯¹å¿«éåå»æ¶å¾å¾æ¾å¾åæ³ä¸å¤ã\n\n\nä¸ç¡®å®æ§è¯´æï¼\næ¬é¢æµåºäºåå²æ°æ®åç»è®¡æ¨¡åï¼è¶³çæ¯èµå·æé«åº¦ä¸ç¡®å®æ§ï¼ä¼¤çãå¤©æ°ãè£å¤ç­å ç´ å¯è½å¯¼è´å®éç»æä¸é¢æµåå·®è¾å¤§ã",
+  "visualization_payload": {
+    "power_ranking": [
+      {
+        "rank": 1,
+        "team": "France",
+        "power_score": 0.6521,
+        "elo": 2100.0
+      },
+      {
+        "rank": 2,
+        "team": "Spain",
+        "power_score": 0.6433,
+        "elo": 2080.0
+      },
+      {
+        "rank": 3,
+        "team": "Brazil",
+        "power_score": 0.6346,
+        "elo": 2060.0
+      },
+      {
+        "rank": 4,
+        "team": "Argentina",
+        "power_score": 0.6302,
+        "elo": 2050.0
+      },
+      {
+        "rank": 5,
+        "team": "England",
+        "power_score": 0.6258,
+        "elo": 2040.0
+      },
+      {
+        "rank": 6,
+        "team": "Germany",
+        "power_score": 0.6083,
+        "elo": 2000.0
+      },
+      {
+        "rank": 7,
+        "team": "Portugal",
+        "power_score": 0.5996,
+        "elo": 1980.0
+      },
+      {
+        "rank": 8,
+        "team": "Netherlands",
+        "power_score": 0.5908,
+        "elo": 1960.0
+      },
+      {
+        "rank": 9,
+        "team": "Belgium",
+        "power_score": 0.5558,
+        "elo": 1880.0
+      },
+      {
+        "rank": 10,
+        "team": "Switzerland",
+        "power_score": 0.5471,
+        "elo": 1860.0
+      }
+    ],
+    "group_summary": [
+      {
+        "group": "Group A",
+        "qualified": [
+          "Mexico",
+          "South Africa"
+        ]
+      },
+      {
+        "group": "Group B",
+        "qualified": [
+          "Switzerland",
+          "Canada"
+        ]
+      },
+      {
+        "group": "Group C",
+        "qualified": [
+          "Brazil",
+          "Morocco"
+        ]
+      },
+      {
+        "group": "Group D",
+        "qualified": [
+          "USA",
+          "Australia"
+        ]
+      },
+      {
+        "group": "Group E",
+        "qualified": [
+          "Germany",
+          "Ivory Coast"
+        ]
+      },
+      {
+        "group": "Group F",
+        "qualified": [
+          "Netherlands",
+          "Japan"
+        ]
+      },
+      {
+        "group": "Group G",
+        "qualified": [
+          "Belgium",
+          "Egypt"
+        ]
+      },
+      {
+        "group": "Group H",
+        "qualified": [
+          "Spain",
+          "Cape Verde"
+        ]
+      },
+      {
+        "group": "Group I",
+        "qualified": [
+          "France",
+          "Norway"
+        ]
+      },
+      {
+        "group": "Group J",
+        "qualified": [
+          "Argentina",
+          "Austria"
+        ]
+      },
+      {
+        "group": "Group K",
+        "qualified": [
+          "Colombia",
+          "Portugal"
+        ]
+      },
+      {
+        "group": "Group L",
+        "qualified": [
+          "England",
+          "Croatia"
+        ]
+      }
+    ],
+    "knockout_bracket": [
+      {
+        "round": "round_of_32",
+        "matchup": "South Africa vs Canada",
+        "score": "0-1",
+        "winner": "Canada"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Brazil vs Japan",
+        "score": "2-1",
+        "winner": "Brazil"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Germany vs Paraguay",
+        "score": "1-1",
+        "winner": "Paraguay"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Netherlands vs Morocco",
+        "score": "1-1",
+        "winner": "Morocco"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Ivory Coast vs Norway",
+        "score": "1-2",
+        "winner": "Norway"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "France vs Sweden",
+        "score": "3-0",
+        "winner": "France"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Mexico vs Ecuador",
+        "score": "2-0",
+        "winner": "Mexico"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "England vs DR Congo",
+        "score": "2-1",
+        "winner": "England"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Belgium vs Senegal",
+        "score": "3-2",
+        "winner": "Belgium"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "USA vs Bosnia",
+        "score": "2-0",
+        "winner": "USA"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Spain vs Austria",
+        "score": "3-0",
+        "winner": "Spain"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Portugal vs Croatia",
+        "score": "2-1",
+        "winner": "Portugal"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Switzerland vs Algeria",
+        "score": "2-0",
+        "winner": "Switzerland"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Australia vs Egypt",
+        "score": "0-0",
+        "winner": "Egypt"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Argentina vs Cape Verde",
+        "score": "3-2",
+        "winner": "Argentina"
+      },
+      {
+        "round": "round_of_32",
+        "matchup": "Colombia vs Ghana",
+        "score": "1-0",
+        "winner": "Colombia"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Canada vs Morocco",
+        "score": "0-3",
+        "winner": "Morocco"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "France vs Paraguay",
+        "score": "1-0",
+        "winner": "France"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Brazil vs Norway",
+        "score": "1-2",
+        "winner": "Norway"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Mexico vs England",
+        "score": "2-3",
+        "winner": "England"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Portugal vs Spain",
+        "score": "0-1",
+        "winner": "Spain"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "USA vs Belgium",
+        "score": "1-4",
+        "winner": "Belgium"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Argentina vs Egypt",
+        "score": "3-2",
+        "winner": "Argentina"
+      },
+      {
+        "round": "round_of_16",
+        "matchup": "Switzerland vs Colombia",
+        "score": "0-0",
+        "winner": "Switzerland"
+      },
+      {
+        "round": "quarter_finals",
+        "matchup": "Morocco vs France",
+        "score": "0-1",
+        "winner": "France"
+      },
+      {
+        "round": "quarter_finals",
+        "matchup": "Norway vs England",
+        "score": "0-1",
+        "winner": "England"
+      },
+      {
+        "round": "quarter_finals",
+        "matchup": "Spain vs Belgium",
+        "score": "2-0",
+        "winner": "Spain"
+      },
+      {
+        "round": "quarter_finals",
+        "matchup": "Argentina vs Switzerland",
+        "score": "2-0",
+        "winner": "Argentina"
+      },
+      {
+        "round": "semi_finals",
+        "matchup": "France vs England",
+        "score": "1-0",
+        "winner": "France"
+      },
+      {
+        "round": "semi_finals",
+        "matchup": "Spain vs Argentina",
+        "score": "1-0",
+        "winner": "Spain"
+      },
+      {
+        "round": "final",
+        "matchup": "France vs Spain",
+        "score": "1-0",
+        "winner": "France"
+      }
+    ],
+    "final_prediction": {
+      "champion": "France",
+      "runner_up": "Spain"
+    },
+    "final_match": {
+      "round": "final",
+      "home_team": "France",
+      "away_team": "Spain",
+      "predicted_score": "1-0",
+      "predicted_home_score": 1,
+      "predicted_away_score": 0,
+      "winner": "France",
+      "is_penalty_shootout": false,
+      "source": "agent_prediction",
+      "confidence": 0.4287,
+      "reason_codes": [
+        "EVEN_MATCH"
+      ]
+    },
+    "qualified_teams": [
+      1,
+      2,
+      5,
+      6,
+      9,
+      10,
+      13,
+      14,
+      17,
+      18,
+      21,
+      22,
+      25,
+      26,
+      29,
+      30,
+      33,
+      34,
+      37,
+      38,
+      41,
+      42,
+      45,
+      46
+    ]
+  },
+  "tool_trace": [],
+  "errors": [
+    "èµç¨è·åå¤±è´¥: API è¯·æ±å¤±è´¥æé¢åº¦ç¨å°½",
+    "çéè·åå¤±è´¥: API è¯·æ±å¤±è´¥æé¢åº¦ç¨å°½"
+  ],
+  "warnings": [
+    "ç¬è«æªè·åå°ä»»ä½æ°æ®ï¼éé»å¡ï¼",
+    "ä½¿ç¨ fallback æ°æ®ï¼é¢æµç²¾åº¦å¯è½éä½",
+    "ç¼ºå°çéè¿ææç»©æ°æ®",
+    "åå²æ¯èµæ°æ®åå°ï¼67 åºï¼å»ºè®® â¥100ï¼",
+    "ææ å®æ¶æ¯åæ°æ®ï¼éå³é®ï¼",
+    "ä½¿ç¨é»è®¤èµç¨æ°æ®ï¼API éæµï¼éçº§è¿è¡ï¼",
+    "ä½¿ç¨é»è®¤ 48 æ¯çéåç»ï¼API éæµï¼éçº§è¿è¡ï¼"
+  ],
+  "status": "degraded_completed",
+  "created_at": "2026-07-09T11:28:38.939403"
+}

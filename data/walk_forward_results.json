@@ -1,0 +1,32 @@
+[
+  {
+    "phase": "Train 2010-2018 / Val 2019-2020",
+    "train_samples": 3628,
+    "test_samples": 833,
+    "accuracy": 0.517406962785114,
+    "macro_f1": 0.45257301366572894,
+    "balanced_accuracy": 0.4759827782598738,
+    "brier_score": 0.597545762758475,
+    "log_loss": 0.9963136911392212
+  },
+  {
+    "phase": "Train 2010-2020 / Val 2021-2022",
+    "train_samples": 4461,
+    "test_samples": 779,
+    "accuracy": 0.4890885750962773,
+    "macro_f1": 0.41857991437241737,
+    "balanced_accuracy": 0.463539011848871,
+    "brier_score": 0.6031461818711311,
+    "log_loss": 1.002626657485962
+  },
+  {
+    "phase": "Train 2010-2022 / Val 2023-2024",
+    "train_samples": 5240,
+    "test_samples": 760,
+    "accuracy": 0.5118421052631579,
+    "macro_f1": 0.4796720100800947,
+    "balanced_accuracy": 0.49119503302065465,
+    "brier_score": 0.5977928604961694,
+    "log_loss": 0.9959820508956909
+  }
+]

@@ -1,0 +1,35 @@
+# ============================================================
+# 2026 世界杯冠军预测系统 — 后端 Dockerfile
+# FastAPI + PyTorch + XGBoost
+# 启动入口：main:app（项目根目录）
+# ============================================================
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# 系统依赖：编译 torch/xgboost 需要 build-essential
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 先复制依赖文件，利用 Docker 缓存层
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制项目代码
+COPY . .
+
+# 创建数据目录（挂载 volume 会覆盖，但确保目录存在）
+RUN mkdir -p /app/data /app/models
+
+# 环境变量默认值（可通过 .env 或 docker-compose 覆盖）
+ENV PYTHONIOENCODING=utf-8
+ENV HOST=0.0.0.0
+ENV PORT=8001
+ENV ALLOWED_ORIGINS=*
+
+EXPOSE 8001
+
+# 启动 FastAPI（入口为 main:app，从项目根目录运行）
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

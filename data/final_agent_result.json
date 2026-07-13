@@ -1,0 +1,746 @@
+{
+  "champion": "Argentina",
+  "predicted_champion": "Argentina",
+  "champion_probability": 0.4774,
+  "top5": [
+    {
+      "team": "Argentina",
+      "probability": 0.4774
+    },
+    {
+      "team": "France",
+      "probability": 0.2598
+    },
+    {
+      "team": "England",
+      "probability": 0.1521
+    },
+    {
+      "team": "Spain",
+      "probability": 0.1107
+    }
+  ],
+  "top_candidates": [
+    {
+      "team": "Argentina",
+      "probability": 0.4774
+    },
+    {
+      "team": "France",
+      "probability": 0.2598
+    },
+    {
+      "team": "England",
+      "probability": 0.1521
+    },
+    {
+      "team": "Spain",
+      "probability": 0.1107
+    }
+  ],
+  "surviving_teams": [
+    "Argentina",
+    "England",
+    "France",
+    "Spain"
+  ],
+  "stage": "semi_finals",
+  "stage_info": {
+    "stage": "semi_finals",
+    "stage_label": "四强",
+    "surviving_teams": [
+      "Argentina",
+      "England",
+      "France",
+      "Spain"
+    ],
+    "surviving_count": 4,
+    "champion": null,
+    "pending_scenario_matches": [
+      {
+        "match_id": "fd_537387",
+        "home_team": "France",
+        "away_team": "Spain",
+        "stage": "semi_finals"
+      },
+      {
+        "match_id": "fd_537388",
+        "home_team": "England",
+        "away_team": "Argentina",
+        "stage": "semi_finals"
+      }
+    ],
+    "sandbox_enabled": true,
+    "sandbox_message": "当前为四强阶段，可假设任一半决赛结果，推演可能决赛对阵和夺冠概率变化。",
+    "last_updated": "2026-07-13T12:37:51.734119"
+  },
+  "bracket_payload": {
+    "round_of_32": [
+      {
+        "round": "round_of_32",
+        "home_team": "South Africa",
+        "away_team": "Canada",
+        "home_score": 0,
+        "away_score": 1,
+        "predicted_score": "0-1",
+        "winner": "Canada",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Brazil",
+        "away_team": "Japan",
+        "home_score": 2,
+        "away_score": 1,
+        "predicted_score": "2-1",
+        "winner": "Brazil",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Germany",
+        "away_team": "Paraguay",
+        "home_score": 4,
+        "away_score": 5,
+        "predicted_score": "4-5",
+        "winner": "Paraguay",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Netherlands",
+        "away_team": "Morocco",
+        "home_score": 3,
+        "away_score": 4,
+        "predicted_score": "3-4",
+        "winner": "Morocco",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Ivory Coast",
+        "away_team": "Norway",
+        "home_score": 1,
+        "away_score": 2,
+        "predicted_score": "1-2",
+        "winner": "Norway",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "France",
+        "away_team": "Sweden",
+        "home_score": 3,
+        "away_score": 0,
+        "predicted_score": "3-0",
+        "winner": "France",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Mexico",
+        "away_team": "Ecuador",
+        "home_score": 2,
+        "away_score": 0,
+        "predicted_score": "2-0",
+        "winner": "Mexico",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "England",
+        "away_team": "Congo DR",
+        "home_score": 2,
+        "away_score": 1,
+        "predicted_score": "2-1",
+        "winner": "England",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Belgium",
+        "away_team": "Senegal",
+        "home_score": 3,
+        "away_score": 2,
+        "predicted_score": "3-2",
+        "winner": "Belgium",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "United States",
+        "away_team": "Bosnia-Herzegovina",
+        "home_score": 2,
+        "away_score": 0,
+        "predicted_score": "2-0",
+        "winner": "United States",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Spain",
+        "away_team": "Austria",
+        "home_score": 3,
+        "away_score": 0,
+        "predicted_score": "3-0",
+        "winner": "Spain",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Portugal",
+        "away_team": "Croatia",
+        "home_score": 2,
+        "away_score": 1,
+        "predicted_score": "2-1",
+        "winner": "Portugal",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Switzerland",
+        "away_team": "Algeria",
+        "home_score": 2,
+        "away_score": 0,
+        "predicted_score": "2-0",
+        "winner": "Switzerland",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Australia",
+        "away_team": "Egypt",
+        "home_score": 3,
+        "away_score": 5,
+        "predicted_score": "3-5",
+        "winner": "Egypt",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Argentina",
+        "away_team": "Cape Verde Islands",
+        "home_score": 3,
+        "away_score": 2,
+        "predicted_score": "3-2",
+        "winner": "Argentina",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_32",
+        "home_team": "Colombia",
+        "away_team": "Ghana",
+        "home_score": 1,
+        "away_score": 0,
+        "predicted_score": "1-0",
+        "winner": "Colombia",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      }
+    ],
+    "round_of_16": [
+      {
+        "round": "round_of_16",
+        "home_team": "Canada",
+        "away_team": "Morocco",
+        "home_score": 0,
+        "away_score": 3,
+        "predicted_score": "0-3",
+        "winner": "Morocco",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Paraguay",
+        "away_team": "France",
+        "home_score": 0,
+        "away_score": 1,
+        "predicted_score": "0-1",
+        "winner": "France",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Brazil",
+        "away_team": "Norway",
+        "home_score": 1,
+        "away_score": 2,
+        "predicted_score": "1-2",
+        "winner": "Norway",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Mexico",
+        "away_team": "England",
+        "home_score": 2,
+        "away_score": 3,
+        "predicted_score": "2-3",
+        "winner": "England",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Portugal",
+        "away_team": "Spain",
+        "home_score": 0,
+        "away_score": 1,
+        "predicted_score": "0-1",
+        "winner": "Spain",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "United States",
+        "away_team": "Belgium",
+        "home_score": 1,
+        "away_score": 4,
+        "predicted_score": "1-4",
+        "winner": "Belgium",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Argentina",
+        "away_team": "Egypt",
+        "home_score": 3,
+        "away_score": 2,
+        "predicted_score": "3-2",
+        "winner": "Argentina",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "round_of_16",
+        "home_team": "Switzerland",
+        "away_team": "Colombia",
+        "home_score": 4,
+        "away_score": 3,
+        "predicted_score": "4-3",
+        "winner": "Switzerland",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      }
+    ],
+    "quarter_finals": [
+      {
+        "round": "quarter_finals",
+        "home_team": "France",
+        "away_team": "Morocco",
+        "home_score": 2,
+        "away_score": 0,
+        "predicted_score": "2-0",
+        "winner": "France",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "quarter_finals",
+        "home_team": "Spain",
+        "away_team": "Belgium",
+        "home_score": 2,
+        "away_score": 1,
+        "predicted_score": "2-1",
+        "winner": "Spain",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "quarter_finals",
+        "home_team": "Norway",
+        "away_team": "England",
+        "home_score": 1,
+        "away_score": 2,
+        "predicted_score": "1-2",
+        "winner": "England",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "quarter_finals",
+        "home_team": "Argentina",
+        "away_team": "Switzerland",
+        "home_score": 3,
+        "away_score": 1,
+        "predicted_score": "3-1",
+        "winner": "Argentina",
+        "status": "FINISHED",
+        "display_label": "已结束",
+        "match_source": "real_result",
+        "source": "real_result",
+        "is_verified": true,
+        "needs_review": false
+      }
+    ],
+    "semi_finals": [
+      {
+        "round": "semi_finals",
+        "home_team": "France",
+        "away_team": "Spain",
+        "home_score": 2,
+        "away_score": 1,
+        "predicted_score": "2-1",
+        "winner": "France",
+        "status": "SCHEDULED",
+        "display_label": "预测",
+        "match_source": "prediction",
+        "source": "agent_prediction",
+        "is_verified": true,
+        "needs_review": false
+      },
+      {
+        "round": "semi_finals",
+        "home_team": "England",
+        "away_team": "Argentina",
+        "home_score": 1,
+        "away_score": 2,
+        "predicted_score": "1-2",
+        "winner": "England",
+        "status": "SCHEDULED",
+        "display_label": "预测",
+        "match_source": "prediction",
+        "source": "agent_prediction",
+        "is_verified": true,
+        "needs_review": false
+      }
+    ],
+    "final": [
+      {
+        "round": "final",
+        "home_team": "France",
+        "away_team": "England",
+        "home_score": 1,
+        "away_score": 0,
+        "predicted_score": "1-0",
+        "winner": "France",
+        "status": "",
+        "display_label": "预测",
+        "match_source": "prediction",
+        "source": "agent_prediction",
+        "is_verified": true,
+        "needs_review": false
+      }
+    ],
+    "champion": {
+      "team": "France",
+      "probability": null,
+      "source": "prediction",
+      "status": "predicted"
+    }
+  },
+  "data_status": {
+    "source_used": "football_data",
+    "source_level": "external_real",
+    "is_external_realtime": true,
+    "is_verified": false,
+    "needs_review": false,
+    "fixtures_count": 104,
+    "last_updated": "2026-07-13T12:33:25.758633",
+    "user_message": "比赛数据已更新。"
+  },
+  "model_status": {
+    "ensemble_v2": true,
+    "nn_v2": true,
+    "xgboost": true,
+    "weights": {
+      "elo": 0.25,
+      "nn": 0.3,
+      "xgboost": 0.2,
+      "poisson": 0.15,
+      "path": 0.1
+    }
+  },
+  "explanation": {
+    "title": "为什么预测 Argentina 夺冠？",
+    "content": "## 为什么预测 Argentina 夺冠？\n\n当前赛事已进入四强阶段，系统只在Argentina、England、France、Spain四支仍有夺冠可能的球队中进行模拟分析。\n\n根据已结束比赛结果和后续对阵形势，Argentina 展现出较强的夺冠实力，系统给出 47.74% 的夺冠概率。球队在攻防两端表现均衡，是当前最有可能捧起大力神杯的队伍。\n\n### 核心优势\n- 进攻端表现强劲，场均进球数领先，锋线火力十足。\n- 防守端同样稳固，失球数控制得当，后防线值得信赖。\n- 近期状态出色，连续多场保持高水平竞技状态。\n\n### 关键因素\n- 后续晋级路径相对有利，潜在对手实力相对较弱。\n- 攻击能力突出，场均进球数领先。\n- 防守稳固，失球数控制出色。\n\n### AI综合判断\n\n综合各方面分析，Argentina 以 47.74% 的夺冠概率领跑群雄。球队整体实力突出，晋级形势有利，是最有可能夺冠的球队。\n",
+    "key_reasons": [
+      "攻击能力突出，场均进球数领先",
+      "防守稳固，失球数控制出色",
+      "近期状态出色，胜率较高",
+      "晋级路径相对有利",
+      "淘汰赛阶段表现优异",
+      "球队整体实力排名靠前"
+    ],
+    "source": "fallback",
+    "probability": 47.74
+  },
+  "top_contenders": [
+    {
+      "team": "France",
+      "team_strength_index": 0.8577,
+      "recent_form_score": 0.9333,
+      "attack_score": 0.7619,
+      "defense_score": 0.9565,
+      "path_advantage_score": 0.5667,
+      "key_reasons": [
+        "攻击能力突出",
+        "防守稳固",
+        "近期状态出色",
+        "晋级路径有利",
+        "淘汰赛表现优异"
+      ]
+    },
+    {
+      "team": "Argentina",
+      "team_strength_index": 0.8498,
+      "recent_form_score": 0.8903,
+      "attack_score": 0.8095,
+      "defense_score": 0.7826,
+      "path_advantage_score": 0.6,
+      "key_reasons": [
+        "攻击能力突出",
+        "防守稳固",
+        "近期状态出色",
+        "晋级路径有利",
+        "淘汰赛表现优异"
+      ]
+    },
+    {
+      "team": "Spain",
+      "team_strength_index": 0.7632,
+      "recent_form_score": 0.7917,
+      "attack_score": 0.5238,
+      "defense_score": 1,
+      "path_advantage_score": 0.4,
+      "key_reasons": [
+        "防守稳固",
+        "近期状态出色",
+        "淘汰赛表现优异"
+      ]
+    },
+    {
+      "team": "England",
+      "team_strength_index": 0.7563,
+      "recent_form_score": 0.7514,
+      "attack_score": 0.619,
+      "defense_score": 0.7826,
+      "path_advantage_score": 0.4333,
+      "key_reasons": [
+        "攻击能力突出",
+        "防守稳固",
+        "近期状态出色",
+        "淘汰赛表现优异"
+      ]
+    },
+    {
+      "team": "Brazil",
+      "team_strength_index": 0.7548,
+      "recent_form_score": 0.6583,
+      "attack_score": 0.5714,
+      "defense_score": 0.8348,
+      "path_advantage_score": 1.0,
+      "key_reasons": [
+        "防守稳固",
+        "近期状态出色",
+        "晋级路径有利"
+      ]
+    },
+    {
+      "team": "Germany",
+      "team_strength_index": 0.6694,
+      "recent_form_score": 0.6062,
+      "attack_score": 1,
+      "defense_score": 0.4565,
+      "path_advantage_score": 1.0,
+      "key_reasons": [
+        "攻击能力突出",
+        "近期状态出色",
+        "晋级路径有利"
+      ]
+    },
+    {
+      "team": "Netherlands",
+      "team_strength_index": 0.6521,
+      "recent_form_score": 0.6229,
+      "attack_score": 0.9286,
+      "defense_score": 0.5217,
+      "path_advantage_score": 1.0,
+      "key_reasons": [
+        "攻击能力突出",
+        "近期状态出色",
+        "晋级路径有利"
+      ]
+    },
+    {
+      "team": "Portugal",
+      "team_strength_index": 0.6309,
+      "recent_form_score": 0.5533,
+      "attack_score": 0.4571,
+      "defense_score": 0.887,
+      "path_advantage_score": 0.4333,
+      "key_reasons": [
+        "防守稳固"
+      ]
+    }
+  ],
+  "representative_path_champion": {
+    "name": "France",
+    "source": "single_bracket_path"
+  },
+  "agent_steps_summary": [
+    {
+      "step": 1,
+      "name": "数据采集",
+      "description": "从 API 获取 2026 世界杯赛程与球队数据",
+      "status": "completed"
+    },
+    {
+      "step": 2,
+      "name": "历史分析",
+      "description": "加载 6000+ 场历史国际比赛数据",
+      "status": "completed"
+    },
+    {
+      "step": 3,
+      "name": "模型融合",
+      "description": "综合 ELO、神经网络、XGBoost 等多模型预测",
+      "status": "completed"
+    },
+    {
+      "step": 4,
+      "name": "模拟推演",
+      "description": "10000 次蒙特卡洛模拟推演淘汰赛进程",
+      "status": "completed"
+    },
+    {
+      "step": 5,
+      "name": "AI 解释",
+      "description": "生成冠军预测解释与关键因素分析",
+      "status": "completed"
+    }
+  ],
+  "model_version": "ensemble_v2",
+  "simulation_count": 10000,
+  "data_source": "比赛数据已更新。",
+  "historical_samples": 6000,
+  "generated_at": "2026-07-13T12:37:51.734119"
+}

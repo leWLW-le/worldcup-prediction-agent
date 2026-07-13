@@ -1,0 +1,10 @@
+competition_name,weight,source,needs_review
+FIFA World Cup,1.0,llm_generated_template,true
+UEFA European Championship,0.8,llm_generated_template,true
+Copa America,0.75,llm_generated_template,true
+UEFA Nations League,0.5,llm_generated_template,true
+AFC Asian Cup,0.6,llm_generated_template,true
+Africa Cup of Nations,0.6,llm_generated_template,true
+CONCACAF Gold Cup,0.55,llm_generated_template,true
+FIFA Confederations Cup,0.7,llm_generated_template,true
+International Friendly,0.3,llm_generated_template,true

@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-07-12T13:11:34.893829+00:00",
+  "api_key_detected": true,
+  "zhipu_key_detected": true,
+  "llm_assisted": true,
+  "season": 2026,
+  "csv_files": [
+    {
+      "file": "data\\cache\\worldcup_2026_teams_api.csv",
+      "rows": 0,
+      "source": "api-sports",
+      "needs_manual_review": false,
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "file": "data\\cache\\worldcup_2026_fixtures_api.csv",
+      "rows": 0,
+      "source": "api-sports",
+      "needs_manual_review": false,
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "file": "data\\cache\\worldcup_2026_live_api.csv",
+      "rows": 24,
+      "source": "api-sports",
+      "needs_manual_review": false,
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "file": "data\\team_aliases.csv",
+      "rows": 1,
+      "source": "llm_generated_template",
+      "needs_manual_review": true,
+      "warnings": [
+        "无 API 数据，仅生成模板"
+      ],
+      "errors": []
+    },
+    {
+      "file": "data\\team_ratings.csv",
+      "rows": 1,
+      "source": "llm_generated_template",
+      "needs_manual_review": true,
+      "warnings": [
+        "初始模板，需补充真实数据"
+      ],
+      "errors": []
+    },
+    {
+      "file": "data\\competition_weights.csv",
+      "rows": 9,
+      "source": "llm_generated_template",
+      "needs_manual_review": true,
+      "warnings": [],
+      "errors": []
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

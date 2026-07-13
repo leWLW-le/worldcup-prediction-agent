@@ -1,0 +1,159 @@
+team,elo_rating,fifa_rank,squad_strength,world_cup_experience,major_tournament_score,source
+Argentina,2100.0,10,1.0,1.0,1.0,db_derived
+France,2080.0,12,0.975,0.971,0.971,db_derived
+Brazil,2060.0,14,0.95,0.943,0.943,db_derived
+England,2040.0,16,0.925,0.914,0.914,db_derived
+Spain,2020.0,18,0.9,0.886,0.886,db_derived
+Germany,2000.0,20,0.875,0.857,0.857,db_derived
+Portugal,1980.0,22,0.85,0.829,0.829,db_derived
+Netherlands,1960.0,24,0.825,0.8,0.8,db_derived
+Armenia,1500.0,70,0.25,0.143,0.143,db_derived
+Oman,1500.0,70,0.25,0.143,0.143,db_derived
+El Salvador,1500.0,70,0.25,0.143,0.143,db_derived
+Gabon,1500.0,70,0.25,0.143,0.143,db_derived
+Ghana,1500.0,70,0.25,0.143,0.143,db_derived
+Tahiti,1500.0,70,0.25,0.143,0.143,db_derived
+Czechia,1500.0,70,0.25,0.143,0.143,db_derived
+Martinique,1500.0,70,0.25,0.143,0.143,db_derived
+Trinidad And Tobago,1500.0,70,0.25,0.143,0.143,db_derived
+Congo,1500.0,70,0.25,0.143,0.143,db_derived
+Egypt,1500.0,70,0.25,0.143,0.143,db_derived
+Albania,1500.0,70,0.25,0.143,0.143,db_derived
+Sweden,1500.0,70,0.25,0.143,0.143,db_derived
+Benin,1500.0,70,0.25,0.143,0.143,db_derived
+Sudan,1500.0,70,0.25,0.143,0.143,db_derived
+Suriname,1500.0,70,0.25,0.143,0.143,db_derived
+Greece,1500.0,70,0.25,0.143,0.143,db_derived
+Central African Republic,1500.0,70,0.25,0.143,0.143,db_derived
+Kazakhstan,1500.0,70,0.25,0.143,0.143,db_derived
+Croatia,1500.0,70,0.25,0.143,0.143,db_derived
+Dr Congo,1500.0,70,0.25,0.143,0.143,db_derived
+Liberia,1500.0,70,0.25,0.143,0.143,db_derived
+Cape Verde,1500.0,70,0.25,0.143,0.143,db_derived
+Equatorial Guinea,1500.0,70,0.25,0.143,0.143,db_derived
+Mali,1500.0,70,0.25,0.143,0.143,db_derived
+Morocco,1500.0,70,0.25,0.143,0.143,db_derived
+Turkey,1500.0,70,0.25,0.143,0.143,db_derived
+Mexico,1500.0,70,0.25,0.143,0.143,db_derived
+Burkina Faso,1500.0,70,0.25,0.143,0.143,db_derived
+Wales,1500.0,70,0.25,0.143,0.143,db_derived
+Uruguay,1500.0,70,0.25,0.143,0.143,db_derived
+Mauritania,1500.0,70,0.25,0.143,0.143,db_derived
+Romania,1500.0,70,0.25,0.143,0.143,db_derived
+Mauritius,1500.0,70,0.25,0.143,0.143,db_derived
+Finland,1500.0,70,0.25,0.143,0.143,db_derived
+Honduras,1500.0,70,0.25,0.143,0.143,db_derived
+Italy,1500.0,70,0.25,0.143,0.143,db_derived
+South Africa,1500.0,70,0.25,0.143,0.143,db_derived
+Northern Ireland,1500.0,70,0.25,0.143,0.143,db_derived
+Azerbaijan,1500.0,70,0.25,0.143,0.143,db_derived
+Thailand,1500.0,70,0.25,0.143,0.143,db_derived
+Togo,1500.0,70,0.25,0.143,0.143,db_derived
+North Macedonia,1500.0,70,0.25,0.143,0.143,db_derived
+Iraq,1500.0,70,0.25,0.143,0.143,db_derived
+Qatar,1500.0,70,0.25,0.143,0.143,db_derived
+China,1500.0,70,0.25,0.143,0.143,db_derived
+Saudi Arabia,1500.0,70,0.25,0.143,0.143,db_derived
+Zambia,1500.0,70,0.25,0.143,0.143,db_derived
+Tunisia,1500.0,70,0.25,0.143,0.143,db_derived
+Faroe Islands,1500.0,70,0.25,0.143,0.143,db_derived
+Slovakia,1500.0,70,0.25,0.143,0.143,db_derived
+French Guiana,1500.0,70,0.25,0.143,0.143,db_derived
+Jamaica,1500.0,70,0.25,0.143,0.143,db_derived
+Haiti,1500.0,70,0.25,0.143,0.143,db_derived
+Chad,1500.0,70,0.25,0.143,0.143,db_derived
+United Arab Emirates,1500.0,70,0.25,0.143,0.143,db_derived
+Rwanda,1500.0,70,0.25,0.143,0.143,db_derived
+Belarus,1500.0,70,0.25,0.143,0.143,db_derived
+Guadeloupe,1500.0,70,0.25,0.143,0.143,db_derived
+Norway,1500.0,70,0.25,0.143,0.143,db_derived
+Costa Rica,1500.0,70,0.25,0.143,0.143,db_derived
+Seychelles,1500.0,70,0.25,0.143,0.143,db_derived
+Ivory Coast,1500.0,70,0.25,0.143,0.143,db_derived
+Estonia,1500.0,70,0.25,0.143,0.143,db_derived
+United States,1500.0,70,0.25,0.143,0.143,db_derived
+South Sudan,1500.0,70,0.25,0.143,0.143,db_derived
+Barbados,1500.0,70,0.25,0.143,0.143,db_derived
+Angola,1500.0,70,0.25,0.143,0.143,db_derived
+Malta,1500.0,70,0.25,0.143,0.143,db_derived
+Australia,1500.0,70,0.25,0.143,0.143,db_derived
+Senegal,1500.0,70,0.25,0.143,0.143,db_derived
+Guinea-Bissau,1500.0,70,0.25,0.143,0.143,db_derived
+Cuba,1500.0,70,0.25,0.143,0.143,db_derived
+Moldova,1500.0,70,0.25,0.143,0.143,db_derived
+Lebanon,1500.0,70,0.25,0.143,0.143,db_derived
+Bosnia-Herzegovina,1500.0,70,0.25,0.143,0.143,db_derived
+Guinea,1500.0,70,0.25,0.143,0.143,db_derived
+Serbia,1500.0,70,0.25,0.143,0.143,db_derived
+San Marino,1500.0,70,0.25,0.143,0.143,db_derived
+IR Iran,1500.0,70,0.25,0.143,0.143,db_derived
+Slovenia,1500.0,70,0.25,0.143,0.143,db_derived
+Panama,1500.0,70,0.25,0.143,0.143,db_derived
+Niger,1500.0,70,0.25,0.143,0.143,db_derived
+Malaysia,1500.0,70,0.25,0.143,0.143,db_derived
+Belize,1500.0,70,0.25,0.143,0.143,db_derived
+Uzbekistan,1500.0,70,0.25,0.143,0.143,db_derived
+Zimbabwe,1500.0,70,0.25,0.143,0.143,db_derived
+Venezuela,1500.0,70,0.25,0.143,0.143,db_derived
+Indonesia,1500.0,70,0.25,0.143,0.143,db_derived
+Hungary,1500.0,70,0.25,0.143,0.143,db_derived
+Bahrain,1500.0,70,0.25,0.143,0.143,db_derived
+Korea Dpr,1500.0,70,0.25,0.143,0.143,db_derived
+Montenegro,1500.0,70,0.25,0.143,0.143,db_derived
+Syria,1500.0,70,0.25,0.143,0.143,db_derived
+Japan,1500.0,70,0.25,0.143,0.143,db_derived
+Nigeria,1500.0,70,0.25,0.143,0.143,db_derived
+Tajikistan,1500.0,70,0.25,0.143,0.143,db_derived
+Liechtenstein,1500.0,70,0.25,0.143,0.143,db_derived
+Colombia,1500.0,70,0.25,0.143,0.143,db_derived
+Latvia,1500.0,70,0.25,0.143,0.143,db_derived
+Paraguay,1500.0,70,0.25,0.143,0.143,db_derived
+Fiji,1500.0,70,0.25,0.143,0.143,db_derived
+Ireland,1500.0,70,0.25,0.143,0.143,db_derived
+Kenya,1500.0,70,0.25,0.143,0.143,db_derived
+Guatemala,1500.0,70,0.25,0.143,0.143,db_derived
+Iceland,1500.0,70,0.25,0.143,0.143,db_derived
+Denmark,1500.0,70,0.25,0.143,0.143,db_derived
+Gambia,1500.0,70,0.25,0.143,0.143,db_derived
+New Caledonia,1500.0,70,0.25,0.143,0.143,db_derived
+Austria,1500.0,70,0.25,0.143,0.143,db_derived
+Switzerland,1500.0,70,0.25,0.143,0.143,db_derived
+Belgium,1500.0,70,0.25,0.143,0.143,db_derived
+Russia,1500.0,70,0.25,0.143,0.143,db_derived
+Scotland,1500.0,70,0.25,0.143,0.143,db_derived
+Sierra Leone,1500.0,70,0.25,0.143,0.143,db_derived
+Mozambique,1500.0,70,0.25,0.143,0.143,db_derived
+Palestine,1500.0,70,0.25,0.143,0.143,db_derived
+Chile,1500.0,70,0.25,0.143,0.143,db_derived
+Gibraltar,1500.0,70,0.25,0.143,0.143,db_derived
+Burundi,1500.0,70,0.25,0.143,0.143,db_derived
+Guyana,1500.0,70,0.25,0.143,0.143,db_derived
+Curaçao,1500.0,70,0.25,0.143,0.143,db_derived
+Kyrgyzstan,1500.0,70,0.25,0.143,0.143,db_derived
+Ecuador,1500.0,70,0.25,0.143,0.143,db_derived
+Peru,1500.0,70,0.25,0.143,0.143,db_derived
+Comoros,1500.0,70,0.25,0.143,0.143,db_derived
+Kosovo,1500.0,70,0.25,0.143,0.143,db_derived
+Algeria,1500.0,70,0.25,0.143,0.143,db_derived
+Uganda,1500.0,70,0.25,0.143,0.143,db_derived
+Vietnam,1500.0,70,0.25,0.143,0.143,db_derived
+Bahamas,1500.0,70,0.25,0.143,0.143,db_derived
+Luxembourg,1500.0,70,0.25,0.143,0.143,db_derived
+Bermuda,1500.0,70,0.25,0.143,0.143,db_derived
+Tanzania,1500.0,70,0.25,0.143,0.143,db_derived
+Jordan,1500.0,70,0.25,0.143,0.143,db_derived
+Andorra,1500.0,70,0.25,0.143,0.143,db_derived
+Bolivia,1500.0,70,0.25,0.143,0.143,db_derived
+Cameroon,1500.0,70,0.25,0.143,0.143,db_derived
+Madagascar,1500.0,70,0.25,0.143,0.143,db_derived
+Georgia,1500.0,70,0.25,0.143,0.143,db_derived
+Canada,1500.0,70,0.25,0.143,0.143,db_derived
+Ethiopia,1500.0,70,0.25,0.143,0.143,db_derived
+Lithuania,1500.0,70,0.25,0.143,0.143,db_derived
+Nicaragua,1500.0,70,0.25,0.143,0.143,db_derived
+Poland,1500.0,70,0.25,0.143,0.143,db_derived
+Cyprus,1500.0,70,0.25,0.143,0.143,db_derived
+Ukraine,1500.0,70,0.25,0.143,0.143,db_derived
+New Zealand,1500.0,70,0.25,0.143,0.143,db_derived
+Korea Republic,1500.0,70,0.25,0.143,0.143,db_derived
+Solomon Islands,1500.0,70,0.25,0.143,0.143,db_derived

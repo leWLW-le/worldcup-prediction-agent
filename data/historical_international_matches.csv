@@ -1,0 +1,68 @@
+date,home_team,away_team,home_score,away_score,tournament,city,country,neutral
+2022-12-18,Argentina,France,3,3,FIFA World Cup,Lusail,Qatar,TRUE
+2022-12-17,Croatia,Morocco,2,1,FIFA World Cup,Al Rayyan,Qatar,TRUE
+2022-12-14,Argentina,Croatia,3,0,FIFA World Cup,Lusail,Qatar,TRUE
+2022-12-15,France,Morocco,2,0,FIFA World Cup,Al Bayt,Qatar,TRUE
+2022-12-10,Croatia,Brazil,1,1,FIFA World Cup,Al Rayyan,Qatar,TRUE
+2022-12-10,Morocco,Portugal,1,0,FIFA World Cup,Doha,Qatar,TRUE
+2022-12-10,England,France,1,2,FIFA World Cup,Al Bayt,Qatar,TRUE
+2022-12-09,Netherlands,Argentina,2,2,FIFA World Cup,Lusail,Qatar,TRUE
+2022-12-06,Morocco,Spain,0,0,FIFA World Cup,Doha,Qatar,TRUE
+2022-12-06,Portugal,Switzerland,6,1,FIFA World Cup,Lusail,Qatar,TRUE
+2022-12-05,Japan,Croatia,1,1,FIFA World Cup,Al Janoub,Qatar,TRUE
+2022-12-05,Brazil,South Korea,4,1,FIFA World Cup,Doha,Qatar,TRUE
+2022-12-04,England,Senegal,3,0,FIFA World Cup,Al Bayt,Qatar,TRUE
+2022-12-04,France,Poland,3,1,FIFA World Cup,Al Thumama,Qatar,TRUE
+2022-12-03,Netherlands,USA,3,1,FIFA World Cup,Khalifa,Qatar,TRUE
+2022-12-03,Argentina,Australia,2,1,FIFA World Cup,Ahmad bin Ali,Qatar,TRUE
+2023-03-24,Argentina,Panama,2,0,Friendly,Buenos Aires,Argentina,FALSE
+2023-03-25,France,Netherlands,4,0,UEFA Euro Qualifier,Paris,France,FALSE
+2023-03-26,Brazil,Morocco,2,1,Friendly,Tangier,Morocco,TRUE
+2023-03-26,England,Italy,1,2,UEFA Euro Qualifier,Naples,Italy,TRUE
+2023-06-16,Spain,Italy,0,0,UEFA Nations League,Enschede,Netherlands,TRUE
+2023-06-18,Portugal,Iceland,3,0,UEFA Euro Qualifier,Reykjavik,Iceland,TRUE
+2023-09-08,Germany,Japan,1,4,Friendly,Wolfsburg,Germany,FALSE
+2023-09-09,Brazil,Bolivia,5,1,FIFA World Cup Qualifier,Belem,Brazil,FALSE
+2023-09-12,France,Belgium,2,0,Friendly,Dortmund,Germany,TRUE
+2023-10-13,Argentina,Paraguay,1,0,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2023-10-14,Spain,Georgia,2,0,UEFA Euro Qualifier,Tbilisi,Georgia,TRUE
+2023-10-17,England,Italy,3,1,Friendly,London,England,FALSE
+2023-11-17,Argentina,Uruguay,0,2,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2023-11-21,Brazil,Colombia,2,1,FIFA World Cup Qualifier,Rio de Janeiro,Brazil,FALSE
+2024-03-23,England,Brazil,0,1,Friendly,London,England,FALSE
+2024-03-23,Spain,Colombia,0,1,Friendly,Madrid,Spain,FALSE
+2024-03-26,France,Germany,0,2,Friendly,Marseille,France,FALSE
+2024-03-26,Argentina,Costa Rica,3,1,Friendly,Houston,USA,TRUE
+2024-06-05,Portugal,Finland,4,2,Friendly,Lisbon,Portugal,FALSE
+2024-06-07,Germany,Greece,5,1,Friendly,Monchengladbach,Germany,FALSE
+2024-06-08,Brazil,Mexico,3,2,Friendly,Orlando,USA,TRUE
+2024-06-14,Germany,Scotland,5,1,UEFA Euro,Munich,Germany,FALSE
+2024-06-15,Argentina,Canada,2,0,Copa America,Atlanta,USA,TRUE
+2024-06-16,Spain,Croatia,3,0,UEFA Euro,Berlin,Germany,TRUE
+2024-06-20,Spain,Italy,1,0,UEFA Euro,Gelsenkirchen,Germany,TRUE
+2024-06-24,Argentina,Chile,0,0,Copa America,East Rutherford,USA,TRUE
+2024-06-25,France,Poland,1,1,UEFA Euro,Dortmund,Germany,TRUE
+2024-06-26,England,Slovenia,0,0,UEFA Euro,Cologne,Germany,TRUE
+2024-06-30,Germany,Denmark,2,0,UEFA Euro,Dortmund,Germany,FALSE
+2024-07-01,France,Belgium,1,0,UEFA Euro,Dusseldorf,Germany,TRUE
+2024-07-05,Portugal,France,0,0,UEFA Euro,Hamburg,Germany,TRUE
+2024-07-06,Spain,Germany,2,1,UEFA Euro,Berlin,Germany,TRUE
+2024-07-09,Spain,France,2,1,UEFA Euro,Munich,Germany,TRUE
+2024-07-10,England,Netherlands,2,1,UEFA Euro,Dortmund,Germany,TRUE
+2024-07-14,Spain,England,2,1,UEFA Euro,Berlin,Germany,TRUE
+2024-09-05,Argentina,Chile,3,0,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2024-09-06,France,Italy,1,3,UEFA Nations League,Paris,France,FALSE
+2024-09-07,Germany,Hungary,5,0,UEFA Nations League,Dusseldorf,Germany,FALSE
+2024-09-08,Brazil,Ecuador,1,0,FIFA World Cup Qualifier,Sao Paulo,Brazil,FALSE
+2024-10-10,Spain,Serbia,3,0,UEFA Nations League,Murcia,Spain,FALSE
+2024-10-11,Argentina,Ecuador,1,0,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2024-10-15,Germany,Netherlands,1,0,UEFA Nations League,Munich,Germany,FALSE
+2024-11-14,Brazil,Venezuela,1,1,FIFA World Cup Qualifier,Sao Paulo,Brazil,FALSE
+2024-11-15,Spain,Switzerland,3,2,UEFA Nations League,Zurich,Switzerland,TRUE
+2024-11-19,Argentina,Peru,1,0,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2025-03-21,France,Germany,2,0,UEFA Nations League,Lyon,France,FALSE
+2025-03-22,Brazil,England,1,2,Friendly,London,England,TRUE
+2025-03-25,Spain,Netherlands,3,1,UEFA Nations League,Madrid,Spain,FALSE
+2025-06-04,Argentina,Uruguay,2,1,FIFA World Cup Qualifier,Buenos Aires,Argentina,FALSE
+2025-06-06,France,Spain,2,1,UEFA Nations League Final,Munich,Germany,TRUE
+2025-06-08,Germany,Portugal,3,2,UEFA Nations League,Munich,Germany,FALSE

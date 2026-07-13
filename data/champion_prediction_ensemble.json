@@ -1,0 +1,38 @@
+{
+  "n_simulations": 10000,
+  "surviving_teams": [
+    "Argentina",
+    "England",
+    "France",
+    "Spain"
+  ],
+  "stage": "semi_finals",
+  "champion_probabilities": {
+    "Argentina": 0.4774,
+    "France": 0.2598,
+    "England": 0.1521,
+    "Spain": 0.1107
+  },
+  "top_champion": "Argentina",
+  "top_probability": 0.4774,
+  "top5": [
+    {
+      "team": "Argentina",
+      "probability": 0.4774
+    },
+    {
+      "team": "France",
+      "probability": 0.2598
+    },
+    {
+      "team": "England",
+      "probability": 0.1521
+    },
+    {
+      "team": "Spain",
+      "probability": 0.1107
+    }
+  ],
+  "france_champion_probability": 0.2598,
+  "argentina_champion_probability": 0.4774
+}
