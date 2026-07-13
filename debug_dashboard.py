@@ -1210,8 +1210,8 @@ def display_scenario_sandbox(data: Dict):
         subtitle = '选择一场未开始的半决赛，并假设其中一队晋级。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
         badge_text = "假设推演"
     else:
-        subtitle = sandbox_message or "当前阶段沙盘推演已关闭。"
-        badge_text = "已关闭"
+        subtitle = sandbox_message or "沙盘推演已结束。"
+        badge_text = "已结束"
 
     title_html = f"""
 <div class="section-title">🎮 冠军路径沙盘</div>
@@ -1303,7 +1303,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             st.markdown(title_html, unsafe_allow_html=True)
             st.markdown(f"""
 <div style="text-align:center;color:#5a7090;padding:1rem 0;font-size:1rem;">
-    {sandbox_message or "当前阶段沙盘推演已关闭。"}
+    {sandbox_message or "沙盘推演已结束。"}
 </div>""", unsafe_allow_html=True)
             st.markdown("""
 <div class="warning-note">
@@ -1311,14 +1311,14 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 </div>""", unsafe_allow_html=True)
         return
 
-    # ── 没有可推演的比赛 ──
+    # ── 没有可推演的比赛（sandbox 开启但比赛列表为空） ──
     if not pending_matches:
         with st.container():
             st.markdown('<div id="sandbox-container-marker" style="display:none;"></div>', unsafe_allow_html=True)
             st.markdown(title_html, unsafe_allow_html=True)
             st.markdown("""
 <div style="text-align:center;color:#5a7090;padding:1rem 0;font-size:1rem;">
-    当前没有可推演的未结束比赛。
+    暂时无法获取可推演比赛列表，请稍后重试。
 </div>""", unsafe_allow_html=True)
             st.markdown("""
 <div class="warning-note">
