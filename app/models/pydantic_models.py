@@ -61,14 +61,6 @@ class MatchUpdate(BaseModel):
     tournament_type: Optional[str] = Field(None, max_length=50)
 
 
-class MatchResponse(MatchBase):
-    """比赛响应模型"""
-    id: int
-    
-    class Config:
-        from_attributes = True
-
-
 # ============ Simulation Record Schemas ============
 
 class SimulationRecordBase(BaseModel):
@@ -81,23 +73,6 @@ class SimulationRecordBase(BaseModel):
 class SimulationRecordCreate(SimulationRecordBase):
     """创建模拟记录请求模型"""
     pass
-
-
-class SimulationRecordResponse(SimulationRecordBase):
-    """模拟记录响应模型"""
-    id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class SimulationResultSummary(BaseModel):
-    """模拟结果汇总模型"""
-    version: str
-    total_simulations: int = Field(..., ge=1, description="总模拟次数")
-    champion_distribution: dict[str, int] = Field(..., description="冠军分布统计")
-    top_teams: list[dict[str, Any]] = Field(..., description="前几名队伍统计")
 
 
 # ============ Prediction Schemas ============

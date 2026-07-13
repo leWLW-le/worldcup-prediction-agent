@@ -65,7 +65,7 @@ section("1. 数据完整性检查")
 # 1a. fixtures 数量
 try:
     from app.db.database import SessionLocal
-    from app.models.fixtures import Fixture
+    from app.models.agent_models import Fixture
     db = SessionLocal()
     fixture_count = db.query(Fixture).count()
     db.close()

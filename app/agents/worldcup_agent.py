@@ -19,7 +19,6 @@ from app.agents.agent_state import AgentState
 from app.agents.data_quality_agent import DataQualityAgent
 from app.tools.api_sports_tool import APISportsTool
 from app.tools.historical_data_tool import HistoricalDataTool
-from app.tools.scraper_tool import ScraperTool
 from app.tools.feature_builder_tool import FeatureBuilderTool
 from app.tools.match_predictor_tool import MatchPredictorTool
 from app.tools.bracket_tool import BracketTool
@@ -436,23 +435,10 @@ class WorldCupPredictionAgent:
             state.add_error(f"历史数据加载失败: {result.get('error')}")
             state.collected_data["historical"] = None
 
-    # ── Step 5: 爬虫（可选） ──
+    # ── Step 5: 爬虫（已禁用，原 scraper_tool 运行时必定崩溃） ──
     def _step5_collect_scraper(self, state: AgentState):
-        state.add_reasoning("尝试获取爬虫补充数据（可选）")
-        scraper = ScraperTool()
-        scraper_data = {}
-        # 尝试获取前几支球队的身价
-        team_names = [t["name"] for t in self._get_team_list(state)][:6]
-        for name in team_names:
-            try:
-                result = scraper.get_team_market_value(name)
-                if result["success"]:
-                    scraper_data[name] = result["data"]
-            except Exception:
-                pass
-        state.collected_data["scraper"] = scraper_data
-        if not scraper_data:
-            state.add_warning("爬虫未获取到任何数据（非阻塞）")
+        state.add_reasoning("爬虫模块已禁用（scraper_tool 已移除）")
+        state.collected_data["scraper"] = {}
 
     # ── Step 6: 数据质量检查 ──
     def _step6_quality_check(self, state: AgentState):
