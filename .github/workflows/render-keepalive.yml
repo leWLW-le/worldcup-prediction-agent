@@ -1,0 +1,97 @@
+name: Keep Render Demo Awake
+
+on:
+  schedule:
+    # Private repo: every 12 minutes to save Actions minutes
+    # If repo is public, change to: "3,13,23,33,43,53 * * * *"
+    - cron: "1,13,25,37,49 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-demo-keepalive
+  cancel-in-progress: true
+
+env:
+  DEMO_START_AT: "2026-07-14T00:00:00Z"
+  DEMO_END_AT: "2026-07-29T00:00:00Z"
+  BACKEND_HEALTH_URL: "https://worldcup-backend-k2sn.onrender.com/health"
+  FRONTEND_HEALTH_URL: "https://worldcup-frontend-rpnj.onrender.com/_stcore/health"
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check demo period
+        id: period
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NOW="$(date -u +%s)"
+          START="$(date -u -d "${DEMO_START_AT}" +%s)"
+          END="$(date -u -d "${DEMO_END_AT}" +%s)"
+
+          if (( NOW < START || NOW >= END )); then
+            echo "active=false" >> "${GITHUB_OUTPUT}"
+            echo "Outside demo period."
+          else
+            echo "active=true" >> "${GITHUB_OUTPUT}"
+            echo "Demo keep-alive is active."
+          fi
+
+      - name: Ping frontend and backend
+        if: steps.period.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          check_url() {
+            local name="$1"
+            local url="$2"
+            local code
+
+            echo "Checking ${name}"
+
+            code="$(
+              curl \
+                --location \
+                --silent \
+                --show-error \
+                --output /dev/null \
+                --write-out "%{http_code}" \
+                --connect-timeout 20 \
+                --max-time 150 \
+                --retry 2 \
+                --retry-delay 5 \
+                --retry-all-errors \
+                "${url}" || true
+            )"
+
+            echo "${name}: HTTP ${code:-000}"
+
+            case "${code}" in
+              2*|3*) return 0 ;;
+              *)
+                echo "::error::${name} failed with HTTP ${code:-000}"
+                return 1
+                ;;
+            esac
+          }
+
+          check_url "Backend" "${BACKEND_HEALTH_URL}" &
+          BACKEND_PID=$!
+
+          check_url "Frontend" "${FRONTEND_HEALTH_URL}" &
+          FRONTEND_PID=$!
+
+          STATUS=0
+
+          wait "${BACKEND_PID}" || STATUS=1
+          wait "${FRONTEND_PID}" || STATUS=1
+
+          exit "${STATUS}"

@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.db.database import init_db, engine
+from app.db.database import init_db, engine, DB_BACKEND, check_db_connection
 from app.api.routes import api_router
 
 # 导入 Agent 数据库模型，确保 Base.metadata 包含这些表
@@ -37,10 +37,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # === 启动阶段 ===
     print("🚀 Starting World Cup Prediction API...")
     
-    # 1. 初始化 SQLite 数据库
-    print("📦 Initializing SQLite database...")
+    # 1. 初始化数据库
+    print(f"Database backend: {DB_BACKEND}")
+    print("Initializing database...")
     init_db()
-    print("✅ SQLite database initialized")
+    print("Database initialized")
     
     # 2. 加载 PyTorch 模型权重
     print("🤖 Loading PyTorch model weights...")
@@ -199,7 +200,13 @@ def root():
 @app.get("/health", tags=["health"])
 def health_check():
     """健康检查端点"""
-    return {"status": "ok"}
+    db_ok = check_db_connection()
+    status = "healthy" if db_ok else "degraded"
+    return {
+        "status": status,
+        "database": "connected" if db_ok else "disconnected",
+        "backend": DB_BACKEND,
+    }
 
 
 if __name__ == "__main__":

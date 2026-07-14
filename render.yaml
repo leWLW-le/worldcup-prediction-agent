@@ -1,11 +1,17 @@
+databases:
+  - name: worldcup-postgres
+    plan: free
+    region: oregon
+
 services:
   # ── Backend: FastAPI ──
   - type: web
     name: worldcup-backend
     env: python
     plan: free
+    healthCheckPath: /health
     buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: python scripts/init_database.py && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: FOOTBALL_DATA_API
         sync: false
@@ -22,13 +28,16 @@ services:
       - key: ENV
         value: production
       - key: DATABASE_URL
-        value: sqlite:///./data/worldcup.db
+        fromDatabase:
+          name: worldcup-postgres
+          property: connectionString
 
   # ── Frontend: Streamlit Dashboard ──
   - type: web
     name: worldcup-frontend
     env: python
     plan: free
+    healthCheckPath: /_stcore/health
     buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
     startCommand: streamlit run debug_dashboard.py --server.address 0.0.0.0 --server.port $PORT
     envVars:
