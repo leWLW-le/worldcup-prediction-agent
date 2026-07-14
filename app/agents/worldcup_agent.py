@@ -907,11 +907,15 @@ class WorldCupPredictionAgent:
             logger.error("[Agent] _build_enhanced_features error: %s", e, exc_info=True)
 
     def _generate_champion_explanation(self, state: AgentState):
-        """生成冠军解释（LLM + fallback）"""
+        """生成冠军解释（LLM + fallback）
+
+        注意：概率统一使用 state.champion_probability（来自 top5[0]），
+        不再独立读取 Monte Carlo，避免与 _save_final_agent_result 不一致。
+        """
         champ = state.predicted_champion or "Unknown"
         prob = state.champion_probability or 50.0
 
-        # ── 优先使用 Monte Carlo 概率，避免展示 strength_score 旧值 ──
+        # ── 仅读取 stage 信息（存活球队、阶段），概率统一使用 state.champion_probability ──
         mc_surviving_teams = []
         mc_stage = "unknown"
         try:
@@ -920,15 +924,12 @@ class WorldCupPredictionAgent:
             if sim_path.exists():
                 with open(sim_path, encoding="utf-8") as f:
                     sim_data = _json.load(f)
-                mc_champion = sim_data.get("champion", {})
                 mc_surviving_teams = sim_data.get("surviving_teams", [])
                 mc_stage = sim_data.get("stage", "unknown")
-                if mc_champion and champ in mc_champion:
-                    mc_prob_pct = round(mc_champion[champ] * 100, 2)
-                    logger.info("[Agent] explanation 使用 Monte Carlo 概率: %s = %.2f%%", champ, mc_prob_pct)
-                    prob = mc_prob_pct
+                logger.info("[Agent] explanation 使用 state.champion_probability: %s = %.2f%%",
+                            champ, prob)
         except Exception as e:
-            logger.warning("[Agent] explanation 加载 Monte Carlo 概率失败: %s", e)
+            logger.warning("[Agent] explanation 加载 simulation_distribution.json 失败: %s", e)
 
         fb = state.feature_breakdown
 
@@ -1072,11 +1073,13 @@ class WorldCupPredictionAgent:
                 mc_surviving_teams = sim_data.get("surviving_teams", [])
                 mc_stage = sim_data.get("stage", "unknown")
                 if mc_champion:
+                    # 按概率降序排列，确保 top5[0] 是夺冠概率最高的队伍
+                    sorted_mc = sorted(mc_champion.items(), key=lambda x: x[1], reverse=True)
                     # 动态数量：min(5, len(surviving_teams))
                     display_count = min(5, len(mc_surviving_teams)) if mc_surviving_teams else 5
                     mc_top_candidates = [
                         {"team": team, "probability": round(p, 4)}
-                        for team, p in list(mc_champion.items())[:display_count]
+                        for team, p in sorted_mc[:display_count]
                     ]
                     # 用 Monte Carlo 概率覆盖冠军概率
                     if champ in mc_champion:
@@ -1191,19 +1194,70 @@ class WorldCupPredictionAgent:
                 "last_updated": datetime.utcnow().isoformat(),
             }
 
-        # ── 强制 champion 来自 top5[0] ──
+        # ── 强制 champion 和 champion_probability 来自 top5[0] ──
+        # top5 按 Monte Carlo 概率降序排列，top5[0] 是唯一权威
         if top5:
             top1_team = top5[0].get("team", champ)
             top1_prob = top5[0].get("probability", 0)
             if champ != top1_team:
                 logger.info("[Agent] champion 被 top5[0] 覆盖: %s → %s", champ, top1_team)
                 champ = top1_team
+                state.predicted_champion = champ
+            # 统一：champion_probability 始终 = top5[0].probability（0-1 范围）
             prob = top1_prob * 100 if top1_prob <= 1 else top1_prob
+            state.champion_probability = prob
+            logger.info("[Agent] 统一 champion_probability=%.4f%% (来自 top5[0])", prob)
+
+        # ── 重新生成 explanation（确保文本中的概率与最终 champion_probability 一致） ──
+        # 因为 _generate_champion_explanation 可能在不同时间点读取 Monte Carlo 数据，
+        # 导致文本中的百分比与最终 top5[0] 不一致，所以在此重新生成
+        self._generate_champion_explanation(state)
+
+        # ── 统一 explanation 字段，绑定 champion / probability / run_id ──
+        final_champ_prob = round(prob / 100.0, 4) if prob > 1 else round(prob, 4)
+        explanation_data = state.champion_explanation or {}
+        if explanation_data:
+            # 统一 probability 为 champion_probability 的百分比形式
+            expl_pct = round(final_champ_prob * 100, 2) if final_champ_prob <= 1 else round(final_champ_prob, 2)
+            old_expl_prob = explanation_data.get("probability")
+            explanation_data["probability"] = expl_pct
+            # 绑定 champion 和 champion_probability 到 explanation
+            explanation_data["champion"] = champ
+            explanation_data["champion_probability"] = final_champ_prob
+            # 替换文本中硬编码的百分比，避免过期数字
+            content = explanation_data.get("content", "")
+            if content and old_expl_prob is not None:
+                import re as _re
+                old_pct_val = float(old_expl_prob) if isinstance(old_expl_prob, (int, float)) else 0
+                old_pct_str = f"{old_pct_val:.2f}" if old_pct_val > 0 else ""
+                new_pct_str = f"{expl_pct:.2f}"
+                if old_pct_str and old_pct_str != new_pct_str:
+                    content = content.replace(old_pct_str + "%", new_pct_str + "%")
+                    content = content.replace(old_pct_str, new_pct_str)
+                    explanation_data["content"] = content
+                    logger.info("[Agent] explanation 概率已同步: %s%% → %s%%, champion=%s", old_expl_prob, expl_pct, champ)
+        else:
+            explanation_data = {
+                "title": f"为什么预测 {champ} 夺冠？",
+                "content": "",
+                "key_reasons": [],
+                "source": "none",
+                "probability": round(final_champ_prob * 100, 2) if final_champ_prob <= 1 else round(final_champ_prob, 2),
+                "champion": champ,
+                "champion_probability": final_champ_prob,
+            }
+
+        # ── 生成 run_id（基于 champion + probability + generated_at） ──
+        import hashlib
+        run_ts = datetime.utcnow().isoformat()
+        run_id_raw = f"{champ}:{final_champ_prob}:{run_ts}"
+        run_id = "run_" + hashlib.md5(run_id_raw.encode()).hexdigest()[:12]
 
         result = {
+            "run_id": run_id,
             "champion": champ,
             "predicted_champion": champ,
-            "champion_probability": round(prob / 100.0, 4) if prob > 1 else round(prob, 4),
+            "champion_probability": final_champ_prob,
             "top5": top5,
             "top_candidates": top5,
             "surviving_teams": mc_surviving_teams,
@@ -1212,7 +1266,7 @@ class WorldCupPredictionAgent:
             "bracket_payload": bp,
             "data_status": ds,
             "model_status": model_status,
-            "explanation": state.champion_explanation or {},
+            "explanation": explanation_data,
             "top_contenders": state.top_contenders or [],
             "representative_path_champion": getattr(state, "representative_path_champion", None),
             "agent_steps_summary": agent_steps_summary,
@@ -1220,7 +1274,8 @@ class WorldCupPredictionAgent:
             "simulation_count": 10000,
             "data_source": ds.get("user_message", ""),
             "historical_samples": 6000,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": run_ts,
+            "status": "completed",
         }
 
         out_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"

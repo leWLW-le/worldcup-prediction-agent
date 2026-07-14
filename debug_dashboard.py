@@ -1011,7 +1011,9 @@ def validate_data_consistency(result: Dict) -> List[str]:
     检查项：
     1. champion 与 top5[0].team 一致
     2. champion_probability 与 top5[0].probability 一致
-    3. explanation 标题中的球队名与 champion 一致
+    3. explanation.champion 与 champion 一致
+    4. explanation.champion_probability 与 champion_probability 一致
+    5. explanation.run_id 与 data.run_id 一致
     """
     warnings = []
     data = result.get("data", {})
@@ -1022,7 +1024,6 @@ def validate_data_consistency(result: Dict) -> List[str]:
     champ = data.get("champion", "")
     champ_prob = data.get("champion_probability", 0)
     explanation = data.get("explanation", {})
-    expl_content = explanation.get("content", "") if isinstance(explanation, dict) else ""
 
     # 1. champion 字段应与 top5[0] 一致
     if top5:
@@ -1038,12 +1039,27 @@ def validate_data_consistency(result: Dict) -> List[str]:
         if abs(expected - actual) > 0.001:
             warnings.append(f"champion_probability({champ_prob}) 与 top5[0].probability({top1_prob}) 不一致")
 
-    # 3. explanation 内容中的球队名应与 champion 一致
-    #    只检查 explanation 对象中是否有显式的 champion 字段
+    # 3. explanation.champion 应与 champion 一致
     if isinstance(explanation, dict):
         expl_champ = explanation.get("champion", "")
         if expl_champ and champ and expl_champ != champ:
             warnings.append(f"AI解读champion({expl_champ}) 与 champion({champ}) 不一致")
+
+    # 4. explanation.champion_probability 应与 champion_probability 一致
+    if isinstance(explanation, dict):
+        expl_prob = explanation.get("champion_probability")
+        if expl_prob is not None and champ_prob is not None:
+            e = float(expl_prob) if float(expl_prob) <= 1 else float(expl_prob) / 100.0
+            a = float(champ_prob) if float(champ_prob) <= 1 else float(champ_prob) / 100.0
+            if abs(e - a) > 1e-9:
+                warnings.append(f"AI解读概率({expl_prob}) 与 champion_probability({champ_prob}) 不一致")
+
+    # 5. explanation.run_id 应与 data.run_id 一致
+    data_run_id = data.get("run_id", "")
+    if isinstance(explanation, dict) and data_run_id:
+        expl_run_id = explanation.get("run_id", "")
+        if expl_run_id and expl_run_id != data_run_id:
+            warnings.append(f"AI解读run_id({expl_run_id}) 与 data.run_id({data_run_id}) 不一致")
 
     return warnings
 
@@ -1078,18 +1094,12 @@ def render_consistency_warning(warnings: List[str]):
 def display_champion_card(data: Dict):
     """冠军卡片 — 使用 official-card 样式
 
-    冠军以 Monte Carlo 模拟 top5[0] 为准（夺冠概率最高），
-    不混用 bracket 单路径冠军或 top_contenders（按实力排序）。
+    权威字段：data["champion"] 和 data["champion_probability"]
+    后端已保证 champion = top5[0].team, champion_probability = top5[0].probability
     """
-    top5 = data.get("top5", [])
-
-    # ── 冠军名 & 概率：统一以 Monte Carlo top5[0] 为准 ──
-    if top5:
-        champion = top5[0].get("team", "—")
-        prob = top5[0].get("probability", 0)
-    else:
-        champion = data.get("champion", "—")
-        prob = data.get("champion_probability", 0)
+    # ── 权威字段：直接使用 data 顶层字段 ──
+    champion = data.get("champion", "—")
+    prob = data.get("champion_probability", 0)
 
     prob_display = format_probability(prob)
 
@@ -1168,7 +1178,12 @@ def render_explanation_html(text: str, champion_name: str) -> str:
 
 
 def display_explanation(data: Dict):
-    """AI 冠军解读 — 使用 ai-card 样式，去重标题，增加文字层次"""
+    """AI 冠军解读 — 使用 ai-card 样式
+
+    权威字段：data["champion"] 和 data["champion_probability"]
+    不使用 explanation 中可能过期的 probability 字段。
+    动态替换正文中的百分比为最新 champion_probability。
+    """
     explanation = data.get("explanation", {})
     if not explanation:
         return
@@ -1176,13 +1191,40 @@ def display_explanation(data: Dict):
     if not content:
         return
 
-    # 确定正确的冠军名（与冠军卡片一致：优先 top5[0]）
+    # ── 权威字段：统一使用 data 顶层字段 ──
     champion_name = data.get("champion", "—")
-    top5 = data.get("top5", [])
-    if top5:
-        top1_team = top5[0].get("team", "")
-        if top1_team:
-            champion_name = top1_team
+    champion_prob = data.get("champion_probability", 0)
+    # 转为百分比显示
+    prob_pct = round(float(champion_prob) * 100, 2) if float(champion_prob) <= 1 else round(float(champion_prob), 2)
+    prob_display = f"{prob_pct:.1f}%"
+
+    # ── run_id 一致性校验 ──
+    data_run_id = data.get("run_id", "")
+    expl_run_id = explanation.get("run_id", "")
+    if data_run_id and expl_run_id and data_run_id != expl_run_id:
+        st.markdown("""
+<div style="background:linear-gradient(90deg,rgba(255,80,80,.12),rgba(255,80,80,.04));
+    border:1px solid rgba(255,80,80,.35); border-radius:10px; padding:.55rem 1rem;
+    color:#ff6b6b; font-weight:600; font-size:.85rem; margin-bottom:.6rem; text-align:center;">
+    ⚠️ 该预测解读正在更新，请重新预测以获取最新分析。
+</div>""", unsafe_allow_html=True)
+        return
+
+    # ── 动态替换正文中的百分比 ──
+    import re as _re
+    # 使用 explanation.probability 字段中的旧值替换为新值
+    expl_prob_field = explanation.get("probability")
+    if expl_prob_field is not None:
+        old_val = float(expl_prob_field)
+        old_pct = f"{old_val:.2f}"
+        new_pct = f"{prob_pct:.2f}"
+        if old_pct != new_pct:
+            content = content.replace(old_pct + "%", new_pct + "%")
+            content = content.replace(old_pct, new_pct)
+    # 安全网：替换正文中所有 XX.XX% 格式的概率为最新值
+    # （后端已确保文本正确，此处仅处理历史缓存数据）
+    if expl_prob_field is None:
+        content = _re.sub(r'\d+\.?\d*\s*%', lambda m: f"{prob_display}", content)
 
     # 清洗正文，移除重复标题
     cleaned_text = clean_explanation_text(content, champion_name)
@@ -1194,7 +1236,7 @@ def display_explanation(data: Dict):
 <div class="section-card">
     <div class="section-title">💡 AI 冠军解读</div>
     <div class="ai-card">
-        <h3 style="color:#ffd866;margin:0 0 .6rem 0;font-size:1.1rem;font-weight:800;">为什么预测 {champion_name} 夺冠？</h3>
+        <h3 style="color:#ffd866;margin:0 0 .6rem 0;font-size:1.1rem;font-weight:800;">为什么预测 {champion_name} 夺冠？ <span style="color:#e8f2ff;font-size:1.05rem;">（{prob_display}）</span></h3>
         {expl_html}
     </div>
 </div>""", unsafe_allow_html=True)
@@ -2067,6 +2109,7 @@ def clear_official_prediction_state():
     用于「重新预测」按钮成功后调用。
     不得清除沙盘比赛列表或沙盘状态。
     """
+    st.session_state.pop("official_prediction", None)
     st.session_state.pop("final_result", None)
     st.session_state.pop("final_result_cache_key", None)
     st.session_state.pop("prediction_error", None)
