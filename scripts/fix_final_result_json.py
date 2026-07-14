@@ -72,6 +72,15 @@ def fix_json(dry_run: bool = False):
         print(f"[Step 2] 保留 run_id: {run_id}")
 
     # ── Step 3: 同步所有字段 ──
+    changes = []  # 追踪哪些字段被修改了
+
+    old_champ = data.get("champion")
+    old_prob = data.get("champion_probability")
+    old_status = data.get("status")
+    old_run_id = data.get("run_id")
+    old_tc = data.get("top_candidates")
+    old_expl = data.get("explanation")
+
     data["champion"] = champ
     data["predicted_champion"] = champ
     data["champion_probability"] = champ_prob_01
@@ -79,7 +88,21 @@ def fix_json(dry_run: bool = False):
     data["top_candidates"] = deepcopy(top5)
     data["run_id"] = run_id
     data["status"] = "completed"
-    data["generated_at"] = datetime.now(timezone.utc).isoformat()
+
+    # generated_at 只在缺失时才设置，保证幂等
+    if not data.get("generated_at"):
+        data["generated_at"] = datetime.now(timezone.utc).isoformat()
+
+    if old_champ != champ:
+        changes.append(f"champion: {old_champ} -> {champ}")
+    if old_prob != champ_prob_01:
+        changes.append(f"champion_probability: {old_prob} -> {champ_prob_01}")
+    if old_status != "completed":
+        changes.append(f"status: {old_status} -> completed")
+    if old_run_id != run_id:
+        changes.append(f"run_id: {old_run_id} -> {run_id}")
+    if old_tc != data["top_candidates"]:
+        changes.append("top_candidates: synchronized from top5")
 
     print(f"[Step 3] top_candidates[0] = {data['top_candidates'][0]}")
 
@@ -123,6 +146,10 @@ def fix_json(dry_run: bool = False):
 
     print(f"[Step 4] explanation: champion={expl['champion']}, prob={expl['champion_probability']}, "
           f"probability={expl['probability']}, run_id={expl['run_id']}")
+
+    # 检查 explanation 是否有变化
+    if old_expl != expl:
+        changes.append("explanation: synchronized")
 
     # ── Step 5: 校验 ──
     print("\n[Step 5] 执行一致性校验...")
@@ -168,10 +195,25 @@ def fix_json(dry_run: bool = False):
 
     print("[PASS] 一致性校验通过")
 
-    # ── Step 6: 保存 ──
+    # ── Step 6: 保存（仅在有需要修改时） ──
     if dry_run:
         print("\n[DRY-RUN] 不保存，仅检查")
         return True
+
+    if not changes:
+        print("\n[INFO] 数据已经一致，无需重新保存")
+        print(f"  champion         = {data.get('champion')}")
+        print(f"  champion_prob    = {data.get('champion_probability')}")
+        print(f"  top5[0]          = {data.get('top5', [{}])[0]}")
+        print(f"  top_cand[0]      = {data.get('top_candidates', [{}])[0]}")
+        print(f"  expl.champion    = {data['explanation'].get('champion')}")
+        print(f"  expl.prob        = {data['explanation'].get('champion_probability')}")
+        print(f"  run_id           = {data.get('run_id')}")
+        return True
+
+    print(f"\n[Step 6] 发现 {len(changes)} 处修改:")
+    for c in changes:
+        print(f"  - {c}")
 
     with open(JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
