@@ -525,9 +525,8 @@ div[data-testid="stButton"] button:hover {
 
 # ==================== API 调用函数 ====================
 def get_api_base_url() -> str:
-    """从环境变量 BACKEND_URL 获取后端地址，默认 localhost:8001"""
-    backend_url = os.getenv("BACKEND_URL", "http://localhost:8001")
-    # 去掉末尾斜杠，统一拼接
+    """从环境变量 BACKEND_URL 获取后端地址，默认指向 Render 线上地址"""
+    backend_url = os.getenv("BACKEND_URL", "https://worldcup-backend-k2sn.onrender.com")
     backend_url = backend_url.rstrip("/")
     return st.session_state.get("api_base_url", f"{backend_url}/api/v1")
 

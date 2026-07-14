@@ -33,4 +33,4 @@ services:
     startCommand: streamlit run debug_dashboard.py --server.address 0.0.0.0 --server.port $PORT
     envVars:
       - key: BACKEND_URL
-        value: https://worldcup-backend.onrender.com
+        value: https://worldcup-backend-k2sn.onrender.com

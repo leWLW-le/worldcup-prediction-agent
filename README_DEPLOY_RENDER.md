@@ -69,7 +69,7 @@ git push -u origin master
 构建完成后，打开 Backend 的 URL：
 
 ```
-https://worldcup-backend.onrender.com/docs
+https://worldcup-backend-k2sn.onrender.com/docs
 ```
 
 如果看到 Swagger UI 页面（FastAPI 自动生成的 API 文档），说明 Backend 部署成功。
@@ -98,7 +98,7 @@ https://worldcup-backend.onrender.com/docs
 
 | Key | Value | 说明 |
 |---|---|---|
-| `BACKEND_URL` | `https://worldcup-backend.onrender.com` | 替换为你的 Backend 实际 URL |
+| `BACKEND_URL` | `https://worldcup-backend-k2sn.onrender.com` | 替换为你的 Backend 实际 URL |
 
 > **重要：** `BACKEND_URL` 必须指向你在第三步记下的 Backend 实际 URL。如果 Render 分配的域名不同（例如 `worldcup-backend-abc1.onrender.com`），请相应修改。
 

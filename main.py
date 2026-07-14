@@ -115,6 +115,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         print(f"⚠️  APScheduler startup skipped: {e}")
     
+    # 6. 检查外部 API Key 配置状态（仅记录是否已配置，不记录真实值）
+    _football_data_ok = bool(os.getenv("FOOTBALL_DATA_API", "").strip())
+    _api_football_ok = bool(os.getenv("API_FOOTBALL", "").strip())
+    print(
+        f"🔑 External API config: "
+        f"FOOTBALL_DATA_API={'configured' if _football_data_ok else 'missing'}  "
+        f"API_FOOTBALL={'configured' if _api_football_ok else 'missing'}"
+    )
+    if not _football_data_ok and not _api_football_ok:
+        print("⚠️  No external football API key configured — data refresh will use DB cache only")
+    
     print("✨ Application startup complete!")
     
     yield  # 应用运行期间
