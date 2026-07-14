@@ -252,6 +252,23 @@ def _simulate_semi_finals_scenario(
     all_fixtures = db.query(Fixture).all()
     semifinal_matches = get_semifinal_matches(all_fixtures)
 
+    # Fallback: DB 为空时，从 stage_info 的 pending_scenario_matches 构造半决赛列表
+    if len(semifinal_matches) < 2:
+        stage_info_local = get_current_tournament_stage(db)
+        pending = stage_info_local.get("pending_scenario_matches", [])
+        if len(pending) >= 2:
+            semifinal_matches = [
+                {
+                    "match_id": m.get("match_id", ""),
+                    "home_team": m.get("home_team", ""),
+                    "away_team": m.get("away_team", ""),
+                    "status": m.get("status", "scheduled"),
+                    "winner": None,
+                    "_obj": None,
+                }
+                for m in pending
+            ]
+
     if len(semifinal_matches) < 2:
         return {
             "success": False,
@@ -259,8 +276,19 @@ def _simulate_semi_finals_scenario(
         }
 
     # ── 2. 校验 forced match 是半决赛之一 ──
-    validation = validate_forced_semifinal(fixture, semifinal_matches)
+    # 兼容 dict（fallback）和 ORM fixture
+    if isinstance(fixture, dict):
+        forced_fixture_id = fixture.get("match_id", "")
+    else:
+        forced_fixture_id = str(getattr(fixture, 'fixture_id', ''))
+
+    validation = {"valid": False, "message": ""}
+    for sf in semifinal_matches:
+        if sf["match_id"] == forced_fixture_id:
+            validation = {"valid": True}
+            break
     if not validation["valid"]:
+        validation["message"] = "沙盘推演只允许选择当前未结束的半决赛之一。"
         return {"success": False, "message": validation["message"]}
 
     # ── 3. 校验 forced_winner 是比赛双方之一 ──
@@ -270,7 +298,7 @@ def _simulate_semi_finals_scenario(
             "message": f"假设晋级队必须是所选比赛双方之一。可选: {home_team_name}, {away_team_name}"
         }
 
-    forced_match_id = str(fixture.fixture_id)
+    forced_match_id = forced_fixture_id
 
     # ── 4. 创建 ensemble service + 缓存特征 ──
     ensemble_service = EnsemblePredictionService(db)
@@ -440,7 +468,7 @@ def _simulate_semi_finals_scenario(
         "is_stale": False,
 
         "scenario": {
-            "match_id": str(fixture.fixture_id),
+            "match_id": forced_match_id,
             "match": match_label,
             "stage": stage,
             "forced_winner": forced_winner,
@@ -707,11 +735,25 @@ def run_scenario_simulation(
             (Fixture.fixture_id == normalized_id) | (Fixture.fixture_id == match_id)
         ).first()
 
+        # Fallback: DB 为空时（Render 部署），从 stage_info 的 pending_scenario_matches 获取比赛信息
+        if not fixture:
+            for m in stage_info.get("pending_scenario_matches", []):
+                if m.get("match_id") in (normalized_id, match_id):
+                    fixture = m
+                    break
+
         if not fixture:
             return {"success": False, "error": f"找不到比赛 {match_id}"}
 
-        home_team_name = fixture.home_team
-        away_team_name = fixture.away_team
+        # 兼容 dict（fallback 来源）和 ORM 对象
+        if isinstance(fixture, dict):
+            home_team_name = fixture.get("home_team", "")
+            away_team_name = fixture.get("away_team", "")
+            stage = fixture.get("stage", current_stage)
+        else:
+            home_team_name = fixture.home_team
+            away_team_name = fixture.away_team
+            stage = fixture.stage
 
         # ── 3. 校验 forced_winner ──
         if forced_winner not in (home_team_name, away_team_name):
@@ -902,7 +944,7 @@ def run_scenario_simulation(
             "is_stale": False,
 
             "scenario": {
-                "match_id": str(fixture.fixture_id),
+                "match_id": fixture.get("match_id", "") if isinstance(fixture, dict) else str(fixture.fixture_id),
                 "match": match_label,
                 "stage": stage,
                 "forced_winner": forced_winner,
