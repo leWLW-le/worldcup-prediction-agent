@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import func
 
 from app.db.database import SessionLocal
-from app.models.agent_models import Fixture
+from app.models.agent_models import Fixture, compute_canonical_pair
 
 
 class FixtureRepository:
@@ -51,9 +51,10 @@ class FixtureRepository:
             }
         
         规则：
-        1. 按 fixture_id 去重
-        2. 已存在则更新字段
-        3. 不允许预测结果覆盖真实比分
+        1. 先按 fixture_id 去重
+        2. 再按逻辑键（stage + canonical_pair）去重，防止不同 fixture_id 的同一场比赛重复入库
+        3. 已存在则按 source_level 优先级决定是否更新
+        4. 不允许预测结果覆盖真实比分
         """
         db = SessionLocal()
         inserted = 0
@@ -67,10 +68,24 @@ class FixtureRepository:
                     skipped += 1
                     continue
                 
-                # 查找现有记录
+                # 确保 canonical_pair 已计算
+                if "canonical_pair" not in fx_data or not fx_data.get("canonical_pair"):
+                    home = fx_data.get("home_team", "")
+                    away = fx_data.get("away_team", "")
+                    if home and away:
+                        fx_data["canonical_pair"] = compute_canonical_pair(home, away)
+                
+                # 查找现有记录：先按 fixture_id
                 existing = db.query(Fixture).filter(
                     Fixture.fixture_id == fixture_id
                 ).first()
+                
+                # 如果 fixture_id 没找到，再按逻辑键查找
+                if not existing and fx_data.get("stage") and fx_data.get("canonical_pair"):
+                    existing = db.query(Fixture).filter(
+                        Fixture.stage == fx_data["stage"],
+                        Fixture.canonical_pair == fx_data["canonical_pair"],
+                    ).first()
                 
                 if existing:
                     # 检查是否允许更新（防止预测覆盖真实数据）
@@ -143,7 +158,8 @@ class FixtureRepository:
             "confidence_level": "confidence_level",
             "evidence_count": "evidence_count",
             "evidence_sources": "evidence_sources",
-            "raw_payload": "raw_payload"
+            "raw_payload": "raw_payload",
+            "canonical_pair": "canonical_pair",
         }
         
         for key, attr in field_mapping.items():
@@ -166,6 +182,14 @@ class FixtureRepository:
         if isinstance(evidence_sources, list):
             evidence_sources = json.dumps(evidence_sources, ensure_ascii=False)
         
+        # 确保 canonical_pair 已计算
+        canonical_pair = data.get("canonical_pair")
+        if not canonical_pair:
+            home = data.get("home_team", "")
+            away = data.get("away_team", "")
+            if home and away:
+                canonical_pair = compute_canonical_pair(home, away)
+        
         return Fixture(
             fixture_id=data["fixture_id"],
             api_fixture_id=data.get("api_fixture_id"),
@@ -186,6 +210,7 @@ class FixtureRepository:
             confidence_level=data.get("confidence_level"),
             evidence_count=data.get("evidence_count", 0),
             evidence_sources=evidence_sources,
+            canonical_pair=canonical_pair,
             fetched_at=now,
             updated_at=now,
             raw_payload=data.get("raw_payload")
@@ -372,6 +397,7 @@ class FixtureRepository:
             "confidence_level": fx.confidence_level,
             "evidence_count": fx.evidence_count,
             "evidence_sources": evidence_sources,
+            "canonical_pair": fx.canonical_pair,
             "fetched_at": fx.fetched_at.isoformat() if fx.fetched_at else None,
             "updated_at": fx.updated_at.isoformat() if fx.updated_at else None,
             "raw_payload": fx.raw_payload

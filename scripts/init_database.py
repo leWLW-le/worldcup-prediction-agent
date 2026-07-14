@@ -22,7 +22,7 @@ from app.db.database import Base, engine, SessionLocal, DB_BACKEND
 import app.models.schemas  # noqa: F401
 import app.models.agent_models  # noqa: F401
 from app.models.schemas import Team
-from app.models.agent_models import Fixture
+from app.models.agent_models import Fixture, compute_canonical_pair
 
 
 # 半决赛种子数据（最低可用数据）
@@ -76,14 +76,33 @@ def seed_teams(session):
 
 
 def seed_fixtures(session):
-    """导入半决赛种子数据（幂等）"""
+    """导入半决赛种子数据（幂等）
+
+    去重逻辑：
+    1. 先按 fixture_id 检查（原有逻辑）
+    2. 再按逻辑键（stage + canonical_pair）检查，防止不同 fixture_id 代表同一场比赛
+    3. 如果数据库中已存在同一逻辑比赛，即使 fixture_id 不同也不插入
+    """
     inserted = 0
     for seed in SEED_FIXTURES:
-        existing = session.query(Fixture).filter(
+        # 检查 1: 按 fixture_id 去重
+        existing_by_id = session.query(Fixture).filter(
             Fixture.fixture_id == seed["fixture_id"]
         ).first()
-        if existing:
+        if existing_by_id:
             continue
+
+        # 检查 2: 按逻辑键去重（stage + canonical_pair）
+        cp = compute_canonical_pair(seed["home_team"], seed["away_team"])
+        existing_by_logic = session.query(Fixture).filter(
+            Fixture.stage == seed["stage"],
+            Fixture.canonical_pair == cp,
+        ).first()
+        if existing_by_logic:
+            print(f"  Logical duplicate skipped: {seed['home_team']} vs {seed['away_team']} "
+                  f"(existing: {existing_by_logic.fixture_id})")
+            continue
+
         fixture = Fixture(
             fixture_id=seed["fixture_id"],
             home_team=seed["home_team"],
@@ -92,6 +111,7 @@ def seed_fixtures(session):
             status=seed["status"],
             source=seed["source"],
             source_level=seed["source_level"],
+            canonical_pair=cp,
             is_verified=False,
             needs_review=False,
             fetched_at=datetime.utcnow(),

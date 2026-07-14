@@ -5,12 +5,13 @@
 fixtures 表只保存真实比赛数据，预测结果写入 predicted_matches 表。
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from app.db.database import SessionLocal
-from app.models.agent_models import Fixture
+from app.models.agent_models import Fixture, compute_canonical_pair
 from app.tools.api_sports_tool import APISportsTool
 
 logger = logging.getLogger(__name__)
@@ -20,63 +21,74 @@ LIVE_STATUSES = {"1H", "HT", "2H", "ET", "P", "BT", "LIVE"}
 FINISHED_STATUSES = {"FT", "AET", "PEN"}
 NOT_STARTED_STATUSES = {"NS", "TBD"}
 
+# source_level 优先级（用于 upsert 决策）
+_SOURCE_LEVEL_PRIORITY = {
+    "external_real": 3,
+    "verified_cache": 2,
+    "manual_verified": 2,
+    "unverified_candidate": 1,
+    "unavailable": 0,
+}
+
+
+def _infer_stage_from_round(round_name: str) -> str:
+    """从 API-Football 的 round 字段推断比赛阶段"""
+    if not round_name:
+        return "group_stage"
+    round_lower = round_name.lower()
+    if "group" in round_lower:
+        return "group_stage"
+    if "32" in round_lower or "round of 32" in round_lower:
+        return "round_of_32"
+    if "16" in round_lower or "round of 16" in round_lower:
+        return "round_of_16"
+    if "quarter" in round_lower or "1/4" in round_lower:
+        return "quarter_finals"
+    if "semi" in round_lower or "1/2" in round_lower:
+        return "semi_finals"
+    if "final" in round_lower:
+        return "final"
+    return "group_stage"
+
 
 def parse_api_fixture(raw: Dict[str, Any], season: int = 2026) -> Optional[Dict[str, Any]]:
-    """将 API-Sports 原始 fixture 数据解析为 Fixture 模型字段"""
+    """将 API-Sports 原始 fixture 数据解析为 Fixture 模型字段。
+
+    只返回 Fixture 模型上实际存在的字段，避免 setattr / **kwargs 报错。
+    """
     try:
         fixture_info = raw.get("fixture", {})
         teams = raw.get("teams", {})
         goals = raw.get("goals", {})
-        score = raw.get("score", {})
         league = raw.get("league", {})
         status = fixture_info.get("status", {})
 
-        home = teams.get("home", {})
-        away = teams.get("away", {})
+        home = teams.get("home", {}) or {}
+        away = teams.get("away", {}) or {}
 
         status_short = status.get("short", "NS")
 
         # 判断比赛状态
-        is_live = status_short in LIVE_STATUSES
         is_finished = status_short in FINISHED_STATUSES
-        is_started = is_live or is_finished
 
-        # source 规则
+        # source / source_level 规则
         if is_finished:
             source = "real_result"
+            source_level = "external_real"
         else:
             source = "api-sports"
+            source_level = "external_real"
 
         # 比分
         home_score = goals.get("home")
         away_score = goals.get("away")
 
-        # 半场比分
-        halftime = score.get("halftime", {})
-        halftime_home = halftime.get("home") if halftime else None
-        halftime_away = halftime.get("away") if halftime else None
-
-        # 加时比分
-        extra = score.get("extratime", {})
-        extra_home = extra.get("home") if extra else None
-        extra_away = extra.get("away") if extra else None
-
-        # 点球比分
-        penalty = score.get("penalty", {})
-        penalty_home = penalty.get("home") if penalty else None
-        penalty_away = penalty.get("away") if penalty else None
-
         # 胜者
-        winner = raw.get("teams", {}).get("home", {})
-        winner_team_id = None
-        winner_team_name = None
-        # API 中 winner 字段在 teams.home.winner / teams.away.winner
+        winner = None
         if home.get("winner") is True:
-            winner_team_id = home.get("id")
-            winner_team_name = home.get("name")
+            winner = home.get("name")
         elif away.get("winner") is True:
-            winner_team_id = away.get("id")
-            winner_team_name = away.get("name")
+            winner = away.get("name")
 
         # 比赛日期
         match_date_str = fixture_info.get("date")
@@ -87,40 +99,44 @@ def parse_api_fixture(raw: Dict[str, Any], season: int = 2026) -> Optional[Dict[
             except Exception:
                 match_date = None
 
-        # 场地
-        venue = fixture_info.get("venue", {})
-        venue_name = venue.get("name") if isinstance(venue, dict) else None
-        city_name = venue.get("city") if isinstance(venue, dict) else None
+        # 阶段推断
+        round_name = league.get("round", "")
+        stage = _infer_stage_from_round(round_name)
+
+        # 球队名称
+        home_team = home.get("name", "Unknown") or "Unknown"
+        away_team = away.get("name", "Unknown") or "Unknown"
+
+        # 规范化配对
+        canonical_pair = compute_canonical_pair(home_team, away_team)
+
+        # fixture_id：使用 api_fixture_id 生成带前缀的唯一 ID
+        api_id = fixture_info.get("id")
+        fixture_id = f"af_{api_id}" if api_id else None
 
         return {
-            "api_fixture_id": fixture_info.get("id"),
-            "season": league.get("season", season),
-            "round_name": league.get("round"),
+            "fixture_id": fixture_id,
+            "api_fixture_id": str(api_id) if api_id else None,
+            "home_team": home_team,
+            "away_team": away_team,
+            "home_team_id": str(home["id"]) if home.get("id") else None,
+            "away_team_id": str(away["id"]) if away.get("id") else None,
             "match_date": match_date,
-            "venue": venue_name,
-            "city": city_name,
-            "home_team_id": home.get("id"),
-            "away_team_id": away.get("id"),
-            "home_team_name": home.get("name", "Unknown"),
-            "away_team_name": away.get("name", "Unknown"),
-            "status_short": status_short,
-            "status_long": status.get("long"),
-            "elapsed": status.get("elapsed"),
+            "stage": stage,
+            "status": status_short,
             "home_score": home_score,
             "away_score": away_score,
-            "halftime_home_score": halftime_home,
-            "halftime_away_score": halftime_away,
-            "extra_home_score": extra_home,
-            "extra_away_score": extra_away,
-            "penalty_home_score": penalty_home,
-            "penalty_away_score": penalty_away,
-            "winner_team_id": winner_team_id,
-            "winner_team_name": winner_team_name,
-            "is_live": is_live,
-            "is_started": is_started,
-            "is_finished": is_finished,
+            "winner": winner,
             "source": source,
-            "last_synced_at": datetime.now(timezone.utc),
+            "source_level": source_level,
+            "is_verified": is_finished,
+            "needs_review": False,
+            "confidence_level": "medium" if not is_finished else "high",
+            "evidence_count": 1,
+            "evidence_sources": json.dumps(["api_football"], ensure_ascii=False),
+            "canonical_pair": canonical_pair,
+            "raw_payload": json.dumps(raw, ensure_ascii=False),
+            "updated_at": datetime.now(timezone.utc),
         }
     except Exception as e:
         logger.error(f"[SyncService] parse_api_fixture error: {e}")
@@ -129,24 +145,56 @@ def parse_api_fixture(raw: Dict[str, Any], season: int = 2026) -> Optional[Dict[
 
 def upsert_fixture(db, fixture_data: Dict[str, Any]) -> bool:
     """将单条 fixture 数据 upsert 到 fixtures 表。
-    已存在 api_fixture_id 则更新比分、状态、elapsed、last_synced_at。
-    不存在则插入。
+
+    去重逻辑：
+    1. 先按 fixture_id 查找
+    2. 再按逻辑键（stage + canonical_pair）查找
+    3. 都不存在则插入新记录
+
+    更新时只设置 Fixture 模型上实际存在的字段。
     """
+    fixture_id = fixture_data.get("fixture_id")
     api_id = fixture_data.get("api_fixture_id")
-    if api_id is None:
+    if not fixture_id and not api_id:
         return False
 
-    existing = db.query(Fixture).filter(Fixture.api_fixture_id == api_id).first()
+    # ── 查找已有记录 fixture_id ──
+    existing = None
+    if fixture_id:
+        existing = db.query(Fixture).filter(Fixture.fixture_id == fixture_id).first()
+
+    # ── 按逻辑键查找（stage + canonical_pair）──
+    if not existing and fixture_data.get("stage") and fixture_data.get("canonical_pair"):
+        existing = db.query(Fixture).filter(
+            Fixture.stage == fixture_data["stage"],
+            Fixture.canonical_pair == fixture_data["canonical_pair"],
+        ).first()
+
+    # ── Fixture 模型上实际存在的字段白名单 ──
+    _FIXTURE_FIELDS = {
+        "fixture_id", "api_fixture_id",
+        "home_team", "away_team", "home_team_id", "away_team_id",
+        "match_date", "stage", "status",
+        "home_score", "away_score", "winner",
+        "source", "source_level", "is_verified", "needs_review",
+        "confidence_level", "evidence_count", "evidence_sources",
+        "canonical_pair", "raw_payload", "fetched_at", "updated_at",
+    }
 
     if existing:
-        # 更新已有记录
+        # 更新已有记录（只更新白名单字段）
         for key, value in fixture_data.items():
-            if key != "api_fixture_id" and key != "created_at":
-                setattr(existing, key, value)
+            if key in _FIXTURE_FIELDS and key not in ("fixture_id", "created_at", "fetched_at"):
+                if value is not None:
+                    setattr(existing, key, value)
         existing.updated_at = datetime.now(timezone.utc)
     else:
-        # 插入新记录
-        fixture = Fixture(**fixture_data)
+        # 插入新记录（只传白名单字段）
+        clean_data = {k: v for k, v in fixture_data.items() if k in _FIXTURE_FIELDS}
+        if not clean_data.get("fixture_id"):
+            # 没有 fixture_id 则跳过
+            return False
+        fixture = Fixture(**clean_data)
         db.add(fixture)
 
     return True

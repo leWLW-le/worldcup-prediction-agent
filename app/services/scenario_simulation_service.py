@@ -60,9 +60,16 @@ _SEMI_FINAL_STAGE_ALIASES = {
 
 def get_semifinal_matches(fixtures: list) -> list:
     """
-    从 fixtures 列表中识别两场半决赛。
+    从 fixtures 列表中识别两场半决赛（去重后）。
 
     识别 stage 为 semi_finals / semi_final / semifinal / semifinals / SEMI_FINAL / SEMI_FINALS / 半决赛 的比赛。
+
+    去重逻辑：
+    - 按规范化球队配对（canonical_pair）去重
+    - 同一逻辑比赛有多条记录时，优先保留：
+      1. 有真实外部 API fixture_id（不以 seed_ 开头）
+      2. source_level 更高
+      3. updated_at 更新
 
     返回两场半决赛，每场结构：
     {
@@ -74,18 +81,74 @@ def get_semifinal_matches(fixtures: list) -> list:
         "_obj": Fixture  # 原始 ORM 对象（内部使用）
     }
     """
-    semis = []
+    # 收集所有半决赛记录
+    semis_raw = []
     for f in fixtures:
         stage_val = getattr(f, 'stage', '') or ''
         if stage_val in _SEMI_FINAL_STAGE_ALIASES:
-            semis.append({
-                "match_id": str(getattr(f, 'fixture_id', '')),
-                "home_team": f.home_team,
-                "away_team": f.away_team,
-                "status": f.status,
-                "winner": getattr(f, 'winner', None),
-                "_obj": f,
-            })
+            semis_raw.append(f)
+
+    # 按 canonical_pair 去重
+    source_level_priority = {
+        "external_real": 3,
+        "verified_cache": 2,
+        "manual_verified": 2,
+        "unverified_candidate": 1,
+        "unavailable": 0,
+    }
+
+    def _fixture_rank(f):
+        """排名越高越优先保留"""
+        fid = str(getattr(f, 'fixture_id', ''))
+        has_real_id = not fid.startswith("seed_") if fid else False
+        sl = source_level_priority.get(getattr(f, 'source_level', '') or '', 0)
+        updated = getattr(f, 'updated_at', None) or getattr(f, 'fetched_at', None)
+        return (has_real_id, sl, updated or datetime.min)
+
+    # 尝试使用 canonical_pair 字段去重
+    seen_pairs = {}
+    for f in semis_raw:
+        cp = getattr(f, 'canonical_pair', None)
+        if cp:
+            if cp not in seen_pairs or _fixture_rank(f) > _fixture_rank(seen_pairs[cp]):
+                seen_pairs[cp] = f
+    deduped = list(seen_pairs.values())
+
+    # 如果 canonical_pair 不可用（旧数据库），退回到手动计算
+    if not seen_pairs and semis_raw:
+        manual_pairs = {}
+        for f in semis_raw:
+            home = (getattr(f, 'home_team', '') or '').strip()
+            away = (getattr(f, 'away_team', '') or '').strip()
+            if home and away:
+                pair = " vs ".join(sorted([home, away]))
+                if pair not in manual_pairs or _fixture_rank(f) > _fixture_rank(manual_pairs[pair]):
+                    manual_pairs[pair] = f
+        deduped = list(manual_pairs.values())
+
+    # 构建返回结构
+    semis = []
+    for f in deduped:
+        semis.append({
+            "match_id": str(getattr(f, 'fixture_id', '')),
+            "home_team": f.home_team,
+            "away_team": f.away_team,
+            "status": f.status,
+            "winner": getattr(f, 'winner', None),
+            "_obj": f,
+        })
+
+    # 诊断日志
+    fixture_ids = [s["match_id"] for s in semis]
+    logical_pairs = [
+        " vs ".join(sorted([s["home_team"], s["away_team"]]))
+        for s in semis
+    ]
+    logger.info(
+        f"Semi-final fixture validation: expected=2 actual={len(semis)} "
+        f"fixture_ids={fixture_ids} logical_pairs={logical_pairs}"
+    )
+
     return semis
 
 

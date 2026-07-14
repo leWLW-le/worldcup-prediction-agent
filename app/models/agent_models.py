@@ -4,10 +4,56 @@ Agent 相关数据库模型
 新增表：agent_runs, agent_reasoning_steps, predicted_matches, team_features, fixtures
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Text, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Text, JSON, UniqueConstraint
 from datetime import datetime
 
 from app.db.database import Base
+
+
+def compute_canonical_pair(home_team: str, away_team: str) -> str:
+    """生成规范化的球队配对键（字母序排列），用于逻辑去重。
+
+    规范化规则：
+    1. 首尾去空格
+    2. 连续空格压缩为单个空格
+    3. 首字母大写标准化（Title Case）
+    4. 常见别名统一（如 'USA' -> 'United States'）
+    5. 字母序排列，确保 France vs Spain == Spain vs France
+
+    注意：当前项目只有 season 字段（默认 2026），没有 tournament edition 列。
+    canonical_pair 与 stage 组合构成逻辑唯一键，等效于 season + stage + pair。
+    """
+    # 已知别名映射
+    _ALIASES = {
+        "usa": "United States",
+        "us": "United States",
+        "united states of america": "United States",
+        "uk": "England",
+        "great britain": "England",
+        "england": "England",
+        "czech republic": "Czechia",
+        "czechia": "Czechia",
+        "holland": "Netherlands",
+        "holland": "Netherlands",
+    }
+
+    def _normalize(name: str) -> str:
+        if not name:
+            return ""
+        # 去首尾空格 + 压缩连续空格
+        normalized = " ".join(name.strip().split())
+        # 检查别名（不区分大小写）
+        lower = normalized.lower()
+        if lower in _ALIASES:
+            normalized = _ALIASES[lower]
+        else:
+            # Title Case 标准化
+            normalized = normalized.title() if normalized.isupper() or normalized.islower() else normalized
+        return normalized
+
+    h = _normalize(home_team)
+    a = _normalize(away_team)
+    return " vs ".join(sorted([h, a]))
 
 
 class AgentRun(Base):
@@ -95,6 +141,13 @@ class Fixture(Base):
     match_date = Column(DateTime, index=True)
     stage = Column(String(50))  # group_stage, round_of_32, round_of_16, quarter_finals, semi_finals, final
     status = Column(String(50), index=True)  # NS, LIVE, FT, AET, PEN
+
+    # 逻辑去重键：规范化球队配对（字母序），与 stage 组合构成唯一约束
+    canonical_pair = Column(String(200), index=True)
+
+    __table_args__ = (
+        UniqueConstraint('stage', 'canonical_pair', name='uq_fixture_stage_pair'),
+    )
 
     # 比分
     home_score = Column(Integer)

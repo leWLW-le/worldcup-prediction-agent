@@ -26,6 +26,7 @@ _project_root = Path(__file__).parent.parent.parent
 load_dotenv(_project_root / ".env")
 
 from app.services.fixture_repository import FixtureRepository
+from app.models.agent_models import compute_canonical_pair
 
 logger = logging.getLogger(__name__)
 
@@ -353,6 +354,7 @@ class DataSourceManager:
                 "confidence_level": "medium",
                 "evidence_count": 1,
                 "evidence_sources": ["football_data"],
+                "canonical_pair": compute_canonical_pair(home_team, away_team),
                 "raw_payload": json.dumps(match, ensure_ascii=False)
             }
             
@@ -421,6 +423,7 @@ class DataSourceManager:
                 "confidence_level": "medium",
                 "evidence_count": 1,
                 "evidence_sources": ["api_football"],
+                "canonical_pair": compute_canonical_pair(home_team, away_team),
                 "raw_payload": json.dumps(fx, ensure_ascii=False)
             }
             

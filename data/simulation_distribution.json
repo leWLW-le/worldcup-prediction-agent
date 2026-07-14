@@ -1,5 +1,5 @@
 {
-  "n_simulations": 10000,
+  "n_simulations": 500,
   "surviving_teams": [
     "Argentina",
     "England",
@@ -8,27 +8,27 @@
   ],
   "stage": "semi_finals",
   "champion": {
-    "Argentina": 0.4881,
-    "France": 0.2569,
-    "England": 0.1469,
-    "Spain": 0.1081
+    "Argentina": 0.492,
+    "France": 0.23,
+    "England": 0.158,
+    "Spain": 0.12
   },
   "champion_counts": {
-    "Argentina": 4881,
-    "France": 2569,
-    "England": 1469,
-    "Spain": 1081
+    "Argentina": 246,
+    "England": 79,
+    "France": 115,
+    "Spain": 60
   },
   "semifinalist": {
-    "France": 1.0,
+    "Spain": 1.0,
     "England": 1.0,
-    "Argentina": 1.0,
-    "Spain": 1.0
+    "France": 1.0,
+    "Argentina": 1.0
   },
   "semifinalist_counts": {
-    "France": 10000,
-    "England": 10000,
-    "Argentina": 10000,
-    "Spain": 10000
+    "Spain": 500,
+    "England": 500,
+    "France": 500,
+    "Argentina": 500
   }
 }
