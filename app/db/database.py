@@ -4,6 +4,7 @@
 根据 DATABASE_URL 自动选择后端
 """
 import os
+import threading
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from typing import Generator
@@ -55,14 +56,23 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-def check_db_connection() -> bool:
+def check_db_connection(timeout: float = 5.0) -> bool:
     """
     轻量数据库连通性检查（用于健康检查）
     不写数据、不调外部 API、不加载模型
+    带超时保护，防止连接不可达数据库时阻塞数十秒
     """
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return True
-    except Exception:
-        return False
+    result = {"ok": False}
+
+    def _check():
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            result["ok"] = True
+        except Exception:
+            result["ok"] = False
+
+    t = threading.Thread(target=_check, daemon=True)
+    t.start()
+    t.join(timeout)
+    return result["ok"]
