@@ -34,7 +34,6 @@ def compute_canonical_pair(home_team: str, away_team: str) -> str:
         "czech republic": "Czechia",
         "czechia": "Czechia",
         "holland": "Netherlands",
-        "holland": "Netherlands",
     }
 
     def _normalize(name: str) -> str:
@@ -42,17 +41,22 @@ def compute_canonical_pair(home_team: str, away_team: str) -> str:
             return ""
         # 去首尾空格 + 压缩连续空格
         normalized = " ".join(name.strip().split())
+        if not normalized:
+            return ""
         # 检查别名（不区分大小写）
         lower = normalized.lower()
         if lower in _ALIASES:
             normalized = _ALIASES[lower]
         else:
-            # Title Case 标准化
-            normalized = normalized.title() if normalized.isupper() or normalized.islower() else normalized
+            # 统一 Title Case（覆盖全大写、全小写、混合大小写）
+            normalized = normalized.title()
         return normalized
 
     h = _normalize(home_team)
     a = _normalize(away_team)
+    # 任一球队名为空时返回空字符串，避免生成误导性键（如 " vs France"）
+    if not h or not a:
+        return ""
     return " vs ".join(sorted([h, a]))
 
 
