@@ -35,7 +35,7 @@ _KNOCKOUT_STAGES = [
 _FINISHED_STATUSES = {"FT", "FINISHED", "AET", "PEN"}
 
 # 待进行状态
-_PENDING_STATUSES = {"TIMED", "SCHEDULED", "NS"}
+_PENDING_STATUSES = {"TIMED", "SCHEDULED", "NS", "NOT_STARTED", "PENDING"}
 
 # 半决赛 stage 别名集合
 _SEMI_FINAL_ALIASES = {
@@ -413,22 +413,45 @@ class TournamentStateService:
         from app.models.agent_models import Fixture
 
         # 只取当前阶段的比赛
+        all_stage_fixtures = self.db.query(Fixture).filter(
+            Fixture.stage == stage,
+        ).all()
+
+        total_stage_matches = len(all_stage_fixtures)
+
         fixtures = self.db.query(Fixture).filter(
             Fixture.stage == stage,
             Fixture.status.in_(_PENDING_STATUSES),
         ).all()
 
         matches = []
+        excluded_count = 0
+        excluded_reasons = []
         for f in fixtures:
             # 跳过占位球队（TBD / Winner of / 待定 等）
             if is_placeholder_team(f.home_team) or is_placeholder_team(f.away_team):
+                excluded_count += 1
+                excluded_reasons.append(f"fixture_id={f.fixture_id} reason=placeholder_team")
                 continue
             matches.append({
                 "match_id": str(f.fixture_id),
                 "home_team": f.home_team,
                 "away_team": f.away_team,
                 "stage": f.stage,
+                "status": f.status,
             })
+
+        eligible_matches = len(matches)
+        logger.info(
+            f"Pending match query: stage={stage} "
+            f"total_stage_matches={total_stage_matches} "
+            f"eligible_matches={eligible_matches} "
+            f"excluded_matches={excluded_count} "
+            f"sandbox_enabled={stage not in ('final', 'completed')}"
+        )
+        if excluded_reasons:
+            for reason in excluded_reasons:
+                logger.info(f"  excluded: {reason}")
 
         return matches
 

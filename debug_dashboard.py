@@ -531,27 +531,220 @@ def get_api_base_url() -> str:
     return st.session_state.get("api_base_url", f"{backend_url}/api/v1")
 
 
-def fetch_final_result() -> Optional[Dict[str, Any]]:
-    """从 API 获取 final_agent_result.json（前端唯一数据源）"""
+def _check_api_consistency(data: Dict) -> bool:
+    """校验 API 返回数据的内部一致性：top5[0] 应与 explanation 中的冠军一致。
+
+    当 API 的 top5 排序和 explanation 文本描述的冠军不匹配时，
+    说明 API 数据本身存在矛盾，应视为不可信。
+    """
+    import re as _re
+
+    # 获取 top5 第一名
+    top5 = data.get("top5") or data.get("top_candidates") or []
+    if not top5:
+        return True  # 没有 top5 数据，无法校验，放行
+
+    top_team = ""
+    if isinstance(top5, list) and len(top5) > 0:
+        first = top5[0]
+        if isinstance(first, dict):
+            top_team = first.get("team", "")
+        elif isinstance(first, str):
+            top_team = first
+
+    if not top_team:
+        return True  # 无法提取队名，放行
+
+    # 获取 explanation
+    explanation = data.get("explanation", "")
+    if not explanation:
+        return True  # 没有 explanation，无法校验，放行
+
+    # 检查 explanation 中是否提到 top5[0] 的队名
+    # 支持中英文队名匹配
+    team_lower = top_team.lower()
+    explanation_lower = explanation.lower()
+
+    # 直接匹配
+    if team_lower in explanation_lower:
+        return True
+
+    # 常见别名映射（API 可能用英文名，explanation 用中文名）
+    alias_map = {
+        "spain": ["西班牙"],
+        "france": ["法国"],
+        "argentina": ["阿根廷"],
+        "brazil": ["巴西"],
+        "england": ["英格兰", "英国"],
+        "germany": ["德国"],
+        "portugal": ["葡萄牙"],
+        "netherlands": ["荷兰"],
+        "italy": ["意大利"],
+        "belgium": ["比利时"],
+        "croatia": ["克罗地亚"],
+        "uruguay": ["乌拉圭"],
+        "japan": ["日本"],
+        "south korea": ["韩国", "南韩"],
+        "mexico": ["墨西哥"],
+        "usa": ["美国"],
+        "united states": ["美国"],
+    }
+
+    for alias in alias_map.get(team_lower, []):
+        if alias in explanation:
+            return True
+
+    # 反向：explanation 中提到的冠军是否在 top5 中
+    # 提取 explanation 中的冠军队名（"为什么预测 X 夺冠" 或 "X 夺冠概率"）
+    patterns = [
+        r"为什么预测\s+(\S+)\s+夺冠",
+        r"(\S+)\s+夺冠概率",
+        r"预测\s+(\S+)\s+夺冠",
+    ]
+    for pat in patterns:
+        m = _re.search(pat, explanation)
+        if m:
+            mentioned_team = m.group(1)
+            mentioned_lower = mentioned_team.lower()
+            # 检查是否在 top5 中
+            for entry in top5:
+                entry_name = ""
+                if isinstance(entry, dict):
+                    entry_name = entry.get("team", "")
+                elif isinstance(entry, str):
+                    entry_name = entry
+                if entry_name.lower() == mentioned_lower:
+                    return True
+                # 别名匹配
+                for alias in alias_map.get(mentioned_lower, []):
+                    if alias in entry_name:
+                        return True
+            # explanation 提到的冠军不在 top5 中 → 不一致
+            return False
+
+    return True  # 无法通过模式匹配提取，放行
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_final_result() -> Dict[str, Any]:
+    """获取预测结果（前端唯一数据源）
+
+    返回统一结构：
+    {
+        "data": {...},          # 原始预测数据（champion, top5, explanation 等）
+        "source": "api" | "json_fallback",
+        "is_fallback": bool,
+        "run_id": str | None,
+        "generated_at": str | None,
+        "error": str | None,    # fallback 原因（不暴露堆栈）
+    }
+
+    优先级：API（200 + 核心字段有效）> 本地 JSON fallback
+    核心字段：champion, champion_probability, top5 或 top_candidates
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    # ── 核心字段校验 ──
+    def _has_core_fields(d: Dict) -> bool:
+        if not d or not isinstance(d, dict):
+            return False
+        has_champion = bool(d.get("champion"))
+        has_prob = d.get("champion_probability") is not None
+        has_top5 = bool(d.get("top5"))
+        has_top_candidates = bool(d.get("top_candidates"))
+        return has_champion and has_prob and (has_top5 or has_top_candidates)
+
+    # ── 提取元数据 ──
+    def _extract_meta(d: Dict) -> tuple:
+        run_id = d.get("run_id") or d.get("id") or ""
+        generated_at = d.get("generated_at") or d.get("timestamp") or ""
+        return run_id, generated_at
+
+    # ══════════════════════════════════════════════
+    # 1. 尝试 API
+    # ═════════════════════════════════════════════
     backend_url = get_api_base_url()
     api_url = f"{backend_url}/agent/final-result"
+
     try:
         response = requests.get(api_url, timeout=10)
         response.raise_for_status()
         data = response.json()
-        if data.get("status") in ("no_result", "error"):
-            return None
-        return data
+
+        # API 返回空对象 / 错误状态 → 视为无效
+        if not data or data.get("status") in ("no_result", "error"):
+            _log.info("[FinalResult] API 返回空或错误状态，跳过")
+        elif _has_core_fields(data):
+            # ── 内部一致性校验：top5[0] 应与 explanation 中的冠军一致 ──
+            _consistency_ok = _check_api_consistency(data)
+            if not _consistency_ok:
+                _log.warning(
+                    "[FinalResult] API 数据内部不一致 (top5[0] vs explanation)，跳过 API，使用 JSON fallback"
+                )
+            else:
+                run_id, generated_at = _extract_meta(data)
+                _log.info(
+                    "[FinalResult] source=api run_id=%s generated_at=%s "
+                    "champion=%s probability=%s",
+                    run_id or "—", generated_at or "—",
+                    data.get("champion"), data.get("champion_probability"),
+                )
+                return {
+                    "data": data,
+                    "source": "api",
+                    "is_fallback": False,
+                    "run_id": run_id,
+                    "generated_at": generated_at,
+                    "error": None,
+                }
+        else:
+            missing = []
+            if not data.get("champion"): missing.append("champion")
+            if data.get("champion_probability") is None: missing.append("champion_probability")
+            if not data.get("top5") and not data.get("top_candidates"): missing.append("top5/top_candidates")
+            _log.warning("[FinalResult] API 缺少核心字段: %s", ", ".join(missing))
+
+    except requests.exceptions.Timeout:
+        _log.warning("[FinalResult] API 超时")
+    except requests.exceptions.ConnectionError:
+        _log.warning("[FinalResult] API 连接失败")
     except Exception:
-        # API 失败时尝试直接读取文件
-        if FINAL_RESULT_PATH.exists():
-            try:
-                with open(FINAL_RESULT_PATH, encoding="utf-8") as f:
-                    data = json.load(f)
-                return data
-            except Exception:
-                pass
-        return None
+        _log.warning("[FinalResult] API 请求异常")
+
+    # ══════════════════════════════════════════════
+    # 2. Fallback: 本地 JSON
+    # ══════════════════════════════════════════════
+    if FINAL_RESULT_PATH.exists():
+        try:
+            with open(FINAL_RESULT_PATH, encoding="utf-8") as f:
+                data = json.load(f)
+            if _has_core_fields(data):
+                run_id, generated_at = _extract_meta(data)
+                _log.warning("[FinalResult] API unavailable; using JSON fallback")
+                return {
+                    "data": data,
+                    "source": "json_fallback",
+                    "is_fallback": True,
+                    "run_id": run_id,
+                    "generated_at": generated_at,
+                    "error": "API 不可用，展示本地缓存结果",
+                }
+        except Exception:
+            _log.warning("[FinalResult] 本地 JSON 读取失败")
+
+    # ══════════════════════════════════════════════
+    # 3. 全部失败
+    # ══════════════════════════════════════════════
+    _log.error("[FinalResult] API 和 JSON 均不可用")
+    return {
+        "data": {},
+        "source": "none",
+        "is_fallback": True,
+        "run_id": None,
+        "generated_at": None,
+        "error": "API 和本地缓存均不可用",
+    }
 
 
 def call_agent_api(mode: str = "llm_planner", use_llm: bool = True) -> Optional[Dict[str, Any]]:
@@ -612,22 +805,62 @@ def fetch_stage_info() -> Optional[Dict[str, Any]]:
         return None
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def fetch_scenario_pending_matches() -> Dict[str, Any]:
     """
     获取未结束的淘汰赛比赛列表（阶段感知）。
     返回完整响应：{success, matches, stage, stage_label, sandbox_enabled, sandbox_message}
+
+    三种返回状态：
+    - sandbox_enabled=True, matches=[...]  → 可推演
+    - sandbox_enabled=True, matches=[]     → 暂时无法获取（非结束）
+    - sandbox_enabled=False, reason=...    → 沙盘确实已结束
+    - sandbox_enabled=None                 → API 异常，未知状态
     """
+    import logging as _log2
+    _log2 = _log2.getLogger(__name__)
+
     api_url = f"{get_api_base_url()}/scenario/pending-matches"
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
-        return response.json()
-    except Exception:
-        return {"success": False, "matches": [], "sandbox_enabled": False,
-                "sandbox_message": "无法获取比赛列表。"}
+        data = response.json()
+
+        matches = data.get("matches") or data.get("pending_matches") or []
+        sandbox_enabled = data.get("sandbox_enabled")
+        stage = data.get("stage", "unknown")
+
+        _log2.info(
+            "[PendingMatches] http_status=%s stage=%s sandbox_enabled=%s match_count=%d source=api",
+            response.status_code, stage, sandbox_enabled, len(matches),
+        )
+
+        return {
+            "success": data.get("success", True),
+            "matches": matches,
+            "stage": stage,
+            "stage_label": data.get("stage_label", ""),
+            "sandbox_enabled": sandbox_enabled,
+            "sandbox_message": data.get("sandbox_message", ""),
+            "source": "api",
+            "http_status": response.status_code,
+        }
+    except requests.exceptions.Timeout:
+        _log2.warning("[PendingMatches] fetch failed: error_type=timeout sandbox_status=unknown")
+        return {"success": False, "matches": [], "sandbox_enabled": None,
+                "sandbox_message": "请求超时，请稍后重试。", "source": "error", "error_type": "timeout"}
+    except requests.exceptions.ConnectionError:
+        _log2.warning("[PendingMatches] fetch failed: error_type=connection sandbox_status=unknown")
+        return {"success": False, "matches": [], "sandbox_enabled": None,
+                "sandbox_message": "无法连接后端服务，请稍后重试。", "source": "error", "error_type": "connection"}
+    except Exception as e:
+        _log2.warning("[PendingMatches] fetch failed: error_type=%s sandbox_status=unknown", type(e).__name__)
+        return {"success": False, "matches": [], "sandbox_enabled": None,
+                "sandbox_message": f"请求异常 ({type(e).__name__})，请稍后重试。",
+                "source": "error", "error_type": type(e).__name__}
 
 
-def call_scenario_simulate(match_id: str, forced_winner: str, simulation_count: int = 3000) -> Optional[Dict[str, Any]]:
+def call_scenario_simulate(match_id: str, forced_winner: str, simulation_count: int = 1000) -> Optional[Dict[str, Any]]:
     """调用沙盘推演 API"""
     api_url = f"{get_api_base_url()}/scenario/simulate"
     try:
@@ -771,41 +1004,106 @@ def format_delta(d) -> str:
     return f"{v:.1f}%"
 
 
-def display_champion_card(data: Dict):
-    """冠军卡片 — 使用 official-card 样式"""
-    champion = data.get("champion", "—")
-    prob = data.get("champion_probability", 0)
+def validate_data_consistency(result: Dict) -> List[str]:
+    """校验正式预测数据内部一致性（基于结构化字段）。
 
-    # 保护：如果 top5[0] 与 champion 不一致，以 top5[0] 为准（仅日志）
+    参数 result 为 fetch_final_result() 返回的统一结构。
+    检查项：
+    1. champion 与 top5[0].team 一致
+    2. champion_probability 与 top5[0].probability 一致
+    3. explanation 标题中的球队名与 champion 一致
+    """
+    warnings = []
+    data = result.get("data", {})
+    if not data:
+        return warnings
+
     top5 = data.get("top5", [])
+    champ = data.get("champion", "")
+    champ_prob = data.get("champion_probability", 0)
+    explanation = data.get("explanation", {})
+    expl_content = explanation.get("content", "") if isinstance(explanation, dict) else ""
+
+    # 1. champion 字段应与 top5[0] 一致
     if top5:
         top1_team = top5[0].get("team", "")
+        if champ and top1_team and champ != top1_team:
+            warnings.append(f"champion({champ}) 与 top5[0]({top1_team}) 不一致")
+
+    # 2. champion_probability 应与 top5[0].probability 一致
+    if top5:
         top1_prob = top5[0].get("probability", 0)
-        if top1_team and top1_team != champion:
-            import logging
-            logging.getLogger(__name__).warning(
-                "WARNING: champion mismatch fixed by top5[0]: %s → %s", champion, top1_team
-            )
-            champion = top1_team
-            prob = top1_prob
+        expected = top1_prob if top1_prob <= 1 else top1_prob / 100.0
+        actual = champ_prob if champ_prob <= 1 else champ_prob / 100.0
+        if abs(expected - actual) > 0.001:
+            warnings.append(f"champion_probability({champ_prob}) 与 top5[0].probability({top1_prob}) 不一致")
+
+    # 3. explanation 内容中的球队名应与 champion 一致
+    #    只检查 explanation 对象中是否有显式的 champion 字段
+    if isinstance(explanation, dict):
+        expl_champ = explanation.get("champion", "")
+        if expl_champ and champ and expl_champ != champ:
+            warnings.append(f"AI解读champion({expl_champ}) 与 champion({champ}) 不一致")
+
+    return warnings
+
+
+def render_fallback_banner(result: Dict):
+    """如果使用 JSON fallback，在正式预测模块顶部显示明显提示。
+    API 数据恢复后，提示自动消失（因为 source 会变回 'api'）。
+    """
+    if result.get("is_fallback") and result.get("source") == "json_fallback":
+        error_msg = result.get("error", "")
+        st.markdown(f"""
+<div style="background:linear-gradient(90deg,rgba(255,165,0,.12),rgba(255,165,0,.04));
+    border:1px solid rgba(255,165,0,.35); border-radius:10px; padding:.55rem 1rem;
+    color:#ffa500; font-weight:600; font-size:.85rem; margin-bottom:.6rem; text-align:center;">
+    ⚠️ 当前展示缓存预测结果，最新服务结果暂时不可用。（{error_msg}）
+</div>""", unsafe_allow_html=True)
+
+
+def render_consistency_warning(warnings: List[str]):
+    """渲染一致性校验警告"""
+    if not warnings:
+        return
+    msg = "；".join(warnings)
+    st.markdown(f"""
+<div style="background:linear-gradient(90deg,rgba(255,80,80,.12),rgba(255,80,80,.04));
+    border:1px solid rgba(255,80,80,.35); border-radius:10px; padding:.55rem 1rem;
+    color:#ff6b6b; font-weight:600; font-size:.85rem; margin-bottom:.6rem; text-align:center;">
+    ⚠️ 数据不一致：{msg}。请尝试点击「重新预测」。
+</div>""", unsafe_allow_html=True)
+
+
+def display_champion_card(data: Dict):
+    """冠军卡片 — 使用 official-card 样式
+
+    冠军以 Monte Carlo 模拟 top5[0] 为准（夺冠概率最高），
+    不混用 bracket 单路径冠军或 top_contenders（按实力排序）。
+    """
+    top5 = data.get("top5", [])
+
+    # ── 冠军名 & 概率：统一以 Monte Carlo top5[0] 为准 ──
+    if top5:
+        champion = top5[0].get("team", "—")
+        prob = top5[0].get("probability", 0)
+    else:
+        champion = data.get("champion", "—")
+        prob = data.get("champion_probability", 0)
 
     prob_display = format_probability(prob)
 
-    # 实力标签
-    top_contenders = data.get("top_contenders", [])
-    strength_label = "夺冠热门"
-    if top_contenders:
-        champ_data = next((t for t in top_contenders if t.get("team") == champion), None)
-        if champ_data:
-            strength_idx = champ_data.get("team_strength_index", 0)
-            if strength_idx > 0.75:
-                strength_label = "夺冠热门"
-            elif strength_idx > 0.6:
-                strength_label = "强力竞争者"
-            elif strength_idx > 0.45:
-                strength_label = "有力争夺者"
-            else:
-                strength_label = "潜在黑马"
+    # ── 实力标签：基于实际夺冠概率（与展示给用户的数据一致） ─
+    raw = float(prob) if prob else 0
+    pct = raw * 100 if raw <= 1 else raw
+    if pct > 40:
+        strength_label = "夺冠热门"
+    elif pct > 25:
+        strength_label = "强力竞争者"
+    elif pct > 15:
+        strength_label = "有力争夺者"
+    else:
+        strength_label = "潜在黑马"
 
     st.markdown(f"""
 <div class="section-card">
@@ -1193,10 +1491,11 @@ def display_scenario_sandbox(data: Dict):
 
     # ─ 获取阶段感知的比赛列表 ─
     pending_response = fetch_scenario_pending_matches()
-    sandbox_enabled = pending_response.get("sandbox_enabled", False)
+    sandbox_enabled = pending_response.get("sandbox_enabled")  # None=未知, True=开启, False=结束
     sandbox_message = pending_response.get("sandbox_message", "")
     pending_matches = pending_response.get("matches", [])
     stage_label = pending_response.get("stage_label", "")
+    source = pending_response.get("source", "unknown")
 
     # 仅从 session_state 读取（按钮点击后写入），不自动加载 API 缓存
     scenario = st.session_state.get("scenario_result")
@@ -1204,13 +1503,27 @@ def display_scenario_sandbox(data: Dict):
     # ── 检查过期提示 ──
     stale_message = st.session_state.pop("scenario_stale_message", None)
 
-    # ── 标题 HTML（根据阶段动态） ─
-    if sandbox_enabled:
+    # ─ 标题 HTML（根据阶段动态）──
+    # 三种状态：
+    #   A: sandbox_enabled=True + matches>0  → 可推演
+    #   B: sandbox_enabled=None/True + matches=0 或 API 异常 → 暂时无法获取
+    #   C: sandbox_enabled=False + 明确结束原因 → 已结束
+    is_api_error = (source == "error")
+    is_sandbox_ended = (sandbox_enabled is False)
+    has_matches = len(pending_matches) > 0
+    
+    if has_matches and sandbox_enabled is True:
+        # 状态 A：可推演
         subtitle = '选择一场未开始的半决赛，并假设其中一队晋级。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
         badge_text = "假设推演"
-    else:
+    elif is_sandbox_ended:
+        # 状态 C：沙盘确实已结束
         subtitle = sandbox_message or "沙盘推演已结束。"
         badge_text = "已结束"
+    else:
+        # 状态 B：暂时无法获取（API 异常 / sandbox 开启但无比赛）
+        subtitle = sandbox_message or "暂时无法获取可推演比赛列表，请稍后重试。"
+        badge_text = "暂时无法获取"
 
     title_html = f"""
 <div class="section-title">🎮 冠军路径沙盘</div>
@@ -1295,8 +1608,8 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
     st.markdown(sandbox_css, unsafe_allow_html=True)
 
-    # ── 沙盘已关闭（决赛/已结束）──
-    if not sandbox_enabled:
+    # ── 状态 C：沙盘确实已结束（sandbox_enabled=False）──
+    if is_sandbox_ended:
         with st.container():
             st.markdown('<div id="sandbox-container-marker" style="display:none;"></div>', unsafe_allow_html=True)
             st.markdown(title_html, unsafe_allow_html=True)
@@ -1310,15 +1623,21 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 </div>""", unsafe_allow_html=True)
         return
 
-    # ── 没有可推演的比赛（sandbox 开启但比赛列表为空） ──
-    if not pending_matches:
+    # ── 状态 B：暂时无法获取（API 异常 / sandbox 开启但无比赛）──
+    if not has_matches or is_api_error:
         with st.container():
             st.markdown('<div id="sandbox-container-marker" style="display:none;"></div>', unsafe_allow_html=True)
             st.markdown(title_html, unsafe_allow_html=True)
-            st.markdown("""
+            st.markdown(f"""
 <div style="text-align:center;color:#5a7090;padding:1rem 0;font-size:1rem;">
-    暂时无法获取可推演比赛列表，请稍后重试。
+    {sandbox_message or "暂时无法获取可推演比赛列表，请稍后重试。"}
 </div>""", unsafe_allow_html=True)
+            # 重试按钮：清除缓存后重新请求
+            if st.button("重试", key="scenario_retry_btn", use_container_width=False):
+                fetch_scenario_pending_matches.clear()
+                st.session_state.pop("scenario_result", None)
+                st.session_state.pop("scenario_result_visible", None)
+                st.rerun()
             st.markdown("""
 <div class="warning-note">
     ⚠️ 该模块不会修改真实赛果，也不会影响正式冠军预测。
@@ -1389,7 +1708,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             if not match_id or not forced_winner:
                 st.warning("请选择比赛和假设晋级队。")
             else:
-                with st.spinner("正在进行沙盘推演（3000 次模拟）..."):
+                with st.spinner("正在进行沙盘推演（1000 次模拟）..."):
                     result = call_scenario_simulate(match_id, forced_winner)
                 if result and result.get("success"):
                     st.session_state["scenario_result"] = result
@@ -1549,10 +1868,42 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
 # ==================== 主函数 ====================
 def main():
-    # ── 始终从 API 获取最新数据（不依赖旧 session_state 缓存） ──
-    data = fetch_final_result()
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    # ══════════════════════════════════════════════════════
+    # 单次调用 fetch_final_result()，所有组件共享同一结果
+    # ══════════════════════════════════════════════════════
+    result = fetch_final_result()
+    data = result.get("data", {}) if result else {}
+
+    # 保存到 session_state（正式预测专用）
+    if result and result.get("data"):
+        st.session_state["final_result"] = result
+
+    # ── 缓存键：run_id + generated_at ──
+    run_id = result.get("run_id", "") if result else ""
+    generated_at = result.get("generated_at", "") if result else ""
+    if run_id and generated_at:
+        cache_key = f"{run_id}:{generated_at}"
+    elif generated_at:
+        champ = data.get("champion", "")
+        prob = data.get("champion_probability", "")
+        cache_key = f"{generated_at}:{champ}:{prob}"
+    else:
+        cache_key = ""
+    if cache_key:
+        st.session_state["final_result_cache_key"] = cache_key
+
+    # ── 诊断日志（每次渲染一条） ──
     if data:
-        st.session_state["final_result"] = data
+        _log.info(
+            "Final result render: source=%s run_id=%s generated_at=%s "
+            "champion=%s probability=%s",
+            result.get("source", "unknown") if result else "unknown",
+            run_id or "—", generated_at or "—",
+            data.get("champion", "—"), data.get("champion_probability", "—"),
+        )
 
     # ── 无结果：启动页 ──
     if not data:
@@ -1604,25 +1955,19 @@ def main():
                 with st.spinner("正在运行预测，请稍候..."):
                     res = call_agent_api(mode="llm_planner_safe", use_llm=True)
                 if res:
-                    # 清除旧缓存，重新加载
-                    st.session_state.pop("final_result", None)
-                    final = fetch_final_result()
-                    if final:
-                        st.session_state["final_result"] = final
+                    _clear_prediction_state()
                     st.success("预测完成")
                     st.rerun()
                 else:
                     st.error("预测请求失败，请检查后端服务。")
 
-            if st.button("📡 刷新比赛数据", use_container_width=True):
+            if st.button(" 刷新比赛数据", use_container_width=True):
                 with st.spinner("正在全量刷新（赛程→存活球队→模拟→结果）..."):
                     res = refresh_real_data()
                 if res and res.get("success"):
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
-                    st.session_state.pop("scenario_result", None)
-                    st.session_state["scenario_result_visible"] = False
-                    st.session_state["scenario_last_run_key"] = None
+                    _clear_prediction_state()
                     st.success(f"全量刷新完成！阶段: {stage}，存活球队: {len(surviving)} 支")
                     st.rerun()
                 else:
@@ -1653,14 +1998,7 @@ def main():
                 with st.spinner("正在运行预测，请稍候..."):
                     res = call_agent_api(mode="llm_planner_safe", use_llm=True)
                 if res:
-                    st.session_state.pop("final_result", None)
-                    st.session_state.pop("scenario_result", None)
-                    st.session_state["scenario_result_visible"] = False
-                    st.session_state["scenario_last_run_key"] = None
-                    st.cache_data.clear()
-                    final = fetch_final_result()
-                    if final:
-                        st.session_state["final_result"] = final
+                    clear_official_prediction_state()  # 仅清除正式预测，保留沙盘
                     st.success("预测完成")
                     st.rerun()
                 else:
@@ -1672,9 +2010,7 @@ def main():
                 if res and res.get("success"):
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
-                    st.session_state.pop("scenario_result", None)
-                    st.session_state["scenario_result_visible"] = False
-                    st.session_state["scenario_last_run_key"] = None
+                    _clear_prediction_state()
                     st.success(f"全量刷新完成！阶段: {stage}，存活球队: {len(surviving)} 支")
                     st.rerun()
                 else:
@@ -1682,14 +2018,19 @@ def main():
         with c3:
             if st.button("🧹 清除缓存", use_container_width=True):
                 st.session_state.clear()
-                st.cache_data.clear()
+                fetch_final_result.clear()
                 st.cache_resource.clear()
                 st.rerun()
 
     # 3. 数据状态提示
     display_data_status_bar(data)
 
-    # 4. 正式冠军预测
+    # 3.5 Fallback 缓存提示 + 数据一致性校验
+    render_fallback_banner(result)
+    warnings = validate_data_consistency(result)
+    render_consistency_warning(warnings)
+
+    # 4. 正式冠军预测（所有组件从同一 data 对象取值）
     display_champion_card(data)
 
     # 5. AI 冠军解读
@@ -1698,10 +2039,10 @@ def main():
     # 6. 淘汰赛晋级路线
     display_knockout_roadmap(data)
 
-    # 7. 队伍夺冠概率（统一标题 + 动态副标题）
+    # 7. 队伍夺冠概率
     display_top5(data)
 
-    # 8. 冠军路径沙盘
+    # 8. 冠军路径沙盘（独立数据源，不干扰正式预测）
     display_scenario_sandbox(data)
 
     # 9. AI 分析过程（默认折叠）
@@ -1718,6 +2059,42 @@ def main():
     <div style="color:#5a7090;font-size:.78rem;margin-top:.4rem;">2026 FIFA World Cup · AI Prediction System</div>
 </div>""", unsafe_allow_html=True)
 
+
+
+def clear_official_prediction_state():
+    """仅清除正式预测状态，不影响沙盘。
+
+    用于「重新预测」按钮成功后调用。
+    不得清除沙盘比赛列表或沙盘状态。
+    """
+    st.session_state.pop("final_result", None)
+    st.session_state.pop("final_result_cache_key", None)
+    st.session_state.pop("prediction_error", None)
+    fetch_final_result.clear()
+
+
+def clear_scenario_state():
+    """仅清除沙盘状态，不影响正式预测。
+
+    用于沙盘推演失败或过期时调用。
+    清除 pending-matches 缓存以便重新请求。
+    """
+    st.session_state.pop("scenario_result", None)
+    st.session_state.pop("scenario_running", None)
+    st.session_state.pop("scenario_job_id", None)
+    st.session_state["scenario_result_visible"] = False
+    st.session_state["scenario_last_run_key"] = None
+    fetch_scenario_pending_matches.clear()
+
+
+def _clear_prediction_state():
+    """清除正式预测 + 沙盘相关状态，精确清理缓存。
+
+    用于「刷新数据」按钮成功后调用（全量刷新需要清除所有状态）。
+    不清除全站缓存，仅清除相关缓存。
+    """
+    clear_official_prediction_state()
+    clear_scenario_state()
 
 
 if __name__ == "__main__":

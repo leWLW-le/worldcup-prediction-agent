@@ -16,7 +16,7 @@ router = APIRouter(prefix="/scenario", tags=["scenario"])
 class ScenarioSimulateRequest(BaseModel):
     match_id: str
     forced_winner: str
-    simulation_count: int = 3000
+    simulation_count: int = 1000
 
 
 @router.get("/stage-info")
@@ -77,21 +77,33 @@ def get_pending_matches():
     如果沙盘已关闭（决赛/已结束），返回空列表和原因。
     同时返回 stage_info 供前端使用。
     """
+    import logging
+    _log = logging.getLogger(__name__)
+
     from app.db.database import SessionLocal
     from app.services.tournament_state_service import get_current_tournament_stage
 
     db = SessionLocal()
     try:
         stage_info = get_current_tournament_stage(db)
-        return {
+        matches = stage_info.get("pending_scenario_matches", [])
+        response = {
             "success": True,
-            "matches": stage_info.get("pending_scenario_matches", []),
+            "matches": matches,
             "stage": stage_info["stage"],
             "stage_label": stage_info["stage_label"],
             "sandbox_enabled": stage_info["sandbox_enabled"],
             "sandbox_message": stage_info.get("sandbox_message", ""),
         }
+        _log.info(
+            f"Pending matches response: stage={stage_info['stage']} "
+            f"sandbox_enabled={stage_info['sandbox_enabled']} "
+            f"match_count={len(matches)} "
+            f"fixture_ids={[m.get('match_id') for m in matches]}"
+        )
+        return response
     except Exception as e:
+        _log.error(f"Pending matches error: {e}")
         return {"success": False, "error": str(e), "matches": [],
                 "sandbox_enabled": False, "sandbox_message": str(e)}
     finally:
