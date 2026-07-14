@@ -18,7 +18,7 @@ import json
 import sys
 import hashlib
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -27,8 +27,9 @@ JSON_PATH = DATA_DIR / "final_agent_result.json"
 
 def fix_json(dry_run: bool = False):
     if not JSON_PATH.exists():
-        print(f"[ERROR] 文件不存在: {JSON_PATH}")
-        return False
+        print(f"[INFO] 文件不存在，跳过修复: {JSON_PATH}")
+        print("[INFO] 首次运行时会由 agent 自动生成，无需干预")
+        return True  # 文件不存在不是错误，不阻止启动
 
     with open(JSON_PATH, encoding="utf-8") as f:
         data = json.load(f)
@@ -63,7 +64,7 @@ def fix_json(dry_run: bool = False):
     # ── Step 2: 生成 run_id ──
     run_id = data.get("run_id", "")
     if not run_id:
-        run_ts = datetime.utcnow().isoformat()
+        run_ts = datetime.now(timezone.utc).isoformat()
         run_id_raw = f"{champ}:{champ_prob_01}:{run_ts}"
         run_id = "run_" + hashlib.md5(run_id_raw.encode()).hexdigest()[:12]
         print(f"[Step 2] 生成 run_id: {run_id}")
@@ -78,7 +79,7 @@ def fix_json(dry_run: bool = False):
     data["top_candidates"] = deepcopy(top5)
     data["run_id"] = run_id
     data["status"] = "completed"
-    data["generated_at"] = datetime.utcnow().isoformat()
+    data["generated_at"] = datetime.now(timezone.utc).isoformat()
 
     print(f"[Step 3] top_candidates[0] = {data['top_candidates'][0]}")
 
