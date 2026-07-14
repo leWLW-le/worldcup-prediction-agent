@@ -134,13 +134,24 @@ def simulate_tournament(n_simulations: int = 10000, surviving_teams: list = None
         teams = db.query(Team).all()
         team_by_name = {t.name: t for t in teams}
 
-        # 获取 surviving_teams 对应的 Team 对象
+        # 获取 surviving_teams 对应的 Team 对象（DB 为空时自动创建）
         surviving_team_objects = []
         for name in surviving_teams:
             if name in team_by_name:
                 surviving_team_objects.append(team_by_name[name])
             else:
-                logger.warning(f"Team '{name}' not found in database, skipping")
+                logger.warning(f"Team '{name}' not found in database, auto-creating with default ELO")
+                new_team = Team(name=name, current_elo=1500.0, confederation=None)
+                try:
+                    db.add(new_team)
+                    db.commit()
+                    db.refresh(new_team)
+                    surviving_team_objects.append(new_team)
+                    team_by_name[name] = new_team
+                    logger.info(f"Created team: {name} (ID: {new_team.id})")
+                except Exception as e:
+                    db.rollback()
+                    logger.error(f"Failed to create team {name}: {e}")
 
         if len(surviving_team_objects) < 2:
             logger.error(f"Need at least 2 surviving teams, got {len(surviving_team_objects)}")
