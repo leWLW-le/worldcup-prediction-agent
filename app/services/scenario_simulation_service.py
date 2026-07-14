@@ -764,7 +764,7 @@ def run_scenario_simulation(
 
         forced_loser = away_team_name if forced_winner == home_team_name else home_team_name
         match_label = f"{home_team_name} vs {away_team_name}"
-        stage = fixture.stage
+        # stage 已在上面 dict/ORM 兼容处理中设置，不再重复赋值
 
         # ── 半决赛阶段专用路径（任务 7-12） ──
         if stage == "semi_finals":
