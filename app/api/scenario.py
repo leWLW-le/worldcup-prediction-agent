@@ -16,7 +16,7 @@ router = APIRouter(prefix="/scenario", tags=["scenario"])
 class ScenarioSimulateRequest(BaseModel):
     match_id: str
     forced_winner: str
-    simulation_count: int = 10000
+    simulation_count: int = 3000
 
 
 @router.get("/stage-info")

@@ -8,27 +8,27 @@
   ],
   "stage": "semi_finals",
   "champion": {
-    "Argentina": 0.4774,
-    "France": 0.2598,
-    "England": 0.1521,
-    "Spain": 0.1107
+    "Argentina": 0.4881,
+    "France": 0.2569,
+    "England": 0.1469,
+    "Spain": 0.1081
   },
   "champion_counts": {
-    "England": 1521,
-    "France": 2598,
-    "Argentina": 4774,
-    "Spain": 1107
+    "Argentina": 4881,
+    "France": 2569,
+    "England": 1469,
+    "Spain": 1081
   },
   "semifinalist": {
-    "Spain": 1.0,
     "France": 1.0,
     "England": 1.0,
-    "Argentina": 1.0
+    "Argentina": 1.0,
+    "Spain": 1.0
   },
   "semifinalist_counts": {
-    "Spain": 10000,
     "France": 10000,
     "England": 10000,
-    "Argentina": 10000
+    "Argentina": 10000,
+    "Spain": 10000
   }
 }

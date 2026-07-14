@@ -620,7 +620,7 @@ def fetch_scenario_pending_matches() -> Dict[str, Any]:
     """
     api_url = f"{get_api_base_url()}/scenario/pending-matches"
     try:
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         return response.json()
     except Exception:
@@ -628,7 +628,7 @@ def fetch_scenario_pending_matches() -> Dict[str, Any]:
                 "sandbox_message": "无法获取比赛列表。"}
 
 
-def call_scenario_simulate(match_id: str, forced_winner: str, simulation_count: int = 10000) -> Optional[Dict[str, Any]]:
+def call_scenario_simulate(match_id: str, forced_winner: str, simulation_count: int = 3000) -> Optional[Dict[str, Any]]:
     """调用沙盘推演 API"""
     api_url = f"{get_api_base_url()}/scenario/simulate"
     try:
@@ -654,7 +654,7 @@ def fetch_scenario_latest() -> Optional[Dict[str, Any]]:
     """
     api_url = f"{get_api_base_url()}/scenario/latest"
     try:
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
         if data.get("success"):
@@ -1390,7 +1390,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             if not match_id or not forced_winner:
                 st.warning("请选择比赛和假设晋级队。")
             else:
-                with st.spinner("正在进行沙盘推演（10000 次模拟）..."):
+                with st.spinner("正在进行沙盘推演（3000 次模拟）..."):
                     result = call_scenario_simulate(match_id, forced_winner)
                 if result and result.get("success"):
                     st.session_state["scenario_result"] = result

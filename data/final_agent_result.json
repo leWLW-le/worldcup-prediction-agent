@@ -1,23 +1,23 @@
 {
   "champion": "Argentina",
   "predicted_champion": "Argentina",
-  "champion_probability": 0.4774,
+  "champion_probability": 0.4881,
   "top5": [
     {
       "team": "Argentina",
-      "probability": 0.4774
+      "probability": 0.4881
     },
     {
       "team": "France",
-      "probability": 0.2598
+      "probability": 0.2569
     },
     {
       "team": "England",
-      "probability": 0.1521
+      "probability": 0.1469
     },
     {
       "team": "Spain",
-      "probability": 0.1107
+      "probability": 0.1081
     }
   ],
   "top_candidates": [
@@ -742,5 +742,5 @@
   "simulation_count": 10000,
   "data_source": "比赛数据已更新。",
   "historical_samples": 6000,
-  "generated_at": "2026-07-13T15:03:57.357673"
+  "generated_at": "2026-07-14T07:11:21.107795"
 }

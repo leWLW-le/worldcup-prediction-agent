@@ -224,7 +224,7 @@ def _simulate_semi_finals_scenario(
     forced_loser: str,
     match_label: str,
     stage: str,
-    simulation_count: int = 10000,
+    simulation_count: int = 3000,
 ) -> dict:
     """
     半决赛阶段专用沙盘模拟（任务 7-12）。
@@ -676,7 +676,7 @@ def get_pending_knockout_matches(db) -> List[Dict]:
 def run_scenario_simulation(
     match_id: str,
     forced_winner: str,
-    simulation_count: int = 10000,
+    simulation_count: int = 3000,
 ) -> dict:
     """
     运行沙盘模拟。
@@ -684,7 +684,7 @@ def run_scenario_simulation(
     Args:
         match_id: 比赛 fixture_id（如 "fd_537387" 或 "537387"）
         forced_winner: 假设的晋级球队名
-        simulation_count: 模拟次数
+        simulation_count: 模拟次数（默认 3000，适配 Render 免费实例）
 
     Returns:
         沙盘结果 dict，包含新结构：
