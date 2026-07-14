@@ -154,8 +154,12 @@ def _update_final_result(
     用最新模拟结果更新 final_agent_result.json。
 
     保留已有的 bracket_payload、data_status、model_status 等不变，
-    只更新冠军概率、top5、surviving_teams、stage 等字段。
+    同步更新 champion、champion_probability、top5、top_candidates、explanation、run_id。
+    保存前执行 _validate_prediction_snapshot 一致性校验。
     """
+    from copy import deepcopy
+    import hashlib
+
     out_path = DATA_DIR / "final_agent_result.json"
 
     # 加载已有结果（如果存在）
@@ -172,48 +176,154 @@ def _update_final_result(
     top_champ = sim_result.get("top_champion", "")
     top_prob = sim_result.get("top_probability", 0)
 
-    # 更新字段
+    # ══════════════════════════════════════════════════════
+    # Step 1: 强制 champion / champion_probability 来自 top5[0]
+    # ══════════════════════════════════════════════════════
+    if top5:
+        top_champ = top5[0].get("team", top_champ)
+        top1_prob = top5[0].get("probability", 0)
+        champ_prob_01 = top1_prob if top1_prob <= 1 else top1_prob / 100.0
+        champ_prob_01 = round(champ_prob_01, 4)
+    else:
+        champ_prob_01 = round(top_prob, 4) if top_prob <= 1 else round(top_prob / 100, 4)
+
+    # ══════════════════════════════════════════════════════
+    # Step 2: 生成 run_id
+    # ══════════════════════════════════════════════════════
+    run_ts = datetime.utcnow().isoformat()
+    run_id_raw = f"{top_champ}:{champ_prob_01}:{run_ts}"
+    run_id = "run_" + hashlib.md5(run_id_raw.encode()).hexdigest()[:12]
+
+    # ══════════════════════════════════════════════════════
+    # Step 3: 同步更新所有预测字段（top_candidates = deepcopy(top5)）
+    # ══════════════════════════════════════════════════════
     existing["champion"] = top_champ
     existing["predicted_champion"] = top_champ
-    existing["champion_probability"] = round(top_prob, 4) if top_prob <= 1 else round(top_prob / 100, 4)
+    existing["champion_probability"] = champ_prob_01
     existing["top5"] = top5
+    existing["top_candidates"] = deepcopy(top5)
     existing["surviving_teams"] = surviving_teams
     existing["stage"] = stage
     existing["simulation_count"] = sim_result.get("n_simulations", 10000)
-    existing["generated_at"] = datetime.utcnow().isoformat()
+    existing["generated_at"] = run_ts
+    existing["run_id"] = run_id
+    existing["status"] = "completed"
 
-    # 更新 explanation（如果 champion_explanation_service 可用）
+    # ══════════════════════════════════════════════════════
+    # Step 4: 重新生成 explanation（使用最终 champion / probability / run_id）
+    # ══════════════════════════════════════════════════════
     try:
-        _regenerate_explanation(existing, surviving_teams, stage)
+        _regenerate_explanation(existing, surviving_teams, stage,
+                                champion=top_champ,
+                                champion_probability=champ_prob_01,
+                                run_id=run_id)
     except Exception as e:
         logger.warning("[FullRefresh] 重新生成解释失败: %s", e)
 
+    # ══════════════════════════════════════════════════════
+    # Step 5: 强制覆盖 explanation 绑定字段（双保险）
+    # ══════════════════════════════════════════════════════
+    explanation_data = existing.get("explanation", {})
+    if isinstance(explanation_data, dict):
+        explanation_data["champion"] = top_champ
+        explanation_data["champion_probability"] = champ_prob_01
+        explanation_data["probability"] = round(champ_prob_01 * 100, 2)
+        explanation_data["run_id"] = run_id
+
+    # ══════════════════════════════════════════════════════
+    # Step 6: 一致性校验（保存前）
+    # ══════════════════════════════════════════════════════
+    try:
+        from app.agents.worldcup_agent import _validate_prediction_snapshot
+        _validate_prediction_snapshot(existing)
+        logger.info("[FullRefresh] _validate_prediction_snapshot 通过")
+    except AssertionError as e:
+        logger.error("[FullRefresh] 一致性校验失败，拒绝保存: %s", e)
+        raise RuntimeError(f"预测数据一致性校验失败: {e}")
+
+    # ══════════════════════════════════════════════════════
+    # Step 7: 保存
+    # ══════════════════════════════════════════════════════
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(existing, f, ensure_ascii=False, indent=2)
-    logger.info("[FullRefresh] final_agent_result.json 已写入: %s", out_path.resolve())
+    logger.info("[FullRefresh] final_agent_result.json 已写入: %s (champion=%s, prob=%.4f, run_id=%s)",
+                out_path.resolve(), top_champ, champ_prob_01, run_id)
 
 
-def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str):
-    """尝试用 ChampionExplanationService 重新生成冠军解释"""
+def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,
+                            champion: str = "", champion_probability: float = 0,
+                            run_id: str = ""):
+    """重新生成冠军解释，确保与最终 snapshot 一致。
+
+    使用 _generate_champion_explanation 的简化逻辑：
+    从 simulation_distribution.json 读取 stage 信息，
+    但 champion / probability / run_id 必须由调用方传入。
+    """
+    if not champion:
+        logger.warning("[FullRefresh] _regenerate_explanation: champion 为空，跳过")
+        return
+
+    prob_pct = round(champion_probability * 100, 2)
+
+    # 尝试使用 ChampionExplanationService 生成内容
+    content = ""
+    source = "fallback"
     try:
         from app.services.champion_explanation_service import ChampionExplanationService
 
-        # 构建 simulation_data 格式
         sim_dist_path = DATA_DIR / "simulation_distribution.json"
-        if not sim_dist_path.exists():
-            return
+        if sim_dist_path.exists():
+            with open(sim_dist_path, encoding="utf-8") as f:
+                sim_data = json.load(f)
 
-        with open(sim_dist_path, encoding="utf-8") as f:
-            sim_data = json.load(f)
-
-        service = ChampionExplanationService()
-        explanation = service.generate(
-            simulation_data=sim_data,
-            surviving_teams=surviving_teams,
-            stage=stage,
-        )
-        if explanation:
-            result["explanation"] = explanation
-            logger.info("[FullRefresh] 冠军解释已重新生成")
+            service = ChampionExplanationService(use_llm=False)
+            explanation = service.generate(
+                champion=champion,
+                champion_probability=champion_probability,
+                top_contenders=[],
+                team_features={},
+                knockout_predictions=[],
+                simulation_data=sim_data,
+                surviving_teams=surviving_teams,
+                stage=stage,
+            )
+            if explanation and explanation.get("content"):
+                content = explanation["content"]
+                source = explanation.get("source", "fallback")
     except Exception as e:
         logger.warning("[FullRefresh] ChampionExplanationService 不可用: %s", e)
+
+    # Fallback 内容
+    if not content:
+        stage_desc = ""
+        if stage == "semi_finals" and surviving_teams:
+            teams_text = "、".join(surviving_teams)
+            stage_desc = f"当前赛事已进入四强阶段，系统只在{teams_text}四支仍有夺冠可能的球队中进行模拟分析。\n\n"
+        elif stage == "final" and surviving_teams:
+            teams_text = "、".join(surviving_teams)
+            stage_desc = f"当前赛事已进入决赛阶段，{teams_text}两支球队争夺大力神杯。\n\n"
+
+        content = (
+            f"## 为什么预测 {champion} 夺冠？\n\n"
+            f"{stage_desc}"
+            f"根据已结束比赛结果和后续对阵形势，{champion} 展现出较强的夺冠实力，"
+            f"系统给出 {prob_pct}% 的夺冠概率。"
+            f"球队在攻防两端表现均衡，是当前最有可能捧起大力神杯的队伍。\n"
+            f"\n### 核心优势\n- 综合实力均衡，各位置无明显短板。\n"
+            f"\n### 关键因素\n- {champion}在综合评估中表现突出，是当前最具竞争力的球队。\n"
+            f"\n### AI综合判断\n\n"
+            f"综合各方面分析，{champion} 以 {prob_pct}% 的夺冠概率领跑群雄。"
+            f"球队整体实力突出，晋级形势有利，是最有可能夺冠的球队。\n"
+        )
+
+    result["explanation"] = {
+        "title": f"为什么预测 {champion} 夺冠？",
+        "content": content,
+        "key_reasons": [],
+        "source": source,
+        "probability": prob_pct,
+        "champion": champion,
+        "champion_probability": champion_probability,
+        "run_id": run_id,
+    }
+    logger.info("[FullRefresh] 冠军解释已重新生成: champion=%s, prob=%.2f%%", champion, prob_pct)
