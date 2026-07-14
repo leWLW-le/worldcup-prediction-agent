@@ -673,7 +673,7 @@ def fetch_final_result() -> Dict[str, Any]:
         data = response.json()
 
         # API 返回空对象 / 错误状态 → 视为无效
-        if not data or data.get("status") in ("no_result", "error"):
+        if not data or data.get("status") in ("no_result", "error", "validation_failed"):
             _log.info("[FinalResult] API 返回空或错误状态，跳过")
         elif _has_core_fields(data):
             # ── 内部一致性校验：top5[0] 应与 explanation 中的冠军一致 ──

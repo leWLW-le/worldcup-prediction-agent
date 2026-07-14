@@ -221,6 +221,7 @@ def final_result():
     """
     获取 data/final_agent_result.json — 前端展示的唯一数据源。
     如果文件不存在，返回 404 提示。
+    返回前执行一致性校验，校验失败则拒绝返回。
     """
     from pathlib import Path
     result_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"
@@ -233,7 +234,21 @@ def final_result():
         }
     try:
         with open(result_path, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+
+        # ── 返回前一致性校验 ──
+        try:
+            from app.agents.worldcup_agent import _validate_prediction_snapshot
+            _validate_prediction_snapshot(data)
+        except AssertionError as e:
+            logger.error("[API] final-result 校验失败: %s", e)
+            return {
+                "status": "validation_failed",
+                "message": f"预测数据一致性校验失败: {str(e)}",
+                "detail": str(e),
+            }
+
+        return data
     except Exception as e:
         logger.error("Failed to read final_agent_result.json: %s", e)
         return {"status": "error", "message": str(e)}

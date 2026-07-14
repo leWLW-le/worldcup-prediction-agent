@@ -1,11 +1,11 @@
 """
-回归测试：正式冠军卡片与 AI 冠军解读概率一致性
+回归测试：正式冠军预测 snapshot 一致性（v2）
 
 测试 4 项场景：
-1. 同一 run 内，champion / probability / top5 / explanation 全部一致
-2. explanation 属于旧 run → 一致性校验失败，不展示旧解释
-3. 连续 10 次渲染 → run_id 不变，概率始终一致
-4. 重新预测后 → 所有字段切换到新 run
+1. 最终 top5: England 0.2525 → 所有字段一致（champion, top_candidates, explanation）
+2. 早期 Argentina/0.492 → 最终 England/0.2525 → explanation 必须使用 England
+3. 矛盾 snapshot → _validate_prediction_snapshot 校验失败
+4. 连续 10 次 → run_id 不变，所有字段一致
 """
 
 import sys
@@ -13,9 +13,10 @@ import types
 import json
 import os
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from copy import deepcopy
 
-# ── Mock streamlit（必须在 import debug_dashboard 之前） ──
+# ── Mock streamlit ──
 st = types.ModuleType("streamlit")
 st.set_page_config = lambda **kw: None
 st.markdown = lambda *a, **kw: None
@@ -53,48 +54,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # ── 导入被测模块 ──
 import debug_dashboard as dd
-
-
-# ══════════════════════════════════════════════════
-# 辅助函数
-# ══════════════════════════════════════════════════
-
-def _make_mock_fetch(resp):
-    """创建带 .clear() 的 mock fetch 函数"""
-    def mock_fetch():
-        return resp
-    mock_fetch.clear = lambda: None
-    return mock_fetch
-
-
-def _make_result(champion, champ_prob, top5, explanation, run_id="run_abc123",
-                 generated_at="2026-07-14T10:00:00"):
-    """构造 fetch_final_result 返回值"""
-    data = {
-        "run_id": run_id,
-        "champion": champion,
-        "predicted_champion": champion,
-        "champion_probability": champ_prob,
-        "top5": top5,
-        "top_candidates": top5,
-        "explanation": explanation,
-        "generated_at": generated_at,
-        "stage": "semi_finals",
-        "stage_info": {"stage": "semi_finals", "stage_label": "四强"},
-        "bracket_payload": {},
-        "data_status": {},
-        "model_status": {},
-        "surviving_teams": [t["team"] for t in top5],
-    }
-    return {
-        "data": data,
-        "source": "api",
-        "is_fallback": False,
-        "run_id": run_id,
-        "generated_at": generated_at,
-        "error": None,
-    }
-
+from app.agents.worldcup_agent import _validate_prediction_snapshot
 
 passed = 0
 failed = 0
@@ -110,203 +70,266 @@ def check(condition, msg):
         print(f"  ❌ {msg}")
 
 
+def _make_snapshot(champion, champ_prob_01, top5, explanation, run_id="run_test123",
+                   top_candidates=None):
+    """构造完整的 prediction snapshot"""
+    return {
+        "run_id": run_id,
+        "champion": champion,
+        "predicted_champion": champion,
+        "champion_probability": champ_prob_01,
+        "top5": top5,
+        "top_candidates": top_candidates if top_candidates is not None else deepcopy(top5),
+        "surviving_teams": [t["team"] for t in top5],
+        "stage": "semi_finals",
+        "stage_info": {"stage": "semi_finals", "stage_label": "四强"},
+        "bracket_payload": {},
+        "data_status": {},
+        "model_status": {},
+        "explanation": explanation,
+        "top_contenders": [],
+        "agent_steps_summary": [],
+        "model_version": "ensemble_v2",
+        "simulation_count": 10000,
+        "data_source": "",
+        "historical_samples": 6000,
+        "generated_at": "2026-07-14T10:00:00",
+        "status": "completed",
+    }
+
+
+def _make_fetch_result(snapshot):
+    """构造 fetch_final_result 返回值"""
+    return {
+        "data": snapshot,
+        "source": "api",
+        "is_fallback": False,
+        "run_id": snapshot["run_id"],
+        "generated_at": snapshot["generated_at"],
+        "error": None,
+    }
+
+
 # ══════════════════════════════════════════════════
-# 测试 1：同一 run 内所有字段一致
+# 测试 1：最终 top5 England 0.2525 → 所有字段一致
 # ══════════════════════════════════════════════════
 print("\n" + "=" * 60)
-print("测试 1：同一 run 内 champion / probability / top5 / explanation 全部一致")
+print("测试 1：最终 top5 England 0.2525 → 所有字段一致")
 print("=" * 60)
 
-top5_b = [
-    {"team": "Argentina", "probability": 0.4881},
-    {"team": "France", "probability": 0.2569},
-    {"team": "England", "probability": 0.1469},
+top5_eng = [
+    {"team": "England", "probability": 0.2525},
+    {"team": "France", "probability": 0.2496},
+    {"team": "Argentina", "probability": 0.2494},
+    {"team": "Spain", "probability": 0.2485},
 ]
-explanation_b = {
-    "title": "为什么预测 Argentina 夺冠？",
-    "content": "系统给出 48.81% 的夺冠概率。Argentina 以 48.81% 的夺冠概率领跑群雄。",
-    "probability": 48.81,
-    "champion": "Argentina",
-    "champion_probability": 0.4881,
-    "run_id": "run_bbbbbbb",
+
+explanation_eng = {
+    "title": "为什么预测 England 夺冠？",
+    "content": "## 为什么预测 England 夺冠？\n\n系统给出 25.25% 的夺冠概率。England 以 25.25% 的夺冠概率领跑群雄。",
+    "probability": 25.25,
+    "champion": "England",
+    "champion_probability": 0.2525,
+    "run_id": "run_eng12345",
     "source": "fallback",
 }
-result_b = _make_result(
-    champion="Argentina",
-    champ_prob=0.4881,
-    top5=top5_b,
-    explanation=explanation_b,
-    run_id="run_bbbbbbb",
+
+snapshot_eng = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=top5_eng,
+    explanation=explanation_eng,
+    run_id="run_eng12345",
 )
 
-# 一致性校验
-warnings = dd.validate_data_consistency(result_b)
-check(len(warnings) == 0, f"无一致性警告 (got {len(warnings)} warnings: {warnings})")
+# 1a. _validate_prediction_snapshot 通过
+try:
+    _validate_prediction_snapshot(snapshot_eng)
+    check(True, "_validate_prediction_snapshot 通过")
+except AssertionError as e:
+    check(False, f"_validate_prediction_snapshot 不应失败: {e}")
 
-# champion == top5[0].team
-check(result_b["data"]["champion"] == result_b["data"]["top5"][0]["team"],
-      f"champion={result_b['data']['champion']} == top5[0]={result_b['data']['top5'][0]['team']}")
+# 1b. champion == top5[0].team
+check(snapshot_eng["champion"] == "England", "champion = England")
+check(snapshot_eng["champion"] == snapshot_eng["top5"][0]["team"],
+      "champion == top5[0].team")
 
-# champion_probability == top5[0].probability
-check(abs(result_b["data"]["champion_probability"] - result_b["data"]["top5"][0]["probability"]) < 1e-9,
-      f"champion_probability={result_b['data']['champion_probability']} == top5[0].probability={result_b['data']['top5'][0]['probability']}")
+# 1c. champion_probability == top5[0].probability
+check(abs(snapshot_eng["champion_probability"] - 0.2525) < 1e-9,
+      "champion_probability = 0.2525")
 
-# explanation.champion == champion
-check(explanation_b["champion"] == result_b["data"]["champion"],
-      f"explanation.champion={explanation_b['champion']} == champion={result_b['data']['champion']}")
+# 1d. top_candidates[0] == England / 0.2525
+check(snapshot_eng["top_candidates"][0]["team"] == "England",
+      "top_candidates[0].team = England")
+check(abs(snapshot_eng["top_candidates"][0]["probability"] - 0.2525) < 1e-9,
+      "top_candidates[0].probability = 0.2525")
 
-# explanation.champion_probability == champion_probability
-check(abs(explanation_b["champion_probability"] - result_b["data"]["champion_probability"]) < 1e-9,
-      f"explanation.champion_probability={explanation_b['champion_probability']} == champion_probability={result_b['data']['champion_probability']}")
+# 1e. explanation 字段
+check(snapshot_eng["explanation"]["champion"] == "England",
+      "explanation.champion = England")
+check(abs(snapshot_eng["explanation"]["champion_probability"] - 0.2525) < 1e-9,
+      "explanation.champion_probability = 0.2525")
+check(snapshot_eng["explanation"]["probability"] == 25.25,
+      "explanation.probability = 25.25")
+check("England" in snapshot_eng["explanation"]["title"],
+      "explanation.title 包含 England")
+check(snapshot_eng["explanation"]["run_id"] == "run_eng12345",
+      "explanation.run_id == snapshot.run_id")
 
-# explanation.run_id == data.run_id
-check(explanation_b["run_id"] == result_b["data"]["run_id"],
-      f"explanation.run_id={explanation_b['run_id']} == data.run_id={result_b['data']['run_id']}")
+# 1f. 前端一致性校验
+result_eng = _make_fetch_result(snapshot_eng)
+warnings_eng = dd.validate_data_consistency(result_eng)
+check(len(warnings_eng) == 0,
+      f"前端无一致性警告 (got {len(warnings_eng)}: {warnings_eng})")
 
 
 # ══════════════════════════════════════════════════
-# 测试 2：explanation 属于旧 run → 一致性校验失败
+# 测试 2：早期 Argentina/0.492 → 最终 England/0.2525
+# explanation 必须使用 England
 # ══════════════════════════════════════════════════
 print("\n" + "=" * 60)
-print("测试 2：数据库有 run B，但 explanation 属于 run A → 一致性校验失败")
+print("测试 2：早期 Argentina/0.492 → 最终 England/0.2525 → explanation 必须用 England")
 print("=" * 60)
 
-explanation_a = {
+# 模拟：如果 explanation 错误地使用了 Argentina
+explanation_wrong = {
     "title": "为什么预测 Argentina 夺冠？",
-    "content": "系统给出 47.74% 的夺冠概率。",
-    "probability": 47.74,
+    "content": "Argentina 以 49.2% 的夺冠概率领跑。",
+    "probability": 49.2,
     "champion": "Argentina",
-    "champion_probability": 0.4774,
-    "run_id": "run_aaaaaaa",
+    "champion_probability": 0.492,
+    "run_id": "run_eng12345",  # 同一个 run_id
     "source": "fallback",
 }
-# run B 的数据，但 explanation 来自 run A
-result_mixed = _make_result(
-    champion="Argentina",
-    champ_prob=0.4881,
-    top5=top5_b,
-    explanation=explanation_a,  # 旧 run 的 explanation
-    run_id="run_bbbbbbb",
+
+snapshot_wrong = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=top5_eng,
+    explanation=explanation_wrong,
+    run_id="run_eng12345",
 )
 
-warnings_mixed = dd.validate_data_consistency(result_mixed)
-check(len(warnings_mixed) > 0, f"检测到不一致 (got {len(warnings_mixed)} warnings)")
+# 2a. _validate_prediction_snapshot 应该失败（explanation.champion != champion）
+try:
+    _validate_prediction_snapshot(snapshot_wrong)
+    check(False, "_validate_prediction_snapshot 应检测到 explanation.champion 不匹配")
+except AssertionError as e:
+    check(True, f"_validate_prediction_snapshot 正确拒绝: {e}")
 
-# 检查是否检测到 champion_probability 不一致
-prob_warning = any("概率" in w or "probability" in w.lower() for w in warnings_mixed)
-check(prob_warning, f"检测到概率不一致: {warnings_mixed}")
-
-# 检查是否检测到 run_id 不一致
-run_id_warning = any("run_id" in w for w in warnings_mixed)
-check(run_id_warning, f"检测到 run_id 不一致: {warnings_mixed}")
+# 2b. 前端一致性校验也应检测到
+result_wrong = _make_fetch_result(snapshot_wrong)
+warnings_wrong = dd.validate_data_consistency(result_wrong)
+check(len(warnings_wrong) > 0,
+      f"前端检测到不一致 (got {len(warnings_wrong)} warnings)")
+champ_warning = any("Argentina" in w for w in warnings_wrong)
+check(champ_warning, f"检测到 champion 不匹配: {warnings_wrong}")
 
 
 # ══════════════════════════════════════════════════
-# 测试 3：连续 10 次渲染 → run_id 不变，概率一致
+# 测试 3：矛盾 snapshot → 校验失败
 # ══════════════════════════════════════════════════
 print("\n" + "=" * 60)
-print("测试 3：连续 10 次渲染 → run_id 不变，概率始终一致")
+print("测试 3：矛盾 snapshot → 校验失败，不得保存为 completed")
 print("=" * 60)
 
-run_ids_seen = set()
+# 3a. champion != top5[0].team
+snapshot_contradict1 = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=[{"team": "Argentina", "probability": 0.492}],
+    explanation={"champion": "England", "champion_probability": 0.2525, "run_id": "run_x",
+                 "title": "", "content": "", "probability": 25.25, "source": "fallback"},
+    run_id="run_x",
+)
+try:
+    _validate_prediction_snapshot(snapshot_contradict1)
+    check(False, "champion != top5[0].team 应失败")
+except AssertionError:
+    check(True, "champion != top5[0].team 正确拒绝")
+
+# 3b. top_candidates[0] != champion
+snapshot_contradict2 = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=top5_eng,
+    top_candidates=[{"team": "Argentina", "probability": 0.492}],
+    explanation={"champion": "England", "champion_probability": 0.2525, "run_id": "run_x",
+                 "title": "", "content": "", "probability": 25.25, "source": "fallback"},
+    run_id="run_x",
+)
+try:
+    _validate_prediction_snapshot(snapshot_contradict2)
+    check(False, "top_candidates[0] != champion 应失败")
+except AssertionError:
+    check(True, "top_candidates[0] != champion 正确拒绝")
+
+# 3c. explanation.run_id != snapshot.run_id
+snapshot_contradict3 = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=top5_eng,
+    explanation={"champion": "England", "champion_probability": 0.2525,
+                 "run_id": "run_OLD", "title": "", "content": "",
+                 "probability": 25.25, "source": "fallback"},
+    run_id="run_NEW",
+)
+try:
+    _validate_prediction_snapshot(snapshot_contradict3)
+    check(False, "explanation.run_id != snapshot.run_id 应失败")
+except AssertionError:
+    check(True, "explanation.run_id != snapshot.run_id 正确拒绝")
+
+# 3d. status != completed
+snapshot_not_complete = _make_snapshot(
+    champion="England",
+    champ_prob_01=0.2525,
+    top5=top5_eng,
+    explanation={"champion": "England", "champion_probability": 0.2525,
+                 "run_id": "run_x", "title": "", "content": "",
+                 "probability": 25.25, "source": "fallback"},
+    run_id="run_x",
+)
+snapshot_not_complete["status"] = "building"
+try:
+    _validate_prediction_snapshot(snapshot_not_complete)
+    check(False, "status=building 应失败")
+except AssertionError:
+    check(True, "status != completed 正确拒绝")
+
+
+# ══════════════════════════════════════════════════
+# 测试 4：连续 10 次 → run_id 不变，所有字段一致
+# ══════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("测试 4：连续 10 次渲染 → run_id 不变，所有字段一致")
+print("=" * 60)
+
+run_ids = set()
 all_consistent = True
 
 for i in range(10):
-    # 模拟 fetch_final_result 返回相同数据
-    result = _make_result(
-        champion="Argentina",
-        champ_prob=0.4881,
-        top5=top5_b,
-        explanation=explanation_b,
-        run_id="run_bbbbbbb",
-        generated_at="2026-07-14T10:00:00",
-    )
-    run_ids_seen.add(result["data"]["run_id"])
+    result = _make_fetch_result(snapshot_eng)
+    run_ids.add(result["run_id"])
     w = dd.validate_data_consistency(result)
     if len(w) > 0:
         all_consistent = False
+        break
 
-check(len(run_ids_seen) == 1, f"run_id 唯一: {run_ids_seen}")
-check(all_consistent, "10 次渲染全部一致")
-
-
-# ══════════════════════════════════════════════════
-# 测试 4：重新预测后 → 所有字段切换到新 run
-# ══════════════════════════════════════════════════
-print("\n" + "=" * 60)
-print("测试 4：重新预测后 → champion / probability / top5 / explanation 同时切换到新 run")
-print("=" * 60)
-
-# Run A
-top5_a = [
-    {"team": "Argentina", "probability": 0.4774},
-    {"team": "France", "probability": 0.2598},
-]
-explanation_a_full = {
-    "title": "为什么预测 Argentina 夺冠？",
-    "content": "系统给出 47.74% 的夺冠概率。",
-    "probability": 47.74,
-    "champion": "Argentina",
-    "champion_probability": 0.4774,
-    "run_id": "run_aaaaaaa",
-}
-result_a = _make_result(
-    champion="Argentina",
-    champ_prob=0.4774,
-    top5=top5_a,
-    explanation=explanation_a_full,
-    run_id="run_aaaaaaa",
-)
-
-# Run B（重新预测后）
-result_b_full = _make_result(
-    champion="Argentina",
-    champ_prob=0.4881,
-    top5=top5_b,
-    explanation=explanation_b,
-    run_id="run_bbbbbbb",
-)
-
-# 验证 Run A
-w_a = dd.validate_data_consistency(result_a)
-check(len(w_a) == 0, f"Run A 一致: {len(w_a)} warnings")
-check(result_a["data"]["champion_probability"] == 0.4774,
-      f"Run A probability = {result_a['data']['champion_probability']}")
-
-# 验证 Run B
-w_b = dd.validate_data_consistency(result_b_full)
-check(len(w_b) == 0, f"Run B 一致: {len(w_b)} warnings")
-check(result_b_full["data"]["champion_probability"] == 0.4881,
-      f"Run B probability = {result_b_full['data']['champion_probability']}")
-
-# 验证 Run B 的 explanation 不包含旧概率
-check(result_b_full["data"]["explanation"]["champion_probability"] == 0.4881,
-      f"Run B explanation.champion_probability = {result_b_full['data']['explanation']['champion_probability']}")
-check(result_b_full["data"]["explanation"]["run_id"] == "run_bbbbbbb",
-      f"Run B explanation.run_id = {result_b_full['data']['explanation']['run_id']}")
-
-# 交叉验证：Run B data + Run A explanation → 不一致
-result_cross = _make_result(
-    champion="Argentina",
-    champ_prob=0.4881,
-    top5=top5_b,
-    explanation=explanation_a_full,  # 旧 run A 的 explanation
-    run_id="run_bbbbbbb",
-)
-w_cross = dd.validate_data_consistency(result_cross)
-check(len(w_cross) > 0, f"交叉验证检测到不一致: {len(w_cross)} warnings: {w_cross}")
+check(len(run_ids) == 1, f"run_id 唯一 (got {len(run_ids)}: {run_ids})")
+check(all_consistent, "10 次渲染全部通过一致性校验")
 
 
 # ══════════════════════════════════════════════════
-# 总结
+# 汇总
 # ══════════════════════════════════════════════════
 print("\n" + "=" * 60)
 total = passed + failed
-print(f"结果：{passed}/{total} 通过，{failed}/{total} 失败")
+print(f"结果: {passed}/{total} 通过, {failed}/{total} 失败")
 print("=" * 60)
 
 if failed > 0:
     sys.exit(1)
 else:
-    print("✅ 全部测试通过！")
+    print("✅ 全部通过！")
     sys.exit(0)
