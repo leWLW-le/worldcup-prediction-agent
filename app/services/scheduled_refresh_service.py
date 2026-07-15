@@ -241,24 +241,49 @@ def _update_final_result(
         logger.error("[FullRefresh] 一致性校验失败，拒绝保存: %s", e)
         raise RuntimeError(f"预测数据一致性校验失败: {e}")
 
-    # ── Step 6b: 淘汰赛路径一致性校验 ──
+    # ── Step 6b: 标准化 + 淘汰赛路径一致性校验 ──
     bp_for_validation = existing.get("bracket_payload", {})
+    bracket_errors = []
     if bp_for_validation:
         try:
-            from app.tools.bracket_tool import validate_bracket_integrity
-            bracket_errors = validate_bracket_integrity(bp_for_validation)
+            from app.tools.bracket_tool import normalize_bracket_payload, validate_bracket_integrity
+            existing["bracket_payload"] = normalize_bracket_payload(bp_for_validation)
+            bracket_errors = validate_bracket_integrity(existing["bracket_payload"])
             if bracket_errors:
-                logger.warning("[FullRefresh] bracket_integrity 校验发现 %d 个问题: %s",
-                               len(bracket_errors), bracket_errors[:3])
-                existing["bracket_integrity_errors"] = bracket_errors
+                logger.error("[FullRefresh] bracket_integrity 校验失败（%d 个问题），拒绝保存: %s",
+                             len(bracket_errors), bracket_errors[:3])
             else:
                 logger.info("[FullRefresh] bracket_integrity 校验通过 ✓")
         except Exception as e:
             logger.warning("[FullRefresh] bracket_integrity 校验异常: %s", e)
 
     # ══════════════════════════════════════════════════════
-    # Step 7: 保存（原子写入 JSON + DB 持久化）
+    # Step 7: 保存（校验通过才写入）
     # ══════════════════════════════════════════════════════
+    if bracket_errors:
+        # ── 校验失败：不覆盖 JSON，不写 DB，保留上一份有效快照 ──
+        existing["status"] = "bracket_error"
+        existing["bracket_integrity_errors"] = bracket_errors
+
+        # 写入诊断文件
+        diag_path = DATA_DIR / "bracket_error_diagnostic.json"
+        try:
+            with open(diag_path, "w", encoding="utf-8") as df:
+                json.dump({
+                    "run_id": run_id,
+                    "generated_at": run_ts,
+                    "bracket_integrity_errors": bracket_errors,
+                    "champion": top_champ,
+                    "champion_probability": champ_prob_01,
+                }, df, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+        logger.error("[FullRefresh] bracket 校验失败，已跳过 JSON 和 DB 保存。上一份有效快照保持不变。")
+        raise RuntimeError(f"bracket_integrity 校验失败: {bracket_errors[:3]}")
+
+    # ── 校验通过：正常保存 ──
+    existing["status"] = "completed"
     from app.agents.worldcup_agent import atomic_write_json
     atomic_write_json(out_path, existing)
     logger.info("[FullRefresh] final_agent_result.json 已写入: %s (champion=%s, prob=%.4f, run_id=%s)",
@@ -287,9 +312,14 @@ def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,
 
     prob_pct = round(champion_probability * 100, 2)
 
+    # 检查环境变量：定时刷新是否启用 LLM
+    import os
+    enable_refresh_llm = os.environ.get("ENABLE_REFRESH_LLM", "false").lower() == "true"
+
     # 尝试使用 ChampionExplanationService 生成内容
     content = ""
     source = "fallback"
+    fallback_reason = ""
     try:
         from app.services.champion_explanation_service import ChampionExplanationService
 
@@ -298,7 +328,7 @@ def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,
             with open(sim_dist_path, encoding="utf-8") as f:
                 sim_data = json.load(f)
 
-            service = ChampionExplanationService(use_llm=False)
+            service = ChampionExplanationService(use_llm=enable_refresh_llm)
             explanation = service.generate(
                 champion=champion,
                 champion_probability=champion_probability,
@@ -312,8 +342,20 @@ def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,
             if explanation and explanation.get("content"):
                 content = explanation["content"]
                 source = explanation.get("source", "fallback")
+                if source == "fallback":
+                    fallback_reason = explanation.get("fallback_reason", "service_fallback")
+            else:
+                fallback_reason = "service_empty_response"
+        else:
+            fallback_reason = "simulation_distribution_not_found"
     except Exception as e:
+        err_type = type(e).__name__
+        err_msg = str(e)[:100]
+        fallback_reason = f"service_error: {err_type}: {err_msg}"
         logger.warning("[FullRefresh] ChampionExplanationService 不可用: %s", e)
+
+    if not enable_refresh_llm and not fallback_reason:
+        fallback_reason = "llm_disabled_by_env(ENABLE_REFRESH_LLM=false)"
 
     # Fallback 内容
     if not content:
@@ -343,6 +385,7 @@ def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,
         "content": content,
         "key_reasons": [],
         "source": source,
+        "fallback_reason": fallback_reason if source != "llm" else "",
         "probability": prob_pct,
         "champion": champion,
         "champion_probability": champion_probability,

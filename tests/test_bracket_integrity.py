@@ -19,7 +19,7 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.tools.bracket_tool import validate_bracket_integrity
+from app.tools.bracket_tool import validate_bracket_integrity, normalize_bracket_payload
 
 
 # ── 辅助函数 ──
@@ -383,3 +383,344 @@ class TestComprehensiveScenarios:
         count_errors = [e for e in errors if "超过预期" in e]
         assert len(count_errors) > 0, \
             f"应检测到比赛数量超限: {errors}"
+
+
+# ══════════════════════════════════════════════════════════════
+# normalize_bracket_payload 回归测试
+# ══════════════════════════════════════════════════════════════
+
+
+class TestNormalizeProductionData:
+    """回归测试：生产环境 England vs Argentina SCHEDULED + stale winner=England"""
+
+    def test_scheduled_match_stale_winner_cleared(self):
+        """SCHEDULED 比赛 winner=England → normalize 后 winner=None, predicted_winner=Argentina"""
+        sf1 = _scheduled_match("Spain", "France", "Spain")
+        sf2 = {
+            "home_team": "England",
+            "away_team": "Argentina",
+            "predicted_winner": "Argentina",
+            "winner": "England",  # STALE — must be cleared
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 3,
+            "round": "semi_finals",
+        }
+        final_match = _scheduled_match("Spain", "Argentina", "Spain")
+        bracket = _make_bracket(
+            sf=[sf1, sf2],
+            final=[final_match],
+            champion_team="Spain",
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+
+        # England vs Argentina: winner=None, predicted_winner=Argentina
+        sf_match = normalized["semi_finals"][1]
+        assert sf_match["winner"] is None, \
+            f"SCHEDULED 比赛 winner 应为 None，实际为 {sf_match['winner']}"
+        assert sf_match["predicted_winner"] == "Argentina", \
+            f"predicted_winner 应为 Argentina，实际为 {sf_match['predicted_winner']}"
+
+    def test_final_must_be_spain_vs_argentina(self):
+        """normalize 后决赛必须为 Spain vs Argentina"""
+        sf1 = _scheduled_match("Spain", "France", "Spain")
+        sf2 = {
+            "home_team": "England",
+            "away_team": "Argentina",
+            "predicted_winner": "Argentina",
+            "winner": "England",  # STALE
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 3,
+            "round": "semi_finals",
+        }
+        # 决赛可能有 TBD 或错误的队伍
+        final_match = {
+            "home_team": "Spain",
+            "away_team": "TBD",
+            "predicted_winner": "Spain",
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 1,
+            "round": "final",
+        }
+        bracket = _make_bracket(
+            sf=[sf1, sf2],
+            final=[final_match],
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+
+        # 决赛的 away_team 应为 Argentina（从 SF predicted_winner 晋级）
+        fm = normalized["final"][0]
+        assert fm["home_team"] == "Spain", f"决赛主队应为 Spain，实际为 {fm['home_team']}"
+        assert fm["away_team"] == "Argentina", f"决赛客队应为 Argentina，实际为 {fm['away_team']}"
+        assert fm["predicted_winner"] == "Spain", f"决赛 predicted_winner 应为 Spain"
+
+    def test_champion_derived_from_final_predicted_winner(self):
+        """champion 应从决赛 predicted_winner 推导"""
+        sf1 = _scheduled_match("Spain", "France", "Spain")
+        sf2 = {
+            "home_team": "England",
+            "away_team": "Argentina",
+            "predicted_winner": "Argentina",
+            "winner": "England",  # STALE
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 3,
+            "round": "semi_finals",
+        }
+        final_match = {
+            "home_team": "Spain",
+            "away_team": "TBD",
+            "predicted_winner": "Spain",
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 1,
+            "round": "final",
+        }
+        bracket = _make_bracket(
+            sf=[sf1, sf2],
+            final=[final_match],
+            champion_team="England",  # 错误的旧 champion
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+
+        # champion 应被修正为 Spain（决赛 predicted_winner）
+        champion_data = normalized.get("champion", {})
+        if isinstance(champion_data, dict):
+            assert champion_data.get("team") == "Spain", \
+                f"champion 应为 Spain，实际为 {champion_data.get('team')}"
+
+    def test_full_pipeline_normalize_then_validate(self):
+        """normalize 后 validate 应通过（无错误）"""
+        sf1 = _scheduled_match("Spain", "France", "Spain")
+        sf2 = {
+            "home_team": "England",
+            "away_team": "Argentina",
+            "predicted_winner": "Argentina",
+            "winner": "England",  # STALE
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 3,
+            "round": "semi_finals",
+        }
+        final_match = {
+            "home_team": "Spain",
+            "away_team": "TBD",
+            "predicted_winner": "Spain",
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 1,
+            "round": "final",
+        }
+        bracket = _make_bracket(
+            sf=[sf1, sf2],
+            final=[final_match],
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+        errors = validate_bracket_integrity(normalized)
+        assert errors == [], f"normalize 后 validate 应无错误，实际: {errors}"
+
+
+class TestNormalizeFinishedMatch:
+    """normalize 对 FINISHED 比赛的处理"""
+
+    def test_finished_match_winner_from_score(self):
+        """FINISHED 比赛无 winner → 从比分生成"""
+        match = {
+            "home_team": "Brazil",
+            "away_team": "Germany",
+            "home_score": 3,
+            "away_score": 1,
+            "winner": None,  # 缺失
+            "predicted_winner": "Brazil",
+            "status": "FINISHED",
+            "source": "real_result",
+            "round": "quarter_finals",
+        }
+        bracket = _make_bracket(qf=[match])
+        normalized = normalize_bracket_payload(bracket)
+
+        qf_match = normalized["quarter_finals"][0]
+        assert qf_match["winner"] == "Brazil", \
+            f"winner 应为 Brazil（比分 3-1），实际为 {qf_match['winner']}"
+        assert qf_match["predicted_winner"] is None, \
+            f"FINISHED 比赛 predicted_winner 应为 None"
+
+    def test_finished_match_wrong_winner_corrected(self):
+        """FINISHED 比赛 winner 与比分不符 → 从比分修正"""
+        match = {
+            "home_team": "Brazil",
+            "away_team": "Germany",
+            "home_score": 3,
+            "away_score": 1,
+            "winner": "Germany",  # 错误
+            "status": "FINISHED",
+            "source": "real_result",
+            "round": "quarter_finals",
+        }
+        bracket = _make_bracket(qf=[match])
+        normalized = normalize_bracket_payload(bracket)
+
+        qf_match = normalized["quarter_finals"][0]
+        assert qf_match["winner"] == "Brazil", \
+            f"winner 应修正为 Brazil（比分 3-1），实际为 {qf_match['winner']}"
+
+
+class TestNormalizeScheduledMatch:
+    """normalize 对 SCHEDULED 比赛的处理"""
+
+    def test_scheduled_winner_cleared(self):
+        """SCHEDULED 比赛有 winner → 清除为 None"""
+        match = _scheduled_match("Spain", "France", "Spain", winner="Spain")
+        bracket = _make_bracket(sf=[match])
+        normalized = normalize_bracket_payload(bracket)
+
+        sf_match = normalized["semi_finals"][0]
+        assert sf_match["winner"] is None, \
+            f"SCHEDULED 比赛 winner 应为 None，实际为 {sf_match['winner']}"
+        assert sf_match["predicted_winner"] == "Spain", \
+            f"predicted_winner 应保留为 Spain"
+
+    def test_predicted_winner_from_predicted_score(self):
+        """SCHEDULED 比赛无 predicted_winner → 从 predicted_score 生成"""
+        match = {
+            "home_team": "Brazil",
+            "away_team": "Argentina",
+            "predicted_home_score": 1,
+            "predicted_away_score": 3,
+            "predicted_winner": None,  # 缺失
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "round": "semi_finals",
+        }
+        bracket = _make_bracket(sf=[match])
+        normalized = normalize_bracket_payload(bracket)
+
+        sf_match = normalized["semi_finals"][0]
+        assert sf_match["predicted_winner"] == "Argentina", \
+            f"predicted_winner 应从 predicted_score 推导为 Argentina，实际为 {sf_match['predicted_winner']}"
+
+    def test_predicted_winner_from_predicted_score_string(self):
+        """SCHEDULED 比赛无 predicted_winner → 从 predicted_score 字符串生成"""
+        match = {
+            "home_team": "Brazil",
+            "away_team": "Argentina",
+            "predicted_score": "1-3",
+            "predicted_winner": None,
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "round": "semi_finals",
+        }
+        bracket = _make_bracket(sf=[match])
+        normalized = normalize_bracket_payload(bracket)
+
+        sf_match = normalized["semi_finals"][0]
+        assert sf_match["predicted_winner"] == "Argentina", \
+            f"predicted_winner 应从 '1-3' 推导为 Argentina，实际为 {sf_match['predicted_winner']}"
+
+
+class TestNormalizeAdvancementChain:
+    """normalize 修复晋级链"""
+
+    def test_tbd_teams_filled_from_previous_winners(self):
+        """后续轮次 TBD 队伍应从前一轮胜者填充"""
+        qf1 = _scheduled_match("Spain", "France", "Spain")
+        qf2 = _scheduled_match("Brazil", "Germany", "Brazil")
+        qf3 = _scheduled_match("Argentina", "Portugal", "Argentina")
+        qf4 = _scheduled_match("England", "Netherlands", "England")
+        # SF 有 TBD
+        sf1 = {
+            "home_team": "TBD",
+            "away_team": "TBD",
+            "predicted_winner": None,
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 2,
+            "predicted_away_score": 1,
+            "round": "semi_finals",
+        }
+        sf2 = {
+            "home_team": "TBD",
+            "away_team": "TBD",
+            "predicted_winner": None,
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 1,
+            "predicted_away_score": 2,
+            "round": "semi_finals",
+        }
+        bracket = _make_bracket(
+            qf=[qf1, qf2, qf3, qf4],
+            sf=[sf1, sf2],
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+
+        # SF1: Spain vs Brazil (QF 前两场胜者)
+        sf1_norm = normalized["semi_finals"][0]
+        assert sf1_norm["home_team"] == "Spain", f"SF1 主队应为 Spain，实际为 {sf1_norm['home_team']}"
+        assert sf1_norm["away_team"] == "Brazil", f"SF1 客队应为 Brazil，实际为 {sf1_norm['away_team']}"
+        assert sf1_norm["predicted_winner"] == "Spain", f"SF1 predicted_winner 应为 Spain"
+
+        # SF2: Argentina vs England (QF 后两场胜者)
+        sf2_norm = normalized["semi_finals"][1]
+        assert sf2_norm["home_team"] == "Argentina", f"SF2 主队应为 Argentina，实际为 {sf2_norm['home_team']}"
+        assert sf2_norm["away_team"] == "England", f"SF2 客队应为 England，实际为 {sf2_norm['away_team']}"
+        assert sf2_norm["predicted_winner"] == "England", f"SF2 predicted_winner 应为 England (1-2)"
+
+    def test_finished_match_teams_not_overwritten(self):
+        """已结束的当前轮次比赛不修改参赛队"""
+        qf1 = _finished_match("Spain", "France", 2, 1, "Spain")
+        qf2 = _finished_match("Brazil", "Germany", 3, 2, "Brazil")
+        qf3 = _finished_match("Argentina", "Portugal", 1, 0, "Argentina")
+        qf4 = _finished_match("England", "Netherlands", 2, 0, "England")
+        # SF1 已结束（真实结果）
+        sf1 = _finished_match("Spain", "Brazil", 2, 1, "Spain")
+        # SF2 还是 TBD
+        sf2 = {
+            "home_team": "TBD",
+            "away_team": "TBD",
+            "predicted_winner": None,
+            "winner": None,
+            "status": "SCHEDULED",
+            "source": "agent_prediction",
+            "predicted_home_score": 1,
+            "predicted_away_score": 2,
+            "round": "semi_finals",
+        }
+        bracket = _make_bracket(
+            qf=[qf1, qf2, qf3, qf4],
+            sf=[sf1, sf2],
+        )
+
+        normalized = normalize_bracket_payload(bracket)
+
+        # SF1 已结束，参赛队不应被修改
+        sf1_norm = normalized["semi_finals"][0]
+        assert sf1_norm["home_team"] == "Spain"
+        assert sf1_norm["away_team"] == "Brazil"
+        assert sf1_norm["winner"] == "Spain"
+
+        # SF2 未结束，TBD 应被填充
+        sf2_norm = normalized["semi_finals"][1]
+        assert sf2_norm["home_team"] == "Argentina", f"SF2 主队应为 Argentina，实际为 {sf2_norm['home_team']}"
+        assert sf2_norm["away_team"] == "England", f"SF2 客队应为 England，实际为 {sf2_norm['away_team']}"

@@ -1148,37 +1148,57 @@ class WorldCupPredictionAgent:
         # 尝试 LLM 生成
         explanation_content = ""
         explanation_source = "fallback"
+        explanation_fallback_reason = ""
         try:
             from app.services.llm_explainer import HAS_ZHIPUAI as _HAS_ZHIPUAI
-            if _HAS_ZHIPUAI:
+            if not _HAS_ZHIPUAI:
+                explanation_fallback_reason = "sdk_not_installed: zhipuai"
+            else:
                 from zhipuai import ZhipuAI
                 import os
                 api_key = os.environ.get("OPENAI_API_KEY", "")
-                client = ZhipuAI(api_key=api_key)
-                prompt = (
-                    f"你是一个专业的足球分析师。请用120-200字解释为什么预测 {champ} 获得2026世界杯冠军。\n"
-                    f"夺冠概率：{prob}%\n"
-                    f"关键数据：\n"
-                )
-                if fb.get("attack_score"): prompt += f"- 攻击评分：{fb['attack_score']:.2f}\n"
-                if fb.get("defense_score"): prompt += f"- 防守评分：{fb['defense_score']:.2f}\n"
-                if fb.get("recent_form_score"): prompt += f"- 近期状态：{fb['recent_form_score']:.2f}\n"
-                if fb.get("path_advantage_score"): prompt += f"- 路径优势：{fb['path_advantage_score']:.2f}\n"
-                prompt += f"\n关键原因：{', '.join(key_reasons)}\n"
-                prompt += "要求：面向普通用户，专业但通俗，不要出现技术术语。"
+                if not api_key or api_key == "sk-placeholder-key":
+                    explanation_fallback_reason = "no_valid_api_key"
+                else:
+                    client = ZhipuAI(api_key=api_key)
+                    prompt = (
+                        f"你是一个专业的足球分析师。请用120-200字解释为什么预测 {champ} 获得2026世界杯冠军。\n"
+                        f"夺冠概率：{prob}%\n"
+                        f"关键数据：\n"
+                    )
+                    if fb.get("attack_score"): prompt += f"- 攻击评分：{fb['attack_score']:.2f}\n"
+                    if fb.get("defense_score"): prompt += f"- 防守评分：{fb['defense_score']:.2f}\n"
+                    if fb.get("recent_form_score"): prompt += f"- 近期状态：{fb['recent_form_score']:.2f}\n"
+                    if fb.get("path_advantage_score"): prompt += f"- 路径优势：{fb['path_advantage_score']:.2f}\n"
+                    prompt += f"\n关键原因：{', '.join(key_reasons)}\n"
+                    prompt += "要求：面向普通用户，专业但通俗，不要出现技术术语。"
 
-                response = client.chat.completions.create(
-                    model="glm-4-flash",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3,
-                    max_tokens=400,
-                )
-                content = response.choices[0].message.content.strip()
-                if content and len(content) > 30:
-                    explanation_content = content
-                    explanation_source = "llm"
+                    try:
+                        response = client.chat.completions.create(
+                            model="glm-4-flash",
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.3,
+                            max_tokens=400,
+                        )
+                        content = response.choices[0].message.content.strip()
+                        if content and len(content) > 30:
+                            explanation_content = content
+                            explanation_source = "llm"
+                        else:
+                            explanation_fallback_reason = "content_too_short"
+                    except Exception as e:
+                        err_type = type(e).__name__
+                        err_msg = str(e)[:100]
+                        explanation_fallback_reason = f"api_error: {err_type}: {err_msg}"
+                        logger.warning("[Agent] LLM explanation API call failed: %s", e)
+        except ImportError as e:
+            explanation_fallback_reason = f"import_error: {str(e)[:80]}"
+            logger.warning("[Agent] LLM explanation import failed: %s", e)
         except Exception as e:
-            logger.warning("[Agent] LLM explanation failed: %s", e)
+            err_type = type(e).__name__
+            err_msg = str(e)[:100]
+            explanation_fallback_reason = f"unexpected_error: {err_type}: {err_msg}"
+            logger.warning("[Agent] LLM explanation unexpected error: %s", e)
 
         # Fallback
         if not explanation_content:
@@ -1237,6 +1257,7 @@ class WorldCupPredictionAgent:
             "content": explanation_content,
             "key_reasons": key_reasons,
             "source": explanation_source,
+            "fallback_reason": explanation_fallback_reason if explanation_source != "llm" else "",
             "probability": round(prob_pct, 2),
             "champion": champ,
             "champion_probability": round(prob / 100.0, 4) if prob > 1 else round(prob, 4),
@@ -1338,6 +1359,13 @@ class WorldCupPredictionAgent:
                 bp = bracket_tool.predict_knockout_stage()
             except Exception:
                 pass
+
+        # ── 标准化 bracket_payload（修复 winner/predicted_winner/晋级链） ──
+        try:
+            from app.tools.bracket_tool import normalize_bracket_payload
+            bp = normalize_bracket_payload(bp)
+        except Exception as e:
+            logger.warning("[Agent] normalize_bracket_payload 失败: %s", e)
 
         # 数据来源状态
         ds = state.data_status or self._build_data_status(state)
@@ -1479,22 +1507,48 @@ class WorldCupPredictionAgent:
         # ══════════════════════════════════════════════════════
         _validate_prediction_snapshot(snapshot)
 
-        # ── Step 5b: 淘汰赛路径一致性校验 ──
+        # ── Step 5b: 淘汰赛路径一致性校验（normalize 后） ──
         bp_for_validation = snapshot.get("bracket_payload", {})
+        bracket_errors = []
         if bp_for_validation:
             bracket_errors = validate_bracket_integrity(bp_for_validation)
             if bracket_errors:
-                logger.warning("[Agent] bracket_integrity 校验发现 %d 个问题: %s",
-                               len(bracket_errors), bracket_errors[:3])
-                # 不阻止保存，但记录到 snapshot 中供前端展示
-                snapshot["bracket_integrity_errors"] = bracket_errors
+                logger.error("[Agent] bracket_integrity 校验失败（%d 个问题），拒绝保存: %s",
+                             len(bracket_errors), bracket_errors[:3])
             else:
                 logger.info("[Agent] bracket_integrity 校验通过 ✓")
 
         # ══════════════════════════════════════════════════════
-        # Step 6: 保存（原子写入 JSON + DB 持久化）
+        # Step 6: 保存（校验通过才写入）
         # ══════════════════════════════════════════════════════
         out_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"
+
+        if bracket_errors:
+            # ── 校验失败：不覆盖 JSON，不写 DB，保留上一份有效快照 ──
+            snapshot["status"] = "bracket_error"
+            snapshot["bracket_integrity_errors"] = bracket_errors
+
+            # 写入诊断文件（不覆盖正式 JSON）
+            diag_path = Path(__file__).parent.parent.parent / "data" / "bracket_error_diagnostic.json"
+            try:
+                import json as _json_mod
+                with open(diag_path, "w", encoding="utf-8") as df:
+                    _json_mod.dump({
+                        "run_id": run_id,
+                        "generated_at": run_ts,
+                        "bracket_integrity_errors": bracket_errors,
+                        "champion": champ,
+                        "champion_probability": champ_prob_01,
+                    }, df, ensure_ascii=False, indent=2)
+                logger.info("[Agent] 诊断文件已写入: %s", diag_path.resolve())
+            except Exception as e:
+                logger.warning("[Agent] 诊断文件写入失败: %s", e)
+
+            logger.error("[Agent] bracket 校验失败，已跳过 JSON 和 DB 保存。上一份有效快照保持不变。")
+            return
+
+        # ── 校验通过：正常保存 ──
+        snapshot["status"] = "completed"
         try:
             atomic_write_json(out_path, snapshot)
             resolved = out_path.resolve()

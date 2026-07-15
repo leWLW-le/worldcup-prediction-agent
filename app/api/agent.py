@@ -297,16 +297,30 @@ def final_result():
             },
         )
 
-    # ── 淘汰赛路径一致性校验（不阻止返回，仅记录） ──
+    # ── 淘汰赛路径标准化 + 一致性校验 ──
+    # normalize 仅作用于返回副本，不修改 DB/JSON 源数据
     bp = data.get("bracket_payload", {})
     if bp:
         try:
-            from app.tools.bracket_tool import validate_bracket_integrity
-            bracket_errors = validate_bracket_integrity(bp)
+            from copy import deepcopy
+            from app.tools.bracket_tool import normalize_bracket_payload, validate_bracket_integrity
+            bp_copy = deepcopy(bp)
+            bp_normalized = normalize_bracket_payload(bp_copy)
+            bracket_errors = validate_bracket_integrity(bp_normalized)
             if bracket_errors:
-                logger.warning("[API] final-result bracket_integrity 校验发现 %d 个问题 (source=%s): %s",
-                               len(bracket_errors), source, bracket_errors[:3])
-                data["bracket_integrity_errors"] = bracket_errors
+                logger.error("[API] final-result bracket_integrity 校验失败 (source=%s, %d 个问题): %s",
+                             source, len(bracket_errors), bracket_errors[:3])
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "status": "bracket_error",
+                        "message": f"淘汰赛数据一致性校验失败: {bracket_errors[0]}",
+                        "bracket_integrity_errors": bracket_errors,
+                        "source": source,
+                    },
+                )
+            # normalize 通过 → 使用标准化后的 bracket
+            data["bracket_payload"] = bp_normalized
         except Exception as e:
             logger.warning("[API] bracket_integrity 校验异常: %s", e)
 

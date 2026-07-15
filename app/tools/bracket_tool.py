@@ -701,10 +701,178 @@ class BracketTool:
         }
 
 
-# ── 淘汰赛路径一致性校验 ──
+# ── 淘汰赛路径标准化 + 一致性校验 ──
 
 _ROUND_ORDER = ["round_of_32", "round_of_16", "quarter_finals", "semi_finals", "final"]
 _FINISHED_STATUSES_MODULE = {"FT", "AET", "PEN", "FINISHED"}
+
+
+def normalize_bracket_payload(bracket_payload: Dict) -> Dict:
+    """标准化 bracket_payload，确保语义一致性。
+
+    修复以下问题：
+    1. FINISHED 比赛：根据真实比分生成 winner
+    2. SCHEDULED/TIMED 比赛：winner=None
+    3. 从 predicted_score 生成 predicted_winner（如缺失）
+    4. 重新生成后续轮次参赛球队（修复晋级链）
+    5. 重新计算 champion
+
+    返回修正后的 bracket_payload（原地修改）。
+    """
+    if not bracket_payload or not isinstance(bracket_payload, dict):
+        return bracket_payload
+
+    # ══ Pass 1: 逐轮修复每场比赛的 winner / predicted_winner ══
+    for rnd in _ROUND_ORDER:
+        for m in bracket_payload.get(rnd, []):
+            status = (m.get("status") or "").upper()
+            source = m.get("source", "")
+            is_finished = status in _FINISHED_STATUSES_MODULE or source in ("real_result", "real_data")
+
+            # 补充 match_source
+            if "match_source" not in m:
+                if is_finished:
+                    m["match_source"] = "real_result"
+                elif status in ("SCHEDULED", "TIMED"):
+                    m["match_source"] = "prediction"
+
+            if is_finished:
+                # ── FINISHED: 根据真实比分生成 winner ──
+                hs = m.get("home_score")
+                aws = m.get("away_score")
+                if hs is not None and aws is not None and hs != aws:
+                    m["winner"] = m.get("home_team") if hs > aws else m.get("away_team")
+                    m["predicted_winner"] = None
+                elif hs is not None and aws is not None and hs == aws:
+                    # 平局但有 winner（点球/加时）→ 保留 winner
+                    if not m.get("winner"):
+                        m["winner"] = m.get("home_team", "")
+                    m["predicted_winner"] = None
+                else:
+                    # 无比分但有 FINISHED 状态 → 保留已有 winner
+                    m["predicted_winner"] = None
+            else:
+                # ── SCHEDULED/TIMED: winner 必须为 None ──
+                old_winner = m.get("winner")
+                if old_winner is not None and old_winner != "":
+                    # 把错误的 winner 转移到 predicted_winner（仅当 predicted_winner 缺失时）
+                    if not m.get("predicted_winner"):
+                        m["predicted_winner"] = old_winner
+                m["winner"] = None
+
+                # 从 predicted_score 生成 predicted_winner（如缺失）
+                if not m.get("predicted_winner"):
+                    phs = m.get("predicted_home_score")
+                    pas = m.get("predicted_away_score")
+                    if phs is not None and pas is not None:
+                        if phs > pas:
+                            m["predicted_winner"] = m.get("home_team")
+                        elif pas > phs:
+                            m["predicted_winner"] = m.get("away_team")
+                    # 仍无 predicted_winner → 尝试从 predicted_score 字符串解析
+                    if not m.get("predicted_winner") and m.get("predicted_score"):
+                        try:
+                            parts = str(m["predicted_score"]).split("-")
+                            sh, sa = int(parts[0]), int(parts[1])
+                            if sh > sa:
+                                m["predicted_winner"] = m.get("home_team")
+                            elif sa > sh:
+                                m["predicted_winner"] = m.get("away_team")
+                        except (ValueError, IndexError):
+                            pass
+
+    # ══ Pass 2: 修复后续轮次参赛球队（晋级链） ══
+    for idx in range(1, len(_ROUND_ORDER)):
+        prev_rnd = _ROUND_ORDER[idx - 1]
+        curr_rnd = _ROUND_ORDER[idx]
+        prev_matches = bracket_payload.get(prev_rnd, [])
+        curr_matches = bracket_payload.get(curr_rnd, [])
+
+        # 收集前一轮的胜者（FINISHED → winner, SCHEDULED → predicted_winner）
+        prev_advance = []
+        for pm in prev_matches:
+            pm_status = (pm.get("status") or "").upper()
+            pm_source = pm.get("source", "")
+            pm_finished = pm_status in _FINISHED_STATUSES_MODULE or pm_source in ("real_result", "real_data")
+            if pm_finished:
+                adv = pm.get("winner")
+            else:
+                adv = pm.get("predicted_winner")
+            if adv:
+                prev_advance.append(adv)
+
+        # 将前一轮晋级队分配到当前轮次
+        for mi, cm in enumerate(curr_matches):
+            home_idx = mi * 2
+            away_idx = mi * 2 + 1
+            expected_home = prev_advance[home_idx] if home_idx < len(prev_advance) else None
+            expected_away = prev_advance[away_idx] if away_idx < len(prev_advance) else None
+
+            cm_status = (cm.get("status") or "").upper()
+            cm_source = cm.get("source", "")
+            cm_is_finished = cm_status in _FINISHED_STATUSES_MODULE or cm_source in ("real_result", "real_data")
+
+            # 已结束的当前轮次比赛不修改参赛队
+            if cm_is_finished:
+                continue
+
+            changed = False
+            curr_home = cm.get("home_team", "")
+            curr_away = cm.get("away_team", "")
+
+            if expected_home and (not curr_home or curr_home == "TBD" or curr_home == "Winner"):
+                cm["home_team"] = expected_home
+                changed = True
+            if expected_away and (not curr_away or curr_away == "TBD" or curr_away == "Winner"):
+                cm["away_team"] = expected_away
+                changed = True
+
+            # 参赛队变更后重新计算 predicted_winner
+            if changed:
+                new_home = cm.get("home_team", "")
+                new_away = cm.get("away_team", "")
+                phs = cm.get("predicted_home_score")
+                pas = cm.get("predicted_away_score")
+                if phs is not None and pas is not None:
+                    if phs > pas:
+                        cm["predicted_winner"] = new_home
+                    elif pas > phs:
+                        cm["predicted_winner"] = new_away
+                    else:
+                        cm["predicted_winner"] = new_home  # 默认主队
+                elif new_home and new_away:
+                    cm["predicted_winner"] = new_home
+
+    # ══ Pass 3: 修正 champion ══
+    final_matches = bracket_payload.get("final", [])
+    if final_matches:
+        fm = final_matches[0]
+        fm_status = (fm.get("status") or "").upper()
+        fm_finished = fm_status in _FINISHED_STATUSES_MODULE or fm.get("source") in ("real_result", "real_data")
+        fm_home = fm.get("home_team", "")
+        fm_away = fm.get("away_team", "")
+        fm_home_score = fm.get("home_score")
+        fm_away_score = fm.get("away_score")
+
+        if fm_finished and fm_home_score is not None and fm_away_score is not None:
+            if fm_home_score > fm_away_score:
+                champion = fm_home
+            elif fm_away_score > fm_home_score:
+                champion = fm_away
+            else:
+                champion = fm.get("winner") or fm_home
+        else:
+            # 决赛未结束：从 predicted_winner 推导
+            champion = fm.get("predicted_winner") or fm.get("winner") or "Unknown"
+
+        if champion and champion != "Unknown":
+            existing_champion = bracket_payload.get("champion", {})
+            if isinstance(existing_champion, dict):
+                existing_champion["team"] = champion
+            else:
+                bracket_payload["champion"] = {"team": champion, "source": "prediction", "status": "predicted"}
+
+    return bracket_payload
 
 
 def validate_bracket_integrity(bracket_payload: Dict) -> list:
