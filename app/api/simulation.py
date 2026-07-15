@@ -10,12 +10,10 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
 
-from app.services.probability_engine import ProbabilityEngine
-from app.services.tournament_sim import simulate_group_stage, simulate_knockout_stage
-from app.services.feature_network import (
-    FeatureAttentionMixerV2,
-)
-from app.services.llm_explainer import MatchExplainerAgent, MatchExplanation
+# ── 延迟导入说明 ──
+# ProbabilityEngine, simulate_group_stage, simulate_knockout_stage,
+# FeatureAttentionMixerV2, MatchExplainerAgent 等重依赖（torch / langchain / chromadb）
+# 已移至各路由函数内部，避免模块导入阶段阻塞 uvicorn 端口绑定。
 
 router = APIRouter(
     prefix="/simulation",
@@ -99,9 +97,25 @@ class KnockoutMatchResult(BaseModel):
     explanation: Optional[str] = Field(None, description="比赛简要说明")
 
 
-class FinalExplanation(MatchExplanation):
-    """决赛解释模型（继承自Pydantic Schema）"""
-    pass
+class FinalExplanation(BaseModel):
+    """决赛解释模型（字段与 MatchExplanation 保持一致，避免模块级重导入）"""
+    tactical_analysis: str = Field(
+        description="战术相克分析：解释两队在战术风格上的克制关系，如高位逼抢 vs 传控体系的对抗"
+    )
+    key_player_impact: str = Field(
+        description="关键球员影响：分析核心球员的表现对比赛结果的决定性作用"
+    )
+    historical_context: str = Field(
+        description="历史交锋摘要：回顾两队历史交手记录和心理优势"
+    )
+    confidence_score: float = Field(
+        description="置信度评分（0-1），表示解释的可信程度",
+        ge=0.0,
+        le=1.0
+    )
+    prediction_summary: str = Field(
+        description="预测结果摘要：简要复述传入的比分和胜负状态（不得修改）"
+    )
 
 
 class SimulationResponse(BaseModel):
@@ -137,7 +151,7 @@ def _get_global_services(app_state):
 
 
 def _simulate_single_match(
-    engine: ProbabilityEngine,
+    engine,  # ProbabilityEngine — 延迟导入，避免模块级 torch 加载
     team_a: TeamInfo,
     team_b: TeamInfo,
     feature_model=None,
@@ -263,6 +277,10 @@ async def run_simulation(
             "generate_final_explanation": true
         }
     """
+    # ── 延迟导入重依赖（torch / langchain 等已在模块级移除） ──
+    from app.services.probability_engine import ProbabilityEngine
+    from app.services.tournament_sim import simulate_group_stage, simulate_knockout_stage
+
     # 验证小组数量
     if len(request.groups) != 12:
         raise HTTPException(status_code=400, detail="必须提供12个小组")
