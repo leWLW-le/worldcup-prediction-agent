@@ -544,13 +544,13 @@ class TournamentStateService:
             return set()
 
         if stage == "semi_finals":
-            # 半决赛未结束 → 半决赛参赛队
+            # 半决赛未结束 → 半决赛参赛队中未淘汰的
             sf_teams = set()
             for f in fixtures:
                 if f.stage == "semi_finals":
                     sf_teams.add(f.home_team)
                     sf_teams.add(f.away_team)
-            return sf_teams
+            return sf_teams - eliminated_teams
 
         if stage == "quarter_finals":
             # 8 强阶段 → QF 参赛队中未淘汰的

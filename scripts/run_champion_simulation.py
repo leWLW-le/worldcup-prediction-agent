@@ -30,6 +30,67 @@ from app.services.tournament_state_service import get_surviving_teams_from_fixtu
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
+_FINISHED_STATUSES = {"FT", "FINISHED", "AET", "PEN"}
+
+
+def _get_bracket_state(db) -> dict:
+    """
+    查询 DB 中的半决赛/决赛 fixtures，判断当前 bracket 状态。
+
+    返回:
+        {
+            "finalists": ["Spain"],          # 已晋级决赛的球队（赢了已结束的半决赛）
+            "pending_semis": [("England", "Argentina")],  # 未结束的半决赛配对
+            "has_final": False,              # 决赛 fixture 是否已有真实球队
+        }
+    """
+    from app.models.agent_models import Fixture
+
+    sf_fixtures = (
+        db.query(Fixture)
+        .filter(Fixture.stage == "semi_finals")
+        .all()
+    )
+    final_fixtures = (
+        db.query(Fixture)
+        .filter(Fixture.stage == "final")
+        .all()
+    )
+
+    finalists = []
+    pending_semis = []
+
+    for f in sf_fixtures:
+        if f.status in _FINISHED_STATUSES and f.winner:
+            # 已结束的半决赛 → 胜者晋级决赛
+            if f.winner == f.home_team or f.winner == f.away_team:
+                finalists.append(f.winner)
+        else:
+            # 未结束的半决赛
+            if not _is_placeholder(f.home_team) and not _is_placeholder(f.away_team):
+                pending_semis.append((f.home_team, f.away_team))
+
+    # 检查决赛是否已有真实球队
+    has_final = False
+    for f in final_fixtures:
+        if not _is_placeholder(f.home_team) and not _is_placeholder(f.away_team):
+            has_final = True
+            break
+
+    return {
+        "finalists": finalists,
+        "pending_semis": pending_semis,
+        "has_final": has_final,
+    }
+
+
+def _is_placeholder(team_name: str) -> bool:
+    """判断球队名是否为占位符（TBD / Winner of 等）"""
+    if not team_name:
+        return True
+    lower = team_name.lower().strip()
+    return lower in ("", "tbd", "null", "none") or lower.startswith("winner")
+
 
 def simulate_match(ensemble_service, home_team, away_team) -> dict:
     """模拟单场比赛 - 根据概率采样结果"""
@@ -180,6 +241,25 @@ def simulate_tournament(n_simulations: int = 10000, surviving_teams: list = None
             return original_build_dict(team, is_home)
         ensemble_service._build_team_features_dict = cached_build_dict
 
+        # ── 探测 bracket 状态（支持部分半决赛已结束的 scenario）──
+        bracket_state = None
+        try:
+            bracket_state = _get_bracket_state(db)
+            if bracket_state["finalists"] or bracket_state["pending_semis"]:
+                logger.info(
+                    f"[Bracket] finalists={bracket_state['finalists']}, "
+                    f"pending_semis={bracket_state['pending_semis']}, "
+                    f"has_final={bracket_state['has_final']}"
+                )
+        except Exception as e:
+            logger.warning(f"[Bracket] 无法探测 bracket 状态: {e}")
+            bracket_state = None
+
+        use_bracket = (
+            bracket_state
+            and (bracket_state["finalists"] or bracket_state["pending_semis"])
+        )
+
         # ── 模拟 ──
         champion_counts = defaultdict(int)
         finalist_counts = defaultdict(int)
@@ -191,41 +271,97 @@ def simulate_tournament(n_simulations: int = 10000, surviving_teams: list = None
             if (sim + 1) % 1000 == 0:
                 logger.info(f"Simulation {sim + 1}/{n_simulations}")
 
-            # 复制 surviving teams 列表并打乱
-            current_round = list(surviving_team_objects)
-            np.random.shuffle(current_round)
+            if use_bracket:
+                # ── bracket-aware 模拟：尊重已完成的半决赛结果 ──
+                # 1. 已晋级决赛的球队
+                finalists_in_final = list(bracket_state["finalists"])
 
-            # 记录四强（如果从 >= 4 队开始）
-            semifinalists = []
-            if len(current_round) >= 4:
-                semifinalists = list(current_round[:4])
-
-            # 淘汰赛模拟
-            while len(current_round) > 1:
-                next_round = []
-                for i in range(0, len(current_round), 2):
-                    if i + 1 < len(current_round):
-                        home = current_round[i]
-                        away = current_round[i + 1]
-
-                        pred = simulate_match(ensemble_service, home, away)
-
+                # 2. 模拟未结束的半决赛
+                pending_winners = []
+                for home_name, away_name in bracket_state["pending_semis"]:
+                    home_obj = team_by_name.get(home_name)
+                    away_obj = team_by_name.get(away_name)
+                    if home_obj and away_obj:
+                        pred = simulate_match(ensemble_service, home_obj, away_obj)
                         if pred['home_score'] > pred['away_score']:
-                            next_round.append(home)
+                            pending_winners.append(home_obj)
                         elif pred['away_score'] > pred['home_score']:
-                            next_round.append(away)
+                            pending_winners.append(away_obj)
                         else:
-                            # 平局: 点球 (ELO 高的赢)
-                            if home.current_elo >= away.current_elo:
-                                next_round.append(home)
+                            if home_obj.current_elo >= away_obj.current_elo:
+                                pending_winners.append(home_obj)
                             else:
+                                pending_winners.append(away_obj)
+
+                # 3. 组合：已晋级球队 + 半决赛胜者 → 决赛
+                final_participants = []
+                for name in finalists_in_final:
+                    obj = team_by_name.get(name)
+                    if obj:
+                        final_participants.append(obj)
+                final_participants.extend(pending_winners)
+
+                # 4. 模拟决赛
+                if len(final_participants) == 1:
+                    champion = final_participants[0]
+                elif len(final_participants) >= 2:
+                    # 如果决赛已有两支球队（has_final=True），直接模拟
+                    # 如果只有两支球队，直接模拟
+                    np.random.shuffle(final_participants)
+                    current_round = final_participants
+                    while len(current_round) > 1:
+                        next_round = []
+                        for i in range(0, len(current_round), 2):
+                            if i + 1 < len(current_round):
+                                home = current_round[i]
+                                away = current_round[i + 1]
+                                pred = simulate_match(ensemble_service, home, away)
+                                if pred['home_score'] > pred['away_score']:
+                                    next_round.append(home)
+                                elif pred['away_score'] > pred['home_score']:
+                                    next_round.append(away)
+                                else:
+                                    if home.current_elo >= away.current_elo:
+                                        next_round.append(home)
+                                    else:
+                                        next_round.append(away)
+                            else:
+                                next_round.append(current_round[i])
+                        current_round = next_round
+                    champion = current_round[0]
+                else:
+                    # 不应发生
+                    continue
+
+            else:
+                # ── 原始随机配对模拟（无 bracket 信息时使用）──
+                current_round = list(surviving_team_objects)
+                np.random.shuffle(current_round)
+
+                while len(current_round) > 1:
+                    next_round = []
+                    for i in range(0, len(current_round), 2):
+                        if i + 1 < len(current_round):
+                            home = current_round[i]
+                            away = current_round[i + 1]
+
+                            pred = simulate_match(ensemble_service, home, away)
+
+                            if pred['home_score'] > pred['away_score']:
+                                next_round.append(home)
+                            elif pred['away_score'] > pred['home_score']:
                                 next_round.append(away)
-                    else:
-                        next_round.append(current_round[i])
+                            else:
+                                if home.current_elo >= away.current_elo:
+                                    next_round.append(home)
+                                else:
+                                    next_round.append(away)
+                        else:
+                            next_round.append(current_round[i])
 
-                current_round = next_round
+                    current_round = next_round
 
-            champion = current_round[0]
+                champion = current_round[0]
 
             # ── 断言：冠军必须属于 surviving_teams ──
             assert champion.name in surviving_names_set, (
@@ -235,10 +371,9 @@ def simulate_tournament(n_simulations: int = 10000, surviving_teams: list = None
 
             champion_counts[champion.name] += 1
 
-            # 记录决赛和四强
-            if semifinalists:
-                for sf in semifinalists:
-                    semifinalist_counts[sf.name] += 1
+            # 记录四强：所有 surviving teams 都是四强
+            for t in surviving_team_objects:
+                semifinalist_counts[t.name] += 1
 
         # ── 计算概率 ──
         total = sum(champion_counts.values())
