@@ -9,10 +9,12 @@ GET  /api/v1/agent/latest-result   - 获取最近一次预测结果
 
 import json
 import logging
+import threading
 from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,9 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 # ── 全局状态（最近一次运行结果） ──
 _last_run_result: Optional[Dict[str, Any]] = None
 _last_run_time: Optional[str] = None
+
+# ── 并发锁：同一时间只允许一个完整预测运行 ──
+_prediction_lock = threading.Lock()
 
 
 def _save_to_db(state_dict: Dict):
@@ -111,21 +116,34 @@ def run_prediction(request: RunPredictionRequest, background_tasks: BackgroundTa
     """一键运行完整冠军预测 Agent"""
     global _last_run_result, _last_run_time
 
-    from app.agents.worldcup_agent import WorldCupPredictionAgent
+    # ── 并发锁：同一时间只允许一个完整预测 ──
+    if not _prediction_lock.acquire(blocking=False):
+        return JSONResponse(
+            status_code=409,
+            content={
+                "status": "conflict",
+                "message": "已有一个预测任务正在运行，请等待完成后再试",
+            },
+        )
 
-    valid_modes = ("workflow", "llm_planner", "llm_planner_safe", "llm_planner_strict")
-    mode = request.mode if request.mode in valid_modes else "workflow"
-    agent = WorldCupPredictionAgent(seed=42)
-    state = agent.run(season=request.season, mode=mode, use_llm=request.use_llm)
-    result = state.to_dict()
+    try:
+        from app.agents.worldcup_agent import WorldCupPredictionAgent
 
-    _last_run_result = result
-    _last_run_time = datetime.utcnow().isoformat()
+        valid_modes = ("workflow", "llm_planner", "llm_planner_safe", "llm_planner_strict")
+        mode = request.mode if request.mode in valid_modes else "workflow"
+        agent = WorldCupPredictionAgent(seed=42)
+        state = agent.run(season=request.season, mode=mode, use_llm=request.use_llm)
+        result = state.to_dict()
 
-    # 异步保存到数据库
-    background_tasks.add_task(_save_to_db, result)
+        _last_run_result = result
+        _last_run_time = datetime.utcnow().isoformat()
 
-    return result
+        # 异步保存到数据库
+        background_tasks.add_task(_save_to_db, result)
+
+        return result
+    finally:
+        _prediction_lock.release()
 
 
 class RefreshDataRequest(BaseModel):
@@ -229,7 +247,6 @@ def final_result():
     返回前执行一致性校验，校验失败返回 503。
     """
     from pathlib import Path
-    from fastapi.responses import JSONResponse
 
     data = None
     source = "none"

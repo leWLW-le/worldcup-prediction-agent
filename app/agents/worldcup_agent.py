@@ -23,7 +23,7 @@ from app.tools.api_sports_tool import APISportsTool
 from app.tools.historical_data_tool import HistoricalDataTool
 from app.tools.feature_builder_tool import FeatureBuilderTool
 from app.tools.match_predictor_tool import MatchPredictorTool
-from app.tools.bracket_tool import BracketTool, validate_bracket_integrity
+from app.tools.bracket_tool import BracketTool, validate_bracket_integrity, normalize_bracket_payload
 from app.tools.explanation_tool import ExplanationTool
 from app.services.team_rating_service import load_team_ratings
 from app.services.recent_form_service import compute_recent_form
@@ -1354,7 +1354,6 @@ class WorldCupPredictionAgent:
         if not bp:
             # 尝试从 bracket tool 生成
             try:
-                from app.tools.bracket_tool import BracketTool, validate_bracket_integrity
                 bracket_tool = BracketTool()
                 bp = bracket_tool.predict_knockout_stage()
             except Exception:
@@ -1362,7 +1361,6 @@ class WorldCupPredictionAgent:
 
         # ── 标准化 bracket_payload（修复 winner/predicted_winner/晋级链） ──
         try:
-            from app.tools.bracket_tool import normalize_bracket_payload
             bp = normalize_bracket_payload(bp)
         except Exception as e:
             logger.warning("[Agent] normalize_bracket_payload 失败: %s", e)
