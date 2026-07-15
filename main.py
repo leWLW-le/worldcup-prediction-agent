@@ -79,10 +79,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         import torch
         from app.services.feature_network import FeatureAttentionMixer
 
-        # 通过环境变量 MODEL_PATH 配置模型路径，使用绝对路径
+        # 通过环境变量 MODEL_PATH 配置模型路径
         raw_model_path = settings.MODEL_PATH
-        base_dir = Path(__file__).parent.parent
-        weights_path = (base_dir / raw_model_path).resolve()
+        project_root = Path(__file__).resolve().parent  # main.py 位于项目根目录
+
+        # 支持绝对路径和相对路径
+        if Path(raw_model_path).is_absolute():
+            weights_path = Path(raw_model_path).resolve()
+        else:
+            weights_path = (project_root / raw_model_path).resolve()
 
         print(f"   Model path: {weights_path}")
         print(f"   File exists: {weights_path.exists()}")
