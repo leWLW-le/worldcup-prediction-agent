@@ -23,7 +23,7 @@ from app.tools.api_sports_tool import APISportsTool
 from app.tools.historical_data_tool import HistoricalDataTool
 from app.tools.feature_builder_tool import FeatureBuilderTool
 from app.tools.match_predictor_tool import MatchPredictorTool
-from app.tools.bracket_tool import BracketTool
+from app.tools.bracket_tool import BracketTool, validate_bracket_integrity
 from app.tools.explanation_tool import ExplanationTool
 from app.services.team_rating_service import load_team_ratings
 from app.services.recent_form_service import compute_recent_form
@@ -1333,7 +1333,7 @@ class WorldCupPredictionAgent:
         if not bp:
             # 尝试从 bracket tool 生成
             try:
-                from app.tools.bracket_tool import BracketTool
+                from app.tools.bracket_tool import BracketTool, validate_bracket_integrity
                 bracket_tool = BracketTool()
                 bp = bracket_tool.predict_knockout_stage()
             except Exception:
@@ -1478,6 +1478,18 @@ class WorldCupPredictionAgent:
         # Step 5: 一致性校验（保存前）
         # ══════════════════════════════════════════════════════
         _validate_prediction_snapshot(snapshot)
+
+        # ── Step 5b: 淘汰赛路径一致性校验 ──
+        bp_for_validation = snapshot.get("bracket_payload", {})
+        if bp_for_validation:
+            bracket_errors = validate_bracket_integrity(bp_for_validation)
+            if bracket_errors:
+                logger.warning("[Agent] bracket_integrity 校验发现 %d 个问题: %s",
+                               len(bracket_errors), bracket_errors[:3])
+                # 不阻止保存，但记录到 snapshot 中供前端展示
+                snapshot["bracket_integrity_errors"] = bracket_errors
+            else:
+                logger.info("[Agent] bracket_integrity 校验通过 ✓")
 
         # ══════════════════════════════════════════════════════
         # Step 6: 保存（原子写入 JSON + DB 持久化）

@@ -949,7 +949,7 @@ def _is_finished(m: Dict) -> bool:
     """判断比赛是否已结束（FINISHED 状态）"""
     status = (m.get("status") or "").upper()
     source = m.get("source", m.get("match_source", ""))
-    if status in ("FINISHED", "FINISHED_PEN", "PEN"):
+    if status in ("FINISHED", "FT", "AET", "PEN", "FINISHED_PEN"):
         return True
     if source in ("real_result", "real_data", "football_data"):
         return True
@@ -1383,16 +1383,23 @@ def display_knockout_roadmap(data: Dict):
     <div class="road-matches">{matches_html}</div>
 </div>"""
 
-    # 冠军列
-    champion = data.get("champion", "")
-    if champion:
+    # 冠军列 — 使用 bracket_payload 中的冠军（淘汰赛路径胜者），非 Monte Carlo 冠军
+    bracket_champion_team = ""
+    bp_champion = bp.get("champion", {})
+    if isinstance(bp_champion, dict):
+        bracket_champion_team = bp_champion.get("team", "")
+    elif isinstance(bp_champion, str):
+        bracket_champion_team = bp_champion
+
+    if bracket_champion_team:
         cols_html += f"""
 <div class="road-round" style="min-width:120px;max-width:140px;">
-    <div class="road-round-title">🏆 冠军</div>
+    <div class="road-round-title">🏆 淘汰赛冠军</div>
     <div class="road-matches" style="justify-content:center;">
         <div class="road-champion-box">
             <div style="font-size:2rem;">🏆</div>
-            <div style="color:#b8860b;font-size:1.1rem;font-weight:800;margin-top:.2rem;">{champion}</div>
+            <div style="color:#b8860b;font-size:1.1rem;font-weight:800;margin-top:.2rem;">{bracket_champion_team}</div>
+            <div style="color:#8a9bb5;font-size:.6rem;margin-top:.15rem;">淘汰赛路径胜者</div>
         </div>
     </div>
 </div>"""

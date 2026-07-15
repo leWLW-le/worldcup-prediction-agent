@@ -241,6 +241,21 @@ def _update_final_result(
         logger.error("[FullRefresh] 一致性校验失败，拒绝保存: %s", e)
         raise RuntimeError(f"预测数据一致性校验失败: {e}")
 
+    # ── Step 6b: 淘汰赛路径一致性校验 ──
+    bp_for_validation = existing.get("bracket_payload", {})
+    if bp_for_validation:
+        try:
+            from app.tools.bracket_tool import validate_bracket_integrity
+            bracket_errors = validate_bracket_integrity(bp_for_validation)
+            if bracket_errors:
+                logger.warning("[FullRefresh] bracket_integrity 校验发现 %d 个问题: %s",
+                               len(bracket_errors), bracket_errors[:3])
+                existing["bracket_integrity_errors"] = bracket_errors
+            else:
+                logger.info("[FullRefresh] bracket_integrity 校验通过 ✓")
+        except Exception as e:
+            logger.warning("[FullRefresh] bracket_integrity 校验异常: %s", e)
+
     # ══════════════════════════════════════════════════════
     # Step 7: 保存（原子写入 JSON + DB 持久化）
     # ══════════════════════════════════════════════════════

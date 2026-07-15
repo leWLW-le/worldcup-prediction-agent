@@ -178,7 +178,8 @@ class BracketTool:
                     "home_score": match.get("score_a"),
                     "away_score": match.get("score_b"),
                     "predicted_score": f"{match['score_a']}-{match['score_b']}" if match.get("score_a") is not None else None,
-                    "winner": winner_name,
+                    "predicted_winner": winner_name,
+                    "winner": None,
                     "status": match.get("status", "unknown"),
                     "display_label": "已结束" if match.get("status") in self._FINISHED_STATUSES else "预测",
                     "match_source": "real_result" if match.get("status") in self._FINISHED_STATUSES else "prediction",
@@ -194,13 +195,13 @@ class BracketTool:
         if final_match.get("winner_name"):
             bracket_payload["champion"] = {
                 "team": final_match["winner_name"],
-                "probability": None,  # Add logic for probability if available
-                "source": "real_result",
-                "status": "confirmed",
+                "probability": None,
+                "source": "prediction",
+                "status": "predicted",
             }
             bracket_payload["runner_up"] = {
                 "team": final_match["team_b_name"] if final_match["winner_name"] == final_match["team_a_name"] else final_match["team_a_name"],
-                "source": "real_result",
+                "source": "prediction",
             }
 
         return {
@@ -311,13 +312,23 @@ class BracketTool:
                 winner = fx.get("winner")
 
                 if status in self._FINISHED_STATUSES and home_score is not None and away_score is not None:
-                    # 已结束：使用真实比分
+                    # 已结束：从比分计算 winner（不信任 DB 的 winner 字段）
                     is_penalty = status == "PEN"
-                    # 处理平局+点球的情况
-                    if winner == "Draw" and is_penalty:
+                    winner_decision_source = "score"
+
+                    if home_score > away_score:
                         winner_name = home
+                    elif away_score > home_score:
+                        winner_name = away
+                    elif is_penalty:
+                        # 平局 + 点球：DB 的 winner 可能是点球胜者，但仍优先信任比分
+                        # 如果比分相同（点球比分未体现在 home/away_score），用 DB winner 作兜底
+                        winner_name = winner if winner and winner != "Draw" else home
+                        winner_decision_source = "penalty_default"
                     else:
-                        winner_name = winner if winner else home
+                        # 真正平局（极少见于淘汰赛），默认 home
+                        winner_name = home
+                        winner_decision_source = "draw_default"
 
                     current_round_winners[f"{round_prefix}_{i}"] = (
                         winner_name,
@@ -333,11 +344,12 @@ class BracketTool:
                         "predicted_home_score": home_score,
                         "predicted_away_score": away_score,
                         "winner": winner_name,
+                        "winner_decision_source": winner_decision_source,
                         "is_penalty_shootout": is_penalty,
                         "status": "FINISHED",
                         "source": "real_result",
                         "confidence": 1.0,
-                        "reason_codes": ["real_result"],
+                        "reason_codes": ["real_result", winner_decision_source],
                     })
                 else:
                     # 未开始：用 predictor 预测
@@ -364,7 +376,8 @@ class BracketTool:
                         "predicted_score": pred_score,
                         "predicted_home_score": pred_home,
                         "predicted_away_score": pred_away,
-                        "winner": pred_winner,
+                        "predicted_winner": pred_winner,
+                        "winner": None,
                         "is_penalty_shootout": False,
                         "status": "SCHEDULED",
                         "source": "agent_prediction",
@@ -401,23 +414,37 @@ class BracketTool:
                     knockout_result[round_key] = {"matches": [{
                         "team_a_name": m["home_team"], "team_b_name": m["away_team"],
                         "score_a": m["predicted_home_score"], "score_b": m["predicted_away_score"],
-                        "winner_name": m["winner"],
+                        "winner_name": m.get("winner") or m.get("predicted_winner", ""),
                         "is_penalty_shootout": m.get("is_penalty_shootout", False),
                     }]}
             else:
                 knockout_result[round_key] = {"matches": [
                     {"team_a_name": m["home_team"], "team_b_name": m["away_team"],
                      "score_a": m["predicted_home_score"], "score_b": m["predicted_away_score"],
-                     "winner_name": m["winner"],
+                     "winner_name": m.get("winner") or m.get("predicted_winner", ""),
                      "is_penalty_shootout": m.get("is_penalty_shootout", False)}
                     for m in round_preds
                 ]}
 
-        # 提取冠军和亚军
+        # 提取冠军和亚军 — 从决赛比分计算，不信任 winner 字段
         final_preds = [m for m in knockout_predictions if m["round"] == "final"]
         if final_preds:
-            champion = final_preds[0]["winner"]
-            loser = final_preds[0]["away_team"] if champion == final_preds[0]["home_team"] else final_preds[0]["home_team"]
+            fm = final_preds[0]
+            f_home = fm.get("predicted_home_score") or fm.get("home_score")
+            f_away = fm.get("predicted_away_score") or fm.get("away_score")
+            f_status = (fm.get("status") or "").upper()
+            if f_status in self._FINISHED_STATUSES and f_home is not None and f_away is not None:
+                if f_home > f_away:
+                    champion = fm["home_team"]
+                elif f_away > f_home:
+                    champion = fm["away_team"]
+                else:
+                    champion = fm.get("winner") or fm["home_team"]
+                loser = fm["away_team"] if champion == fm["home_team"] else fm["home_team"]
+            else:
+                # 决赛尚未结束，无真实冠军
+                champion = fm.get("winner") or fm.get("predicted_winner") or "Unknown"
+                loser = fm["away_team"] if champion == fm["home_team"] else fm["home_team"]
         else:
             champion = "Unknown"
             loser = "Unknown"
@@ -504,7 +531,8 @@ class BracketTool:
                 "predicted_score": f"{match['score_a']}-{match['score_b']}",
                 "predicted_home_score": match["score_a"],
                 "predicted_away_score": match["score_b"],
-                "winner": match["winner_name"],
+                "predicted_winner": match["winner_name"],
+                "winner": None,
                 "is_penalty_shootout": match.get("is_penalty_shootout", False),
                 "source": "agent_prediction",
                 "confidence": round(pred.get("confidence", 0.6), 4),
@@ -551,7 +579,8 @@ class BracketTool:
                 "predicted_score": f"{match['score_a']}-{match['score_b']}",
                 "predicted_home_score": match["score_a"],
                 "predicted_away_score": match["score_b"],
-                "winner": match["winner_name"],
+                "predicted_winner": match["winner_name"],
+                "winner": None,
                 "is_penalty_shootout": match.get("is_penalty_shootout", False),
                 "source": "agent_prediction",
                 "confidence": round(pred.get("confidence", 0.6), 4),
@@ -588,8 +617,10 @@ class BracketTool:
             "predicted_score": f"{final_match['score_a']}-{final_match['score_b']}",
             "predicted_home_score": final_match["score_a"],
             "predicted_away_score": final_match["score_b"],
-            "winner": final_match["winner_name"],
+            "predicted_winner": final_match["winner_name"],
+            "winner": None,
             "is_penalty_shootout": final_match.get("is_penalty_shootout", False),
+            "status": "SCHEDULED",
             "source": "agent_prediction",
             "confidence": round(pred.get("confidence", 0.6), 4),
             "reason_codes": pred.get("reason_codes", []),
@@ -615,7 +646,12 @@ class BracketTool:
         return payload
 
     def _unify_match_fields(self, m):
-        """统一比赛字段"""
+        """统一比赛字段
+
+        语义规则：
+        - FINISHED（已结束）：winner 为真实胜者（从比分计算），home_score/away_score 为真实比分
+        - SCHEDULED（预测）：winner=None，predicted_winner 为预测胜者
+        """
         status = (m.get("status") or "").upper()
         source = m.get("source", "agent_prediction")
         is_verified = m.get("is_verified", True)
@@ -636,6 +672,17 @@ class BracketTool:
         if predicted_score is None and home_score is not None and away_score is not None:
             predicted_score = f"{home_score}-{away_score}"
 
+        is_finished = status in self._FINISHED_STATUSES or source in ("real_result", "real_data")
+
+        if is_finished:
+            # 已结束：winner 为真实胜者
+            winner = m.get("winner") or ""
+            predicted_winner = None
+        else:
+            # 预测：winner=None，predicted_winner 为预测胜者
+            winner = None
+            predicted_winner = m.get("predicted_winner") or m.get("winner", "")
+
         return {
             "round": m.get("round", ""),
             "home_team": m.get("home_team", ""),
@@ -643,7 +690,8 @@ class BracketTool:
             "home_score": home_score,
             "away_score": away_score,
             "predicted_score": predicted_score,
-            "winner": m.get("winner", ""),
+            "winner": winner,
+            "predicted_winner": predicted_winner,
             "status": status or m.get("status", ""),
             "display_label": display_label,
             "match_source": match_source,
@@ -651,3 +699,153 @@ class BracketTool:
             "is_verified": is_verified,
             "needs_review": needs_review,
         }
+
+
+# ── 淘汰赛路径一致性校验 ──
+
+_ROUND_ORDER = ["round_of_32", "round_of_16", "quarter_finals", "semi_finals", "final"]
+_FINISHED_STATUSES_MODULE = {"FT", "AET", "PEN", "FINISHED"}
+
+
+def validate_bracket_integrity(bracket_payload: Dict) -> list:
+    """淘汰赛路径一致性校验。
+
+    在保存 bracket_payload 之前以及 API 返回之前调用。
+    返回 errors 列表（空列表 = 全部通过）。
+
+    校验项：
+    1. 所有已结束比赛的 winner 必须与比分一致
+    2. 已结束比赛必须有 winner
+    3. SCHEDULED 比赛不能有真实 winner（winner 必须为 None 或空）
+    4. 晋级链：后续轮次的参赛队必须是前一轮的 winner
+    5. 决赛胜者 = bracket_payload.champion.team
+    6. 所有 5 轮都存在（round_of_32 → final）
+    7. 每轮比赛数量为 2 的幂次（或合理数量）
+    """
+    errors = []
+    if not bracket_payload or not isinstance(bracket_payload, dict):
+        return ["bracket_payload 为空或格式错误"]
+
+    # ── Check 6: 所有 5 轮都存在 ──
+    for rnd in _ROUND_ORDER:
+        if rnd not in bracket_payload:
+            errors.append(f"缺少轮次: {rnd}")
+    if errors:
+        return errors  # 结构不完整，无法继续校验
+
+    # ── 收集所有比赛 ──
+    all_matches = []
+    for rnd in _ROUND_ORDER:
+        for m in bracket_payload.get(rnd, []):
+            m["_round"] = rnd
+            all_matches.append(m)
+
+    # ── Check 1 & 2 & 3: winner/比分一致性 ──
+    for m in all_matches:
+        status = (m.get("status") or "").upper()
+        source = m.get("source", "")
+        is_finished = status in _FINISHED_STATUSES_MODULE or source in ("real_result", "real_data")
+        home = m.get("home_team", "")
+        away = m.get("away_team", "")
+        winner = m.get("winner")
+        home_score = m.get("home_score") or m.get("predicted_home_score")
+        away_score = m.get("away_score") or m.get("predicted_away_score")
+
+        if is_finished:
+            # Check 2: 已结束比赛必须有 winner
+            if not winner:
+                errors.append(
+                    f"[{m['_round']}] {home} vs {away} 已结束但无 winner"
+                )
+            else:
+                # Check 1: winner 必须与比分一致
+                if (home_score is not None and away_score is not None
+                        and home_score != away_score):
+                    expected = home if home_score > away_score else away
+                    if winner != expected:
+                        errors.append(
+                            f"[{m['_round']}] {home} {home_score}-{away_score} {away} "
+                            f"但 winner={winner}，应为 {expected}"
+                        )
+                # winner 必须是参赛队之一
+                if winner not in (home, away):
+                    errors.append(
+                        f"[{m['_round']}] winner={winner} 不是参赛队 ({home}/{away})"
+                    )
+        else:
+            # Check 3: SCHEDULED 比赛不能有真实 winner
+            if winner is not None and winner != "":
+                errors.append(
+                    f"[{m['_round']}] {home} vs {away} 状态为 {status or 'SCHEDULED'} "
+                    f"但有 winner={winner}（应为 None）"
+                )
+
+    # ── Check 4: 晋级链一致性 ──
+    # 构建每轮的胜者集合
+    round_winners = {}
+    for rnd in _ROUND_ORDER:
+        winners = set()
+        for m in bracket_payload.get(rnd, []):
+            w = m.get("winner")
+            if w:
+                winners.add(w)
+            pw = m.get("predicted_winner")
+            if pw:
+                winners.add(pw)
+        round_winners[rnd] = winners
+
+    # 检查后续轮次的参赛队是否来自前一轮的胜者
+    for idx in range(1, len(_ROUND_ORDER)):
+        prev_rnd = _ROUND_ORDER[idx - 1]
+        curr_rnd = _ROUND_ORDER[idx]
+        prev_winners = round_winners.get(prev_rnd, set())
+        if not prev_winners:
+            continue  # 前一轮无数据，跳过
+
+        for m in bracket_payload.get(curr_rnd, []):
+            home = m.get("home_team", "")
+            away = m.get("away_team", "")
+            # 如果参赛队不是 TBD 且不在前一轮胜者中，记录警告
+            for team in [home, away]:
+                if team and team != "TBD" and team not in prev_winners:
+                    # 仅当该轮有已结束的比赛时才报错（纯预测轮次允许来自模拟）
+                    prev_finished = any(
+                        (bm.get("status") or "").upper() in _FINISHED_STATUSES_MODULE
+                        or bm.get("source") in ("real_result", "real_data")
+                        for bm in bracket_payload.get(prev_rnd, [])
+                    )
+                    if prev_finished:
+                        errors.append(
+                            f"[{curr_rnd}] {team} 未出现在 {prev_rnd} 胜者列表中"
+                        )
+
+    # ── Check 5: 决赛胜者 = bracket champion ──
+    champion_data = bracket_payload.get("champion", {})
+    bracket_champion = champion_data.get("team") if isinstance(champion_data, dict) else None
+    final_matches = bracket_payload.get("final", [])
+    if final_matches and bracket_champion:
+        final_winner = None
+        for fm in final_matches:
+            w = fm.get("winner")
+            if w:
+                final_winner = w
+                break
+        if final_winner and final_winner != bracket_champion:
+            errors.append(
+                f"决赛胜者={final_winner} 但 bracket champion={bracket_champion}"
+            )
+
+    # ── Check 7: 每轮比赛数量合理性 ──
+    expected_counts = {
+        "round_of_32": 16, "round_of_16": 8,
+        "quarter_finals": 4, "semi_finals": 2, "final": 1,
+    }
+    for rnd in _ROUND_ORDER:
+        actual = len(bracket_payload.get(rnd, []))
+        expected = expected_counts.get(rnd, 0)
+        if actual > expected:
+            errors.append(
+                f"[{rnd}] 比赛数量 {actual} 超过预期 {expected}"
+            )
+
+    return errors

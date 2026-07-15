@@ -297,6 +297,19 @@ def final_result():
             },
         )
 
+    # ── 淘汰赛路径一致性校验（不阻止返回，仅记录） ──
+    bp = data.get("bracket_payload", {})
+    if bp:
+        try:
+            from app.tools.bracket_tool import validate_bracket_integrity
+            bracket_errors = validate_bracket_integrity(bp)
+            if bracket_errors:
+                logger.warning("[API] final-result bracket_integrity 校验发现 %d 个问题 (source=%s): %s",
+                               len(bracket_errors), source, bracket_errors[:3])
+                data["bracket_integrity_errors"] = bracket_errors
+        except Exception as e:
+            logger.warning("[API] bracket_integrity 校验异常: %s", e)
+
     # 标注数据来源（便于调试）
     data["_source"] = source
     return data
