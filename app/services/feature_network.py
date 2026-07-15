@@ -334,6 +334,80 @@ class FeatureAttentionMixerV2(nn.Module):
         return logits
 
 
+def verify_checkpoint_compatibility(checkpoint, model_class, **model_kwargs) -> dict:
+    """
+    探测 checkpoint 架构并与目标模型类对比，验证兼容性。
+
+    Args:
+        checkpoint: torch.load 返回的对象（state_dict 或含 state_dict 的 dict）
+        model_class: 目标模型类（如 FeatureAttentionMixerV2）
+        **model_kwargs: 传给模型类构造函数的参数
+
+    Returns:
+        dict: {
+            "compatible": bool,
+            "checkpoint_keys": list,
+            "model_keys": list,
+            "missing_keys": list,      # 模型有但 checkpoint 没有
+            "unexpected_keys": list,   # checkpoint 有但模型没有
+            "shape_mismatches": list,  # key 相同但 shape 不同
+            "mismatches": str,         # 汇总描述
+            "total_params": int,       # checkpoint 总参数数
+        }
+    """
+    # 提取 state_dict
+    if isinstance(checkpoint, dict):
+        if "state_dict" in checkpoint:
+            sd_ckpt = checkpoint["state_dict"]
+        elif "model_state_dict" in checkpoint:
+            sd_ckpt = checkpoint["model_state_dict"]
+        else:
+            sd_ckpt = checkpoint
+    else:
+        sd_ckpt = checkpoint.state_dict()
+
+    # 实例化目标模型
+    model = model_class(**model_kwargs)
+    sd_model = model.state_dict()
+
+    ckpt_keys = set(sd_ckpt.keys())
+    model_keys = set(sd_model.keys())
+
+    missing = sorted(model_keys - ckpt_keys)
+    unexpected = sorted(ckpt_keys - model_keys)
+
+    # 检查 shape 匹配
+    shape_mismatches = []
+    common = sorted(ckpt_keys & model_keys)
+    for k in common:
+        ckpt_shape = tuple(sd_ckpt[k].shape)
+        model_shape = tuple(sd_model[k].shape)
+        if ckpt_shape != model_shape:
+            shape_mismatches.append(f"{k}: checkpoint={ckpt_shape} vs model={model_shape}")
+
+    total_params = sum(v.numel() for v in sd_ckpt.values())
+    compatible = len(missing) == 0 and len(unexpected) == 0 and len(shape_mismatches) == 0
+
+    mismatches_parts = []
+    if missing:
+        mismatches_parts.append(f"missing_keys={missing}")
+    if unexpected:
+        mismatches_parts.append(f"unexpected_keys={unexpected}")
+    if shape_mismatches:
+        mismatches_parts.append(f"shape_mismatches={shape_mismatches}")
+
+    return {
+        "compatible": compatible,
+        "checkpoint_keys": sorted(ckpt_keys),
+        "model_keys": sorted(model_keys),
+        "missing_keys": missing,
+        "unexpected_keys": unexpected,
+        "shape_mismatches": shape_mismatches,
+        "mismatches": "; ".join(mismatches_parts) if mismatches_parts else "none",
+        "total_params": total_params,
+    }
+
+
 class FocalLoss(nn.Module):
     """
     Focal Loss — 解决类别不平衡问题

@@ -13,9 +13,7 @@ from pydantic import BaseModel, Field
 from app.services.probability_engine import ProbabilityEngine
 from app.services.tournament_sim import simulate_group_stage, simulate_knockout_stage
 from app.services.feature_network import (
-    FeatureAttentionMixer,
-    normalize_features,
-    integrate_with_probability_engine
+    FeatureAttentionMixerV2,
 )
 from app.services.llm_explainer import MatchExplainerAgent, MatchExplanation
 
@@ -142,85 +140,96 @@ def _simulate_single_match(
     engine: ProbabilityEngine,
     team_a: TeamInfo,
     team_b: TeamInfo,
-    feature_model: Optional[FeatureAttentionMixer] = None,
+    feature_model=None,
     enable_attention: bool = True
 ) -> tuple[int, int, float]:
     """
     模拟单场比赛
-    
+
     Returns:
         (score_a, score_b, win_prob_a)
     """
     # 基础 Elo 胜率预测
     base_scores = engine.predict_score_distribution(team_a.elo_rating, team_b.elo_rating)
-    
-    # 如果启用了注意力网络且有模型可用，进行调整
-    if enable_attention and feature_model:
+    rating_diff = team_b.elo_rating - team_a.elo_rating
+    base_win_prob_a = 1 / (1 + 10 ** (rating_diff / 400))
+
+    # 如果启用了注意力网络且有 V2 模型可用，使用 V2 三分类输出调整胜率
+    if enable_attention and feature_model is not None:
         try:
-            # 构建特征字典
-            team_a_features = {
-                'elo_rating': team_a.elo_rating,
-                'player_value': team_a.player_value,
-                'recent_form': team_a.recent_form,
-                'injury_rate': team_a.injury_rate
-            }
-            team_b_features = {
-                'elo_rating': team_b.elo_rating,
-                'player_value': team_b.player_value,
-                'recent_form': team_b.recent_form,
-                'injury_rate': team_b.injury_rate
-            }
-            
-            # 计算基础胜率（从 Elo 分差）
-            rating_diff = team_b.elo_rating - team_a.elo_rating
-            base_win_prob_a = 1 / (1 + 10 ** (rating_diff / 400))
-            
-            # 使用注意力网络调整
-            adjusted_prob_a = integrate_with_probability_engine(
-                engine,
-                team_a.elo_rating,
-                team_b.elo_rating,
-                team_a_features,
-                team_b_features,
-                feature_model,
-                base_win_prob_a
-            )
-            
-            # 根据调整后的概率选择比分
-            # 这里简化处理：如果调整后胜率显著提高，倾向于选择更有利的比分
-            rand = random.random()
-            cumulative_prob = 0.0
-            
-            for goals_a, goals_b, prob in base_scores:
-                cumulative_prob += prob
-                # 应用调整：如果 A 队优势增强，增加选择 A 队有利比分的概率
-                adjusted_threshold = cumulative_prob * (1 + (adjusted_prob_a - base_win_prob_a) * 2)
-                if rand < adjusted_threshold:
-                    return goals_a, goals_b, adjusted_prob_a
-            
-            # 默认返回最可能的比分
-            return base_scores[0][0], base_scores[0][1], adjusted_prob_a
-            
+            import torch
+            from app.services.feature_network import FeatureAttentionMixerV2
+
+            if isinstance(feature_model, FeatureAttentionMixerV2):
+                # 构建 67 维组合特征: [home(25), away(25), diff(17)]
+                combined = _build_sparse_combined_features(team_a, team_b)
+                combined_tensor = torch.tensor(combined.reshape(1, -1), dtype=torch.float32)
+
+                with torch.inference_mode():
+                    logits = feature_model(combined_tensor)
+                    probs = torch.softmax(logits, dim=1).numpy()[0]
+
+                # probs: [home_win, draw, away_win]
+                adjusted_prob_a = float(probs[0])
+                # 与基础 Elo 胜率加权平均（避免完全依赖稀疏特征）
+                adjusted_prob_a = 0.6 * adjusted_prob_a + 0.4 * base_win_prob_a
+                adjusted_prob_a = max(0.05, min(0.95, adjusted_prob_a))
+
+                # 根据调整后的概率选择比分
+                rand = random.random()
+                cumulative_prob = 0.0
+
+                for goals_a, goals_b, prob in base_scores:
+                    cumulative_prob += prob
+                    adjusted_threshold = cumulative_prob * (1 + (adjusted_prob_a - base_win_prob_a) * 2)
+                    if rand < adjusted_threshold:
+                        return goals_a, goals_b, adjusted_prob_a
+
+                return base_scores[0][0], base_scores[0][1], adjusted_prob_a
+
         except Exception as e:
-            # 如果注意力网络失败，回退到基础预测
-            print(f"⚠️  Attention network failed: {e}, using base prediction")
-    
+            print(f"Warning: V2 attention network failed: {e}, using base prediction")
+
     # 基础预测（无注意力调整）
     rand = random.random()
     cumulative_prob = 0.0
-    
+
     for goals_a, goals_b, prob in base_scores:
         cumulative_prob += prob
         if rand < cumulative_prob:
-            # 计算基础胜率
-            rating_diff = team_b.elo_rating - team_a.elo_rating
-            base_win_prob_a = 1 / (1 + 10 ** (rating_diff / 400))
             return goals_a, goals_b, base_win_prob_a
-    
+
     # 如果随机数超出范围，返回最可能的比分
-    rating_diff = team_b.elo_rating - team_a.elo_rating
-    base_win_prob_a = 1 / (1 + 10 ** (rating_diff / 400))
     return base_scores[0][0], base_scores[0][1], base_win_prob_a
+
+
+def _build_sparse_combined_features(team_a: TeamInfo, team_b: TeamInfo):
+    """
+    从 TeamInfo 的 4 个基础特征构建稀疏 67 维组合向量。
+
+    V2 的 TEAM_FEATURE_NAMES 有 25 个特征，TeamInfo 提供其中 4 个：
+      - elo_rating → index 0
+      - recent_form → index 10 (win_rate_5)
+      - player_value → index 17 (attack_score)
+      - injury_rate → index 23 (avg_goals_conceded)
+
+    combined = [home(25), away(25), diff(17)] = 67 维
+    """
+    import numpy as np
+
+    combined = np.zeros(67, dtype=np.float32)
+
+    def fill_team_features(offset, team):
+        combined[offset + 0] = team.elo_rating
+        combined[offset + 10] = team.recent_form
+        combined[offset + 17] = team.player_value / 100.0
+        combined[offset + 23] = team.injury_rate * 2.0
+
+    fill_team_features(0, team_a)
+    fill_team_features(25, team_b)
+    combined[50] = team_a.elo_rating - team_b.elo_rating  # diff_elo_rating
+
+    return combined
 
 
 # ==================== API Endpoints ====================

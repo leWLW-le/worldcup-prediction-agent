@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("🤖 Loading PyTorch model weights...")
     try:
         import torch
-        from app.services.feature_network import FeatureAttentionMixer
+        from app.services.feature_network import FeatureAttentionMixerV2, verify_checkpoint_compatibility
 
         # 通过环境变量 MODEL_PATH 配置模型路径
         raw_model_path = settings.MODEL_PATH
@@ -93,14 +93,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         print(f"   File exists: {weights_path.exists()}")
 
         if weights_path.exists():
-            feature_model = FeatureAttentionMixer()
+            # 先探测 checkpoint 架构兼容性
+            ckpt = torch.load(str(weights_path), map_location="cpu", weights_only=False)
+            compat = verify_checkpoint_compatibility(ckpt, FeatureAttentionMixerV2)
+            if not compat["compatible"]:
+                raise RuntimeError(
+                    f"Checkpoint incompatible with FeatureAttentionMixerV2: {compat['mismatches']}"
+                )
+            print(f"   Checkpoint compatibility: OK ({compat['total_params']} params)")
+
+            # 使用与训练完全一致的构造参数
+            feature_model = FeatureAttentionMixerV2(team_dim=25, input_dim=50)
             feature_model.load_state_dict(
                 torch.load(str(weights_path), map_location="cpu", weights_only=True)
             )
             feature_model.eval()
             app.state.feature_model = feature_model
             _model_status = "loaded"
-            print(f"✅ PyTorch model loaded from {weights_path}")
+            print(f"✅ PyTorch model loaded (FeatureAttentionMixerV2) from {weights_path}")
         else:
             # 权重文件不存在 — 不加载随机模型，标记为 missing
             app.state.feature_model = None
