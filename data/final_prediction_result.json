@@ -1,31 +1,23 @@
 {
-  "champion": "Argentina",
-  "champion_probability": 0.2976,
+  "champion": "Spain",
+  "champion_probability": 0.4979,
   "top5": [
     {
+      "team": "Spain",
+      "probability": 0.4979
+    },
+    {
       "team": "Argentina",
-      "probability": 0.2976
-    },
-    {
-      "team": "France",
-      "probability": 0.1883
-    },
-    {
-      "team": "Brazil",
-      "probability": 0.1668
+      "probability": 0.2534
     },
     {
       "team": "England",
-      "probability": 0.1103
-    },
-    {
-      "team": "Spain",
-      "probability": 0.081
+      "probability": 0.2487
     }
   ],
   "model_version": "ensemble_v2",
   "simulation_count": 10000,
-  "data_source": "fixtures_table (100/104 finished)",
+  "data_source": "fixtures_table (bracket-aware)",
   "historical_samples": 6000,
   "model_files_loaded": {
     "nn_v2": true,

@@ -1,122 +1,157 @@
-# World Cup Prediction API
+# 2026 世界杯冠军预测 Agent
 
-基于 FastAPI 的世界杯冠军预测系统后端服务。
+基于 **Agent + Tools** 架构的 2026 美加墨世界杯冠军预测智能体系统。通过五模型集成预测引擎、Bracket-Aware 蒙特卡洛模拟（10,000 次）、LLM 可解释性分析和交互式 What-If 沙盒，实现从数据采集到冠军预测的全流程自动化。
 
-## 📁 项目结构
+## 线上演示
 
-```
-worldcup/
-├── app/
-│   ├── api/              # API 路由层
-│   │   ├── teams.py      # 球队管理接口
-│   │   ├── predictions.py # 预测相关接口
-│   │   └── routes.py     # 路由注册
-│   ├── core/             # 核心配置
-│   │   └── config.py     # 应用配置
-│   ├── models/           # 数据模型
-│   │   ├── schemas.py    # SQLAlchemy ORM 模型
-│   │   └── pydantic_models.py # Pydantic 验证模型
-│   ├── services/         # 业务逻辑层
-│   │   └── prediction_service.py # 预测服务
-│   ├── db/               # 数据库层
-│   │   └── database.py   # 数据库连接
-│   └── data/             # 数据文件目录
-├── main.py               # 应用入口
-├── init_data.py          # 数据初始化脚本
-├── requirements.txt      # 依赖包
-└── README.md
-```
+- **前端面板**：https://worldcup-frontend.onrender.com
+- **后端 API**：https://worldcup-backend-k2sn.onrender.com
+- **API 文档**：https://worldcup-backend-k2sn.onrender.com/docs
 
-## 🚀 快速开始
+## 核心特性
 
-### 1. 安装依赖
+**五模型集成预测** — 注意力神经网络 (30%) + ELO (25%) + XGBoost (20%) + Poisson (15%) + 路径概率 (10%)，加权集成降低单一模型偏见。
+
+**Bracket-Aware 蒙特卡洛** — 10,000 次完整赛程模拟，自动感知真实对阵结构（已完赛的半决赛/决赛直接带入，仅对未完成的比赛概率采样）。
+
+**Agent 智能体架构** — 支持 workflow（12 步固定流水线）和 LLM Planner（自主决策 + 反思 + workflow 兜底）双模式，13+ 标准化工具，跨运行持久学习记忆。
+
+**LLM 可解释性** — ZhipuAI GLM-4-Flash 驱动的自然语言预测解释，内置 27 项技术术语自动净化，确保非技术用户也能理解。
+
+**What-If 沙盒** — 交互式"如果...会怎样"分析：强制指定任何待赛比赛的胜者，重新运行 1,000 次模拟，展示冠军概率变化。
+
+**多源数据整合** — API-Sports + football-data.org + 本地缓存 + 模板兜底，三级可信度自动降级，PostgreSQL 持久化存储。
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 后端框架 | FastAPI + Uvicorn |
+| 前端面板 | Streamlit（深蓝金色主题） |
+| 数据库 | PostgreSQL (Render) / SQLite (本地) |
+| 机器学习 | PyTorch (注意力网络) + XGBoost + scikit-learn |
+| LLM | ZhipuAI GLM-4-Flash (LangChain 集成) |
+| 数据处理 | Pandas + NumPy + SciPy |
+| 部署 | Render (Docker) + GitHub Actions 保活 |
+
+## 快速开始
+
+### 本地运行
 
 ```bash
+# 1. 安装依赖
 pip install -r requirements.txt
-```
 
-### 2. 初始化数据库和示例数据
+# 2. 配置环境变量（复制模板并填写 API 密钥）
+cp .env.example .env
 
-```bash
-python init_data.py
-```
-
-### 3. 启动服务
-
-```bash
+# 3. 启动后端
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# 4. 启动前端面板（另开终端）
+streamlit run debug_dashboard.py
 ```
 
-### 4. 访问 API 文档
+### Docker 部署
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## 🎯 核心功能
-
-### API 端点
-
-#### 球队管理
-- `GET /api/v1/teams/` - 获取所有球队
-- `GET /api/v1/teams/{team_id}` - 获取单个球队
-- `POST /api/v1/teams/` - 创建新球队
-- `DELETE /api/v1/teams/{team_id}` - 删除球队
-
-#### 预测功能
-- `POST /api/v1/predictions/tournament` - 预测整个锦标赛
-- `POST /api/v1/predictions/match/{match_id}` - 预测单场比赛
-- `GET /api/v1/predictions/match/{match_id}` - 获取比赛预测结果
-- `DELETE /api/v1/predictions/{prediction_id}` - 删除预测结果
-
-### 预测模型
-
-当前实现了基于 **ELO 评分系统**的预测算法：
-
-- 考虑球队实力差异（ELO 评分）
-- 包含主场优势加成（+100 分）
-- 使用泊松分布生成比分
-- 计算预测置信度
-- 提供可解释的推理依据
-
-## 🛠️ 技术栈
-
-- **FastAPI** - 高性能 Web 框架
-- **SQLAlchemy** - ORM 数据库工具
-- **Pydantic** - 数据验证
-- **Pandas** - 数据处理
-- **SciPy** - 科学计算
-- **Uvicorn** - ASGI 服务器
-
-## 📝 开发规范
-
-- 严格使用 Python 3.10+ 类型注解
-- 遵循 PEP 8 代码规范
-- 使用异步编程模式（lifespan）
-- 依赖注入模式（FastAPI Depends）
-
-## 🔧 配置说明
-
-通过环境变量或 `.env` 文件配置：
-
-```env
-APP_NAME=World Cup Prediction API
-APP_VERSION=1.0.0
-DEBUG=False
-HOST=0.0.0.0
-PORT=8000
-DATABASE_URL=sqlite:///./worldcup.db
-DATA_DIR=app/data
-PREDICTION_MODEL_PATH=app/data/models
+```bash
+docker-compose up -d
+# 后端: http://localhost:8001
+# 前端: http://localhost:8501
 ```
 
-## 📈 后续扩展方向
+## 项目结构
 
-1. **数据采集模块** - 接入 FIFA API 或网页抓取
-2. **机器学习模型** - 集成更复杂的预测算法
-3. **可视化前端** - 赛程树和对阵图展示
-4. **历史数据分析** - 往届世界杯数据挖掘
-5. **实时预测更新** - 根据比赛进程动态调整
+```
+worldcup-prediction-agent/
+├── main.py                          # FastAPI 应用入口
+├── debug_dashboard.py               # Streamlit 可视化面板
+├── render.yaml                      # Render 部署配置
+├── docker-compose.yml               # Docker 编排
+│
+├── app/
+│   ├── agents/                      # Agent 编排层
+│   │   ├── worldcup_agent.py        # 核心预测 Agent（12 步流水线）
+│   │   ├── agent_executor.py        # 工具执行引擎
+│   │   ├── agent_memory.py          # 持久学习记忆
+│   │   ├── llm_planner_agent.py     # LLM 规划 Agent
+│   │   ├── tool_adapters.py         # 13+ 工具适配器
+│   │   └── tool_registry.py         # 工具注册中心
+│   │
+│   ├── api/                         # API 路由
+│   │   ├── agent.py                 # 预测 Agent 端点
+│   │   ├── data.py                  # 数据刷新端点
+│   │   ├── simulation.py            # 模拟端点
+│   │   ├── scenario.py              # What-If 沙盒端点
+│   │   ├── predictions.py           # 预测端点
+│   │   └── teams.py                 # 球队端点
+│   │
+│   ├── services/                    # 业务逻辑（25+ 微服务）
+│   │   ├── ensemble_prediction_service.py  # 五模型集成
+│   │   ├── prediction_service.py           # ELO + Poisson 基线
+│   │   ├── feature_network.py              # PyTorch 注意力网络
+│   │   ├── tournament_state_service.py     # 锦标赛状态
+│   │   ├── champion_explanation_service.py # AI 解释 + 术语净化
+│   │   ├── llm_explainer.py               # LLM 比赛解释
+│   │   ├── scenario_simulation_service.py  # What-If 沙盒引擎
+│   │   └── scheduled_refresh_service.py    # 定时数据刷新
+│   │
+│   └── tools/                       # Agent 工具实现
+│       ├── bracket_tool.py          # 淘汰赛 bracket（45KB）
+│       ├── api_sports_tool.py       # API-Sports 集成
+│       └── ...
+│
+├── scripts/                         # 工具脚本（50+）
+│   └── run_champion_simulation.py   # Bracket-Aware Monte Carlo
+│
+├── data/                            # 数据文件
+│   ├── simulation_distribution.json # 模拟结果
+│   ├── final_agent_result.json      # 最终预测
+│   └── agent_memory.json            # Agent 记忆
+│
+├── models/                          # 训练模型
+│   ├── feature_network_v2_latest.pth  # 注意力网络权重
+│   └── tree_predictor.pkl             # XGBoost 模型
+│
+└── tests/                           # 测试
+    ├── test_bracket_integrity.py
+    ├── test_final_result.py
+    └── test_save_integration.py
+```
 
-## 📄 许可证
+## API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/agent/run-prediction` | POST | 一键运行完整冠军预测 |
+| `/api/v1/agent/latest-result` | GET | 获取最新预测结果 |
+| `/api/v1/data/full-refresh` | POST | 全量刷新（同步数据 + 模拟 + 更新结果） |
+| `/api/v1/agent/refresh-data` | POST | 仅同步 API 数据 |
+| `/api/v1/simulation/champion` | POST | 运行 Monte Carlo 模拟 |
+| `/api/v1/scenario/run` | POST | What-If 沙盒模拟 |
+| `/health` | GET | 健康检查 |
+
+## 当前预测
+
+截至 2026-07-16（半决赛阶段）：
+
+| 排名 | 球队 | 夺冠概率 |
+|------|------|----------|
+| 1 | 西班牙 | 49.79% |
+| 2 | 阿根廷 | 25.34% |
+| 3 | 英格兰 | 24.87% |
+
+## 详细文档
+
+- [参赛提交文档](competition-submission.md) — 完整的系统架构、算法设计、创新点说明
+- [项目总结](PROJECT_SUMMARY.md) — 成熟度评估与代码架构分析
+- [架构设计](ARCHITECTURE.md) — Agent + Tools 架构设计文档
+- [API 指南](API_GUIDE.md) — 完整 API 端点文档
+- [概率引擎](PROBABILITY_ENGINE_GUIDE.md) — ELO + Poisson 引擎详解
+- [特征网络](FEATURE_NETWORK_GUIDE.md) — PyTorch 注意力网络详解
+- [LLM 解释](LLM_EXPLAINER_GUIDE.md) — LLM 可解释性模块说明
+- [Streamlit 面板](STREAMLIT_DASHBOARD_GUIDE.md) — 前端面板使用指南
+
+## 许可证
 
 MIT License

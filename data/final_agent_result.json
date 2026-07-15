@@ -1,70 +1,39 @@
 {
-  "schema_version": 1,
-  "run_id": "run_fix_20260715",
-  "status": "completed",
-  "champion": "Argentina",
-  "predicted_champion": "Argentina",
-  "champion_probability": 0.4881,
+  "champion": "Spain",
+  "predicted_champion": "Spain",
+  "champion_probability": 0.4979,
   "top5": [
     {
-      "team": "Argentina",
-      "probability": 0.4881
+      "team": "Spain",
+      "probability": 0.4979
     },
     {
-      "team": "France",
-      "probability": 0.2569
+      "team": "Argentina",
+      "probability": 0.2534
     },
     {
       "team": "England",
-      "probability": 0.1469
-    },
-    {
-      "team": "Spain",
-      "probability": 0.1081
+      "probability": 0.2487
     }
   ],
   "top_candidates": [
     {
-      "team": "Argentina",
-      "probability": 0.4881
+      "team": "Spain",
+      "probability": 0.4979
     },
     {
-      "team": "France",
-      "probability": 0.2569
+      "team": "Argentina",
+      "probability": 0.2534
     },
     {
       "team": "England",
-      "probability": 0.1469
-    },
-    {
-      "team": "Spain",
-      "probability": 0.1081
+      "probability": 0.2487
     }
   ],
-  "explanation": {
-    "title": "为什么预测 Argentina 夺冠？",
-    "content": "## 为什么预测 Argentina 夺冠？\n\n当前赛事已进入四强阶段，系统只在Argentina、England、France、Spain四支仍有夺冠可能的球队中进行模拟分析。\n\n根据已结束比赛结果和后续对阵形势，Argentina 展现出较强的夺冠实力，系统给出 48.81% 的夺冠概率。球队在攻防两端表现均衡，是当前最有可能捧起大力神杯的队伍。\n\n### 核心优势\n- 综合实力均衡，各位置无明显短板。\n\n### 关键因素\n- Argentina在综合评估中表现突出，是当前最具竞争力的球队。\n\n### AI综合判断\n\n综合各方面分析，Argentina 以 48.81% 的夺冠概率领跑群雄。球队整体实力突出，晋级形势有利，是最有可能夺冠的球队。\n",
-    "key_reasons": [],
-    "source": "fallback",
-    "probability": 48.81,
-    "champion": "Argentina",
-    "champion_probability": 0.4881,
-    "run_id": "run_fix_20260715"
-  },
   "surviving_teams": [
     "Argentina",
     "England",
-    "France",
     "Spain"
   ],
-  "stage": "semi_finals",
-  "generated_at": "2026-07-15T00:00:00",
-  "bracket_payload": {},
-  "data_status": {},
-  "model_status": {},
-  "top_contenders": [],
-  "simulation_count": 10000,
-  "model_version": "ensemble_v2",
-  "data_source": "",
-  "historical_samples": 6000
+  "stage": "semi_finals"
 }
