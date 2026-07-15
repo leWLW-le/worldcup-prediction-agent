@@ -1163,7 +1163,7 @@ class WorldCupPredictionAgent:
                     client = ZhipuAI(api_key=api_key)
                     prompt = (
                         f"你是一个专业的足球分析师。请用120-200字解释为什么预测 {champ} 获得2026世界杯冠军。\n"
-                        f"夺冠概率：{prob}%\n"
+                        f"夺冠概率：{prob_pct:.1f}%\n"
                         f"关键数据：\n"
                     )
                     if fb.get("attack_score"): prompt += f"- 攻击评分：{fb['attack_score']:.2f}\n"
@@ -1243,12 +1243,12 @@ class WorldCupPredictionAgent:
                 f"## 为什么预测 {champ} 夺冠？\n\n"
                 f"{stage_desc}"
                 f"根据已结束比赛结果和后续对阵形势，{champ} 展现出较强的夺冠实力，"
-                f"系统给出 {prob}% 的夺冠概率。"
+                f"系统给出 {prob_pct:.1f}% 的夺冠概率。"
                 f"球队在攻防两端表现均衡，是当前最有可能捧起大力神杯的队伍。\n"
                 f"\n### 核心优势\n{adv_lines}\n"
                 f"\n### 关键因素\n{fac_lines}\n"
                 f"\n### AI综合判断\n\n"
-                f"综合各方面分析，{champ} 以 {prob}% 的夺冠概率领跑群雄。"
+                f"综合各方面分析，{champ} 以 {prob_pct:.1f}% 的夺冠概率领跑群雄。"
                 f"球队整体实力突出，晋级形势有利，是最有可能夺冠的球队。\n"
             )
 
@@ -1359,11 +1359,36 @@ class WorldCupPredictionAgent:
             except Exception:
                 pass
 
-        # ── 标准化 bracket_payload（修复 winner/predicted_winner/晋级链） ──
+        # ─ 标准化 bracket_payload（修复 winner/predicted_winner/晋级链） ──
         try:
             bp = normalize_bracket_payload(bp)
         except Exception as e:
             logger.warning("[Agent] normalize_bracket_payload 失败: %s", e)
+
+        # ── 提取 bracket 路径冠军（用于 explanation，确保与 bracket 一致） ──
+        bracket_champion = None
+        bracket_champion_prob = None
+        if bp:
+            # 优先从 final 轮胜者提取
+            final_matches = bp.get("final", [])
+            if final_matches:
+                fm = final_matches[0] if isinstance(final_matches, list) else final_matches
+                winner = fm.get("winner") or fm.get("predicted_winner")
+                if winner:
+                    bracket_champion = winner
+            # 兜底：从 champion 字段提取
+            if not bracket_champion:
+                bp_champ = bp.get("champion", {})
+                if isinstance(bp_champ, dict):
+                    bracket_champion = bp_champ.get("team")
+                elif isinstance(bp_champ, str):
+                    bracket_champion = bp_champ
+            # 从 top5 中查找 bracket 冠军的概率
+            if bracket_champion and top5:
+                for entry in top5:
+                    if isinstance(entry, dict) and entry.get("team", "").lower() == bracket_champion.lower():
+                        bracket_champion_prob = entry.get("probability", 0)
+                        break
 
         # 数据来源状态
         ds = state.data_status or self._build_data_status(state)
@@ -1443,43 +1468,72 @@ class WorldCupPredictionAgent:
         run_id = "run_" + hashlib.md5(run_id_raw.encode()).hexdigest()[:12]
 
         # ══════════════════════════════════════════════════════
-        # Step 3: 生成 explanation（使用最终 champion / probability / run_id）
+        # Step 3: 生成 explanation（使用 bracket 冠军，确保与 bracket 一致）
         # ══════════════════════════════════════════════════════
+        # ── 优先使用 bracket 路径冠军，避免 explanation 与 bracket 不一致 ──
+        expl_champion = bracket_champion or champ
+        expl_prob_01 = bracket_champion_prob if bracket_champion_prob else champ_prob_01
+        logger.info("[Agent] explanation 使用: champion=%s (bracket=%s, mc=%s), prob=%.4f",
+                    expl_champion, bracket_champion, champ, expl_prob_01)
+
         self._generate_champion_explanation(
             state,
-            champion=champ,
-            champion_probability=champ_prob_01,
+            champion=expl_champion,
+            champion_probability=expl_prob_01,
             run_id=run_id,
         )
         explanation_data = state.champion_explanation or {}
 
         # ── 强制覆盖 explanation 绑定字段（双保险） ──
         if explanation_data:
-            explanation_data["champion"] = champ
-            explanation_data["champion_probability"] = champ_prob_01
-            explanation_data["probability"] = round(champ_prob_01 * 100, 2)
+            explanation_data["champion"] = expl_champion
+            explanation_data["champion_probability"] = expl_prob_01
+            explanation_data["probability"] = round(expl_prob_01 * 100, 2)
             explanation_data["run_id"] = run_id
         else:
             explanation_data = {
-                "title": f"为什么预测 {champ} 夺冠？",
+                "title": f"为什么预测 {expl_champion} 夺冠？",
                 "content": "",
                 "key_reasons": [],
                 "source": "none",
-                "probability": round(champ_prob_01 * 100, 2),
-                "champion": champ,
-                "champion_probability": champ_prob_01,
+                "probability": round(expl_prob_01 * 100, 2),
+                "champion": expl_champion,
+                "champion_probability": expl_prob_01,
                 "run_id": run_id,
             }
 
         # ══════════════════════════════════════════════════════
         # Step 4: 构建 snapshot（top_candidates = deepcopy(top5)）
         # ══════════════════════════════════════════════════════
+        # ── 最终冠军统一：优先使用 bracket 路径冠军 ──
+        final_champion = expl_champion
+        final_prob_01 = expl_prob_01
+
+        # ── 如果 bracket 冠军与 MC top5[0] 不同，重排 top5 使之一致 ──
+        if final_champion and top5:
+            top1_team = top5[0].get("team", "") if isinstance(top5[0], dict) else ""
+            if top1_team.lower() != final_champion.lower():
+                # 从 top5 中找到 bracket 冠军条目
+                bracket_entry = None
+                remaining = []
+                for entry in top5:
+                    if isinstance(entry, dict) and entry.get("team", "").lower() == final_champion.lower():
+                        bracket_entry = dict(entry)
+                        bracket_entry["probability"] = final_prob_01
+                    else:
+                        remaining.append(entry)
+                if bracket_entry is None:
+                    bracket_entry = {"team": final_champion, "probability": final_prob_01}
+                top5 = [bracket_entry] + remaining
+                logger.info("[Agent] top5 已重排: bracket champion %s 移至首位 (prob=%.4f)",
+                            final_champion, final_prob_01)
+
         from copy import deepcopy
         snapshot = {
             "run_id": run_id,
-            "champion": champ,
-            "predicted_champion": champ,
-            "champion_probability": champ_prob_01,
+            "champion": final_champion,
+            "predicted_champion": final_champion,
+            "champion_probability": final_prob_01,
             "top5": top5,
             "top_candidates": deepcopy(top5),
             "surviving_teams": mc_surviving_teams,
@@ -1535,8 +1589,8 @@ class WorldCupPredictionAgent:
                         "run_id": run_id,
                         "generated_at": run_ts,
                         "bracket_integrity_errors": bracket_errors,
-                        "champion": champ,
-                        "champion_probability": champ_prob_01,
+                        "champion": final_champion,
+                        "champion_probability": final_prob_01,
                     }, df, ensure_ascii=False, indent=2)
                 logger.info("[Agent] 诊断文件已写入: %s", diag_path.resolve())
             except Exception as e:
@@ -1552,7 +1606,7 @@ class WorldCupPredictionAgent:
             resolved = out_path.resolve()
             logger.info("[Agent] final_agent_result.json saved to %s", resolved)
             print(f"[Agent] 保存路径: {resolved}")
-            print(f"[Agent] champion={champ}, champion_probability={champ_prob_01}, run_id={run_id}")
+            print(f"[Agent] champion={final_champion}, champion_probability={final_prob_01}, run_id={run_id}")
         except Exception as e:
             logger.error("[Agent] Failed to save final_agent_result.json: %s", e)
 

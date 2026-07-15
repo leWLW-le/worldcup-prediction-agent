@@ -539,36 +539,6 @@ def _check_api_consistency(data: Dict) -> bool:
     """
     import re as _re
 
-    # 获取 top5 第一名
-    top5 = data.get("top5") or data.get("top_candidates") or []
-    if not top5:
-        return True  # 没有 top5 数据，无法校验，放行
-
-    top_team = ""
-    if isinstance(top5, list) and len(top5) > 0:
-        first = top5[0]
-        if isinstance(first, dict):
-            top_team = first.get("team", "")
-        elif isinstance(first, str):
-            top_team = first
-
-    if not top_team:
-        return True  # 无法提取队名，放行
-
-    # 获取 explanation
-    explanation = data.get("explanation", "")
-    if not explanation:
-        return True  # 没有 explanation，无法校验，放行
-
-    # 检查 explanation 中是否提到 top5[0] 的队名
-    # 支持中英文队名匹配
-    team_lower = top_team.lower()
-    explanation_lower = explanation.lower()
-
-    # 直接匹配
-    if team_lower in explanation_lower:
-        return True
-
     # 常见别名映射（API 可能用英文名，explanation 用中文名）
     alias_map = {
         "spain": ["西班牙"],
@@ -590,8 +560,59 @@ def _check_api_consistency(data: Dict) -> bool:
         "united states": ["美国"],
     }
 
+    # 获取 top5 第一名
+    top5 = data.get("top5") or data.get("top_candidates") or []
+    if not top5:
+        return True  # 没有 top5 数据，无法校验，放行
+
+    top_team = ""
+    if isinstance(top5, list) and len(top5) > 0:
+        first = top5[0]
+        if isinstance(first, dict):
+            top_team = first.get("team", "")
+        elif isinstance(first, str):
+            top_team = first
+
+    if not top_team:
+        return True  # 无法提取队名，放行
+
+    # 获取 explanation（可能是 str 或 dict）
+    explanation = data.get("explanation", "")
+    if not explanation:
+        return True  # 没有 explanation，无法校验，放行
+
+    # ─ 兼容 explanation 为 dict 的情况（结构化 LLM 输出） ──
+    if isinstance(explanation, dict):
+        # 优先用 champion 字段直接比对（最可靠）
+        expl_champion = explanation.get("champion", "")
+        if expl_champion and expl_champion.lower() == top_team.lower():
+            return True
+        # 别名比对
+        for alias in alias_map.get(top_team.lower(), []):
+            if expl_champion and alias in expl_champion:
+                return True
+        # 拼接文本用于后续模式匹配
+        explanation_text = " ".join(filter(None, [
+            explanation.get("title", ""),
+            explanation.get("content", ""),
+        ]))
+    else:
+        explanation_text = str(explanation)
+
+    if not explanation_text:
+        return True  # dict 中无文本内容，放行
+
+    # 检查 explanation 中是否提到 top5[0] 的队名
+    # 支持中英文队名匹配
+    team_lower = top_team.lower()
+    explanation_lower = explanation_text.lower()
+
+    # 直接匹配
+    if team_lower in explanation_lower:
+        return True
+
     for alias in alias_map.get(team_lower, []):
-        if alias in explanation:
+        if alias in explanation_text:
             return True
 
     # 反向：explanation 中提到的冠军是否在 top5 中
@@ -602,7 +623,7 @@ def _check_api_consistency(data: Dict) -> bool:
         r"预测\s+(\S+)\s+夺冠",
     ]
     for pat in patterns:
-        m = _re.search(pat, explanation)
+        m = _re.search(pat, explanation_text)
         if m:
             mentioned_team = m.group(1)
             mentioned_lower = mentioned_team.lower()
