@@ -12,7 +12,8 @@ services:
     autoDeployTrigger: off
     healthCheckPath: /health
     buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
-    startCommand: python scripts/migrate_add_canonical_pair.py --apply && python scripts/init_database.py && uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    preDeployCommand: bash scripts/predeploy.sh
     envVars:
       - key: FOOTBALL_DATA_API
         sync: false
@@ -26,8 +27,12 @@ services:
         value: glm-4-flash
       - key: ALLOWED_ORIGINS
         value: "*"
-      - key: ENV
+      - key: ENVIRONMENT
         value: production
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: MODEL_PATH
+        value: models/feature_network_v2_latest.pth
       - key: DATABASE_URL
         fromDatabase:
           name: worldcup-postgres

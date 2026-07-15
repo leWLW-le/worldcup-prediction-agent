@@ -270,16 +270,26 @@ def create_scheduler() -> AsyncIOScheduler:
 def start_scheduler():
     """
     启动调度器（在 FastAPI lifespan 中调用）
-    
+
+    通过 ENABLE_SCHEDULER 环境变量控制是否启动。
+    生产环境多实例部署时，应只在一个实例启用。
+
     Returns:
-        已启动的调度器实例
+        已启动的调度器实例，或 None（未启用时）
     """
+    import os
     global _scheduler
-    
+
+    # 环境变量开关
+    enable_str = os.getenv("ENABLE_SCHEDULER", "true").lower()
+    if enable_str in ("false", "0", "no", "off"):
+        log_colored("⚠️ APScheduler disabled by ENABLE_SCHEDULER=false", Colors.YELLOW)
+        return None
+
     if _scheduler is not None:
         log_colored("⚠️ 调度器已在运行中", Colors.YELLOW)
         return _scheduler
-    
+
     _scheduler = create_scheduler()
     _scheduler.start()
     

@@ -287,7 +287,7 @@ def _simulate_semi_finals_scenario(
     forced_loser: str,
     match_label: str,
     stage: str,
-    simulation_count: int = 3000,
+    simulation_count: int = 1000,
 ) -> dict:
     """
     半决赛阶段专用沙盘模拟（任务 7-12）。
@@ -391,34 +391,101 @@ def _simulate_semi_finals_scenario(
         return original_build_dict(team, is_home)
     ensemble_service._build_team_features_dict = cached_build_dict
 
-    # ── 5. Monte Carlo 模拟（任务 7） ──
+    # ── 5. 预计算所有可能对阵的胜者概率（性能优化） ──
+    # 原本每次迭代都调用 predict_with_ensemble（3000×2=6000 次），
+    # 优化后只调用最多 6 次（2 场半决赛 + 4 种可能决赛），循环内用快速概率采样。
+    sf0 = semifinal_matches[0]
+    sf1 = semifinal_matches[1]
+
+    # 识别 forced / other 半决赛
+    if sf0["match_id"] == forced_match_id:
+        forced_sf, other_sf = sf0, sf1
+    else:
+        forced_sf, other_sf = sf1, sf0
+
+    # ── 5a. 非 forced 半决赛胜者概率 ──
+    other_home = other_sf["home_team"]
+    other_away = other_sf["away_team"]
+    other_fixed_winner = None  # 如果比赛已结束则为实际胜者
+
+    if other_sf.get("status") in ("FT", "FINISHED", "AET", "PEN") and other_sf.get("winner"):
+        other_fixed_winner = other_sf["winner"]
+        other_home_win_prob = 1.0 if other_fixed_winner == other_home else 0.0
+    else:
+        h_obj = team_by_name.get(other_home)
+        a_obj = team_by_name.get(other_away)
+        if h_obj and a_obj:
+            try:
+                pred = ensemble_service.predict_with_ensemble(h_obj, a_obj)
+                probs = pred.get('probabilities', {})
+                other_home_win_prob = probs.get('home_win', 0.5)
+            except Exception as e:
+                logger.warning(f"Pre-compute other SF prob failed: {e}")
+                other_home_win_prob = 0.5
+        else:
+            other_home_win_prob = 0.5
+
+    # ── 5b. 预计算 4 种可能决赛对阵的胜者概率 ──
+    forced_sf_other_team = forced_sf["away_team"] if forced_winner == forced_sf["home_team"] else forced_sf["home_team"]
+    possible_finalists_from_other = [other_fixed_winner] if other_fixed_winner else [other_home, other_away]
+
+    final_probs = {}  # (teamA, teamB) → (teamA_win_prob, teamB_win_prob)
+    for ft1 in [forced_winner]:
+        for ft2 in possible_finalists_from_other:
+            pair_key = (ft1, ft2)
+            h_obj = team_by_name.get(ft1)
+            a_obj = team_by_name.get(ft2)
+            if h_obj and a_obj:
+                try:
+                    pred = ensemble_service.predict_with_ensemble(h_obj, a_obj)
+                    probs = pred.get('probabilities', {})
+                    p_h = probs.get('home_win', 0.5)
+                    p_a = probs.get('away_win', 0.25)
+                    total_p = p_h + p_a
+                    if total_p > 0:
+                        final_probs[pair_key] = (p_h / total_p, p_a / total_p)
+                    else:
+                        final_probs[pair_key] = (0.5, 0.5)
+                except Exception as e:
+                    logger.warning(f"Pre-compute final prob failed for {ft1} vs {ft2}: {e}")
+                    final_probs[pair_key] = (0.5, 0.5)
+            else:
+                final_probs[pair_key] = (0.5, 0.5)
+
+    # ── 5c. Monte Carlo 快速采样循环 ──
     champion_counts = defaultdict(int)
     finalist_counts = defaultdict(int)
     final_matchup_counts = defaultdict(int)
 
-    logger.info(f"[Scenario] 开始 {simulation_count} 次半决赛沙盘模拟")
+    logger.info(f"[Scenario] 开始 {simulation_count} 次半决赛沙盘模拟（预计算概率优化）")
     logger.info(f"[Scenario] 半决赛结构: {[(sf['home_team'] + ' vs ' + sf['away_team']) for sf in semifinal_matches]}")
     logger.info(f"[Scenario] forced_match_id={forced_match_id}, forced_winner={forced_winner}")
+    logger.info(f"[Scenario] 预计算概率: other_sf_home_win={other_home_win_prob:.3f}, "
+                f"final_probs={ {f'{k[0]}v{k[1]}': f'{v[0]:.3f}' for k, v in final_probs.items()} }")
 
     for _ in range(simulation_count):
-        # 1. 解析两场半决赛胜者（任务 5）
-        final_team_1, final_team_2 = build_final_matchup_from_semifinal_winners(
-            semifinal_matches=semifinal_matches,
-            forced_match_id=forced_match_id,
-            forced_winner=forced_winner,
-            ensemble_service=ensemble_service,
-        )
+        # 1. 采样非 forced 半决赛胜者
+        if other_fixed_winner:
+            other_winner = other_fixed_winner
+        else:
+            other_winner = other_home if np.random.random() < other_home_win_prob else other_away
 
-        # 2. 统计决赛对阵（任务 6 + 9）
+        # 2. 决赛双方
+        final_team_1 = forced_winner
+        final_team_2 = other_winner
+
+        # 3. 统计决赛对阵
         matchup_key = normalize_final_matchup(final_team_1, final_team_2)
         final_matchup_counts[matchup_key] += 1
 
-        # 3. 统计晋级决赛球队（任务 10）
+        # 4. 统计晋级决赛球队
         finalist_counts[final_team_1] += 1
         finalist_counts[final_team_2] += 1
 
-        # 4. 模拟决赛胜者
-        champion = _simulate_semi_winner(final_team_1, final_team_2, ensemble_service)
+        # 5. 采样决赛胜者（使用预计算概率）
+        prob_key = (final_team_1, final_team_2)
+        p1, p2 = final_probs.get(prob_key, (0.5, 0.5))
+        champion = final_team_1 if np.random.random() < p1 else final_team_2
         champion_counts[champion] += 1
 
     total = simulation_count
@@ -739,7 +806,7 @@ def get_pending_knockout_matches(db) -> List[Dict]:
 def run_scenario_simulation(
     match_id: str,
     forced_winner: str,
-    simulation_count: int = 3000,
+    simulation_count: int = 1000,
 ) -> dict:
     """
     运行沙盘模拟。
@@ -747,7 +814,7 @@ def run_scenario_simulation(
     Args:
         match_id: 比赛 fixture_id（如 "fd_537387" 或 "537387"）
         forced_winner: 假设的晋级球队名
-        simulation_count: 模拟次数（默认 3000，适配 Render 免费实例）
+        simulation_count: 模拟次数（默认 1000，适配 Render 免费实例）
 
     Returns:
         沙盘结果 dict，包含新结构：

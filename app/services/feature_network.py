@@ -10,6 +10,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, Tuple
 
+# 显式使用 CPU 设备（部署环境无 GPU）
+DEVICE = torch.device("cpu")
+
 
 class FeatureAttentionMixer(nn.Module):
     """
@@ -509,7 +512,7 @@ def integrate_with_probability_engine(
     team_b_tensor = normalize_features(team_b_features)
     
     # 禁用梯度计算（推理阶段）
-    with torch.no_grad():
+    with torch.inference_mode():
         # 获取调整系数
         adjustment = model(team_a_tensor, team_b_tensor)
         adjustment_value = adjustment.item()  # 转换为 Python 浮点数

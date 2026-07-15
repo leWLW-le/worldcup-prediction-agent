@@ -279,13 +279,13 @@ class EnsemblePredictionService(PredictionService):
             if not os.path.exists(self.nn_model_path):
                 raise FileNotFoundError(f"NN model not found: {self.nn_model_path}")
             self._nn_model = FeatureAttentionMixerV2(team_dim=25, input_dim=50)
-            self._nn_model.load_state_dict(torch.load(self.nn_model_path, map_location='cpu'))
+            self._nn_model.load_state_dict(torch.load(self.nn_model_path, map_location='cpu', weights_only=True))
             self._nn_model.eval()
 
         combined = self._build_combined_features(home_team, away_team)
         combined_tensor = torch.tensor(combined.reshape(1, -1), dtype=torch.float32)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             logits = self._nn_model(combined_tensor)
             probs = torch.softmax(logits, dim=1).numpy()[0]
 

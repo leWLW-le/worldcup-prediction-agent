@@ -3,88 +3,129 @@ FastAPI 应用入口文件
 使用 lifespan 特性管理应用生命周期，集成 PyTorch、ChromaDB 和 LLM Agent
 """
 from contextlib import asynccontextmanager
+import logging
 import os
 from typing import AsyncGenerator
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.core.config import get_settings
+from app.core.config import get_settings, validate_settings
 from app.db.database import init_db, engine, DB_BACKEND, check_db_connection
 from app.api.routes import api_router
 
 # 导入 Agent 数据库模型，确保 Base.metadata 包含这些表
 import app.models.agent_models  # noqa: F401
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 # 配置对象
 settings = get_settings()
+
+# ── 模型状态全局变量 ──
+# 可能的值: "not_loaded", "loaded", "missing", "load_failed"
+_model_status: str = "not_loaded"
+_model_error: str = ""
+
+
+def get_model_status() -> str:
+    """获取当前模型加载状态"""
+    return _model_status
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     应用生命周期管理器
-    
+
     在应用启动时执行初始化操作：
+    - 配置校验
     - SQLite 数据库引擎
     - PyTorch 权重文件
     - ChromaDB 索引
     - LLM Agent
-    
+
     在应用关闭时执行清理操作
     """
+    global _model_status, _model_error
+
     # === 启动阶段 ===
     print("🚀 Starting World Cup Prediction API...")
-    
+
+    # 0. 配置校验
+    try:
+        validate_settings(settings)
+    except ValueError as e:
+        logger.error("Configuration validation failed: %s", e)
+        if settings.ENVIRONMENT in ("production", "prod"):
+            raise
+
     # 1. 初始化数据库
     print(f"Database backend: {DB_BACKEND}")
     print("Initializing database...")
     init_db()
     print("Database initialized")
-    
+
     # 2. 加载 PyTorch 模型权重
     print("🤖 Loading PyTorch model weights...")
     try:
         import torch
         from app.services.feature_network import FeatureAttentionMixer
-        
-        # 检查权重文件是否存在
-        weights_path = Path("models/feature_mixer.pth")
+
+        # 通过环境变量 MODEL_PATH 配置模型路径，使用绝对路径
+        raw_model_path = settings.MODEL_PATH
+        base_dir = Path(__file__).parent.parent
+        weights_path = (base_dir / raw_model_path).resolve()
+
+        print(f"   Model path: {weights_path}")
+        print(f"   File exists: {weights_path.exists()}")
+
         if weights_path.exists():
             feature_model = FeatureAttentionMixer()
-            feature_model.load_state_dict(torch.load(weights_path, map_location="cpu", weights_only=True))
+            feature_model.load_state_dict(
+                torch.load(str(weights_path), map_location="cpu", weights_only=True)
+            )
             feature_model.eval()
-            # 存储到 app state 供全局访问
             app.state.feature_model = feature_model
+            _model_status = "loaded"
             print(f"✅ PyTorch model loaded from {weights_path}")
         else:
-            # 使用未训练的模型
-            feature_model = FeatureAttentionMixer()
-            feature_model.eval()
-            app.state.feature_model = feature_model
-            print("⚠️  Using untrained PyTorch model (no weights file found)")
+            # 权重文件不存在 — 不加载随机模型，标记为 missing
+            app.state.feature_model = None
+            _model_status = "missing"
+            _model_error = f"Weights file not found: {weights_path}"
+            print(f"⚠️  Model weights NOT found at {weights_path}")
+            print("   Predictions requiring the model will return 503")
     except Exception as e:
-        print(f"⚠️  PyTorch model loading skipped: {e}")
         app.state.feature_model = None
-    
+        _model_status = "load_failed"
+        _model_error = str(e)
+        print(f"❌ PyTorch model loading FAILED: {e}")
+
     # 3. 初始化 ChromaDB 和战术知识库
     print("🔍 Initializing ChromaDB and tactical knowledge base...")
     try:
         from app.services.llm_explainer import TacticalKnowledgeBase
-        
+
         kb = TacticalKnowledgeBase()
         app.state.tactical_kb = kb
         print("✅ Tactical knowledge base initialized")
     except Exception as e:
         print(f"⚠️  Knowledge base initialization skipped: {e}")
         app.state.tactical_kb = None
-    
+
     # 4. 初始化 LLM Explainer Agent
     print("🧠 Initializing LLM Explainer Agent...")
     try:
         from app.services.llm_explainer import MatchExplainerAgent
-        
+
         if settings.USE_LOCAL_MODEL:
             print(f"📡 Using local model: {settings.LOCAL_MODEL_NAME}")
             agent = MatchExplainerAgent(
@@ -100,22 +141,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 api_key=api_key,
                 use_local_model=False
             )
-        
+
         app.state.explainer_agent = agent
         print("✅ LLM Explainer Agent initialized")
     except Exception as e:
         print(f"⚠️  LLM Agent initialization skipped: {e}")
         app.state.explainer_agent = None
-    
-    # 5. 启动 APScheduler 定时任务调度器
+
+    # 5. 启动 APScheduler 定时任务调度器（受 ENABLE_SCHEDULER 环境变量控制）
     print("📅 Starting APScheduler...")
     try:
         from app.core.scheduler import start_scheduler
-        start_scheduler()
-        print("✅ APScheduler started")
+        scheduler = start_scheduler()
+        if scheduler is not None:
+            app.state.scheduler = scheduler
+            print("✅ APScheduler started")
+        else:
+            print("ℹ️  APScheduler disabled by configuration")
     except Exception as e:
         print(f"⚠️  APScheduler startup skipped: {e}")
-    
+
     # 6. 检查外部 API Key 配置状态（仅记录是否已配置，不记录真实值）
     _football_data_ok = bool(os.getenv("FOOTBALL_DATA_API", "").strip())
     _api_football_ok = bool(os.getenv("API_FOOTBALL", "").strip())
@@ -126,14 +171,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
     if not _football_data_ok and not _api_football_ok:
         print("⚠️  No external football API key configured — data refresh will use DB cache only")
-    
+
     print("✨ Application startup complete!")
-    
+
     yield  # 应用运行期间
-    
+
     # === 关闭阶段 ===
     print("🛑 Shutting down application...")
-    
+
     # 0. 停止 APScheduler 调度器
     try:
         from app.core.scheduler import stop_scheduler
@@ -141,7 +186,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         print("✅ APScheduler stopped")
     except Exception as e:
         print(f"⚠️  APScheduler stop skipped: {e}")
-    
+
     # 1. 保存 PyTorch 模型状态（如果需要）
     if hasattr(app.state, 'feature_model') and app.state.feature_model:
         try:
@@ -152,11 +197,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             print("✅ PyTorch model state saved")
         except Exception as e:
             print(f"⚠️  Failed to save model: {e}")
-    
+
     # 2. 关闭数据库连接
     engine.dispose()
     print("✅ Database connection closed")
-    
+
     print("✅ Application shutdown complete")
 
 
@@ -184,34 +229,83 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
-# 根路径健康检查
-@app.get("/", tags=["health"])
+# ── 根路径：同时支持 GET 和 HEAD ──
+@app.api_route("/", methods=["GET", "HEAD"], tags=["health"])
 def root():
-    """根路径 - 健康检查"""
+    """根路径 - 存活检查（GET/HEAD）"""
     return {
-        "status": "healthy",
+        "status": "ok",
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "docs": "/docs"
     }
 
 
-# 健康检查端点
+# ── 存活检查（轻量，含数据库连通性）──
 @app.get("/health", tags=["health"])
 def health_check():
-    """健康检查端点"""
+    """健康检查端点 — 检查进程存活 + 数据库连通性
+
+    数据库正常: HTTP 200 {status: healthy, database: connected, backend: postgresql}
+    数据库异常: HTTP 503 {status: unhealthy, database: disconnected, backend: postgresql}
+    """
     db_ok = check_db_connection()
-    status = "healthy" if db_ok else "degraded"
-    return {
-        "status": status,
-        "database": "connected" if db_ok else "disconnected",
-        "backend": DB_BACKEND,
-    }
+    backend = DB_BACKEND or "unknown"
+
+    if db_ok:
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "backend": backend,
+        }
+    else:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "database": "disconnected",
+                "backend": backend,
+            },
+        )
+
+
+# ── 就绪检查（检查数据库 + 模型 + 配置）──
+@app.get("/ready", tags=["health"])
+def ready_check():
+    """就绪检查 — 检查数据库、模型、配置是否就绪"""
+    checks = {}
+    all_ok = True
+
+    # 数据库检查
+    db_ok = check_db_connection()
+    checks["database"] = "ok" if db_ok else "disconnected"
+    if not db_ok:
+        all_ok = False
+
+    # 模型检查
+    checks["model"] = _model_status
+    if _model_status not in ("loaded",):
+        all_ok = False
+
+    # 配置检查
+    has_api_key = bool(settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "sk-placeholder-key")
+    checks["llm_api"] = "configured" if has_api_key else "missing"
+    # LLM 缺失不阻止就绪（降级运行）
+
+    status = "ok" if all_ok else "degraded"
+    status_code = 200 if all_ok else 503
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": status,
+            "checks": checks,
+        }
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "main:app",
         host=settings.HOST,

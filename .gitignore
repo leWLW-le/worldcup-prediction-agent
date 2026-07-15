@@ -75,3 +75,7 @@ data/*.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Temp scripts (development only)
+scripts/_*
+scripts/_test_result.txt

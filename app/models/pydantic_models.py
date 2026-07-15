@@ -1,7 +1,7 @@
 """
 Pydantic 数据模型（用于 API 请求/响应验证）
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Any
 from datetime import datetime
 
@@ -79,9 +79,11 @@ class SimulationRecordCreate(SimulationRecordBase):
 
 class PredictTournamentRequest(BaseModel):
     """预测锦标赛请求模型"""
+    model_config = ConfigDict(populate_by_name=True)
+
     year: int = Field(2026, description="世界杯年份")
     use_historical_data: bool = Field(True, description="是否使用历史数据")
-    model_type: str = Field("elo", description="预测模型类型 (elo/poisson)")
+    model_kind: str = Field(default="elo", alias="model_type", description="预测模型类型 (elo/poisson)")
 
 
 class TournamentPredictionResponse(BaseModel):

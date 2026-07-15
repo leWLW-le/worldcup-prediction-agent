@@ -38,7 +38,7 @@ def predict_tournament(
         result = prediction_service.predict_tournament(
             year=request.year,
             use_historical_data=request.use_historical_data,
-            model_type=request.model_type
+            model_type=request.model_kind
         )
         
         return result

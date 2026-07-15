@@ -3,9 +3,13 @@
 使用 pydantic-settings 管理应用配置
 LLM 相关配置强制从 .env 文件读取，不受系统环境变量影响
 """
+import os
+import logging
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def _load_env_file() -> dict:
@@ -73,6 +77,13 @@ class Settings(BaseSettings):
     
     # 预测模型配置
     PREDICTION_MODEL_PATH: str = "app/data/models"
+    MODEL_PATH: str = "models/feature_network_v2_latest.pth"
+
+    # 调度器开关（生产环境多实例时只在一个实例启用）
+    ENABLE_SCHEDULER: bool = True
+
+    # 运行环境: development / production
+    ENVIRONMENT: str = "development"
     
     # LLM API 配置（用于 LLM 解释器）
     OPENAI_API_KEY: str = ""
@@ -121,3 +132,42 @@ def get_settings() -> Settings:
         settings.OPENAI_MODEL = _env_file_values["OPENAI_MODEL"]
     
     return settings
+
+
+def validate_settings(s: Settings) -> None:
+    """
+    启动时校验必需的环境变量。
+    生产环境缺少必需配置时抛出 ValueError。
+    """
+    errors = []
+    is_prod = s.ENVIRONMENT in ("production", "prod")
+
+    # 生产环境不允许使用 SQLite 默认值
+    if is_prod and s.DATABASE_URL.startswith("sqlite"):
+        errors.append(
+            "DATABASE_URL is using SQLite (default). "
+            "Production must use PostgreSQL."
+        )
+
+    # 生产环境必须有真实 LLM API Key
+    if is_prod and not s.OPENAI_API_KEY:
+        errors.append(
+            "OPENAI_API_KEY is not set. "
+            "Production requires a valid API key."
+        )
+
+    # MODEL_PATH 文件可以不存在（降级运行），但路径不能为空
+    if not s.MODEL_PATH.strip():
+        errors.append("MODEL_PATH is empty.")
+
+    if errors:
+        msg = "Configuration validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
+        logger.error(msg)
+        raise ValueError(msg)
+
+    # 打印配置状态（不输出密钥）
+    logger.info("Environment: %s", s.ENVIRONMENT)
+    logger.info("Database: %s", "SQLite" if s.DATABASE_URL.startswith("sqlite") else "PostgreSQL")
+    logger.info("Model path: %s", s.MODEL_PATH)
+    logger.info("Scheduler: %s", "enabled" if s.ENABLE_SCHEDULER else "disabled")
+    logger.info("LLM API key: %s", "configured" if s.OPENAI_API_KEY else "MISSING")
