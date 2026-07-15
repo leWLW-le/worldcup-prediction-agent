@@ -8,7 +8,9 @@ WorldCupPredictionAgent - 核心编排
 - llm_planner_strict: LLM 自主决定工具调用，不允许 fallback，未完成则返回 planner_incomplete
 """
 
+import json
 import logging
+import os
 import random
 from collections import Counter
 from datetime import datetime
@@ -124,6 +126,113 @@ def _validate_prediction_snapshot(snapshot: Dict):
 
     logger.info("[Agent] _validate_prediction_snapshot passed: champion=%s, prob=%.4f, run_id=%s",
                 champ, champ_prob, snapshot.get("run_id"))
+
+
+def atomic_write_json(path: Path, data: Dict):
+    """原子写入 JSON 文件：先写临时文件，再 os.replace 替换目标。
+
+    避免读取端读到写了一半的文件。
+    """
+    import tempfile
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=str(path.parent), suffix=".tmp", prefix=".final_agent_result_"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, str(path))
+        logger.info("[Agent] 原子写入完成: %s", path.resolve())
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def build_canonical_snapshot(
+    *,
+    champion: str,
+    champion_probability: float,
+    top5: list,
+    explanation: dict,
+    surviving_teams: list = None,
+    stage: str = "unknown",
+    run_id: str = None,
+    status: str = "completed",
+    bracket_payload: dict = None,
+    data_status: dict = None,
+    model_status: dict = None,
+    top_contenders: list = None,
+    generated_at: str = None,
+    **extra_fields,
+) -> Dict:
+    """构建统一的 canonical prediction snapshot。
+
+    所有写入路径（agent / scheduled_refresh / fix_script）都应使用此函数，
+    确保 JSON 结构一致且通过 _validate_prediction_snapshot 校验。
+
+    核心规则：
+    - champion = top5[0].team
+    - champion_probability = top5[0].probability (0-1 范围)
+    - top_candidates = deepcopy(top5)
+    - explanation 绑定字段强制覆盖
+    """
+    import hashlib
+    from copy import deepcopy
+
+    # ── 强制 champion / probability 来自 top5[0] ──
+    if top5:
+        champion = top5[0].get("team", champion)
+        top1_prob = top5[0].get("probability", 0)
+        champion_probability = top1_prob if top1_prob <= 1 else top1_prob / 100.0
+        champion_probability = round(champion_probability, 4)
+
+    # ── run_id ──
+    if not run_id:
+        run_ts = generated_at or datetime.utcnow().isoformat()
+        run_id_raw = f"{champion}:{champion_probability}:{run_ts}"
+        run_id = "run_" + hashlib.md5(run_id_raw.encode()).hexdigest()[:12]
+
+    # ── generated_at ──
+    if not generated_at:
+        generated_at = datetime.utcnow().isoformat()
+
+    # ── 强制覆盖 explanation 绑定字段 ──
+    if isinstance(explanation, dict):
+        explanation["champion"] = champion
+        explanation["champion_probability"] = champion_probability
+        explanation["probability"] = round(champion_probability * 100, 2)
+        explanation["run_id"] = run_id
+
+    # ── 构建 snapshot ──
+    snapshot = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": status,
+        "champion": champion,
+        "predicted_champion": champion,
+        "champion_probability": champion_probability,
+        "top5": top5,
+        "top_candidates": deepcopy(top5),
+        "explanation": explanation,
+        "surviving_teams": surviving_teams or [],
+        "stage": stage,
+        "generated_at": generated_at,
+        "bracket_payload": bracket_payload or {},
+        "data_status": data_status or {},
+        "model_status": model_status or {},
+        "top_contenders": top_contenders or [],
+    }
+    # 合并额外字段（如 stage_info, simulation_count 等）
+    snapshot.update(extra_fields)
+
+    # ── 保存前校验 ──
+    _validate_prediction_snapshot(snapshot)
+
+    return snapshot
 
 
 class WorldCupPredictionAgent:
@@ -1371,18 +1480,24 @@ class WorldCupPredictionAgent:
         _validate_prediction_snapshot(snapshot)
 
         # ══════════════════════════════════════════════════════
-        # Step 6: 保存
+        # Step 6: 保存（原子写入 JSON + DB 持久化）
         # ══════════════════════════════════════════════════════
         out_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"
         try:
-            with open(out_path, "w", encoding="utf-8") as f:
-                _json.dump(snapshot, f, ensure_ascii=False, indent=2)
+            atomic_write_json(out_path, snapshot)
             resolved = out_path.resolve()
             logger.info("[Agent] final_agent_result.json saved to %s", resolved)
             print(f"[Agent] 保存路径: {resolved}")
             print(f"[Agent] champion={champ}, champion_probability={champ_prob_01}, run_id={run_id}")
         except Exception as e:
             logger.error("[Agent] Failed to save final_agent_result.json: %s", e)
+
+        # ── DB 持久化（Render 临时文件系统的备份） ──
+        try:
+            from app.services.prediction_snapshot_service import save_prediction_snapshot
+            save_prediction_snapshot(snapshot)
+        except Exception as e:
+            logger.warning("[Agent] DB snapshot 保存失败: %s", e)
 
     def _record_to_memory(self, state: AgentState):
         """记录预测结果到 Memory，并自动检测失败模式"""

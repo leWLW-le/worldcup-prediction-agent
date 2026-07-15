@@ -124,6 +124,21 @@ class TeamFeature(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class PredictionSnapshot(Base):
+    """完整预测结果快照（DB 优先数据源）
+
+    存储完整的 prediction snapshot JSON，用于 Render 临时文件系统下的持久化。
+    /final-result 优先读取此表，fallback 到 JSON 文件。
+    """
+    __tablename__ = "prediction_snapshots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_id = Column(String(50), unique=True, index=True, nullable=False)
+    status = Column(String(20), default="completed", index=True)
+    snapshot_json = Column(Text, nullable=False)  # JSON string of full snapshot
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Fixture(Base):
     """真实比赛赛程 / 比分表
     只保存真实比赛数据，不保存预测结果。

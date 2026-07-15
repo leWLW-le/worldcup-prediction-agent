@@ -242,12 +242,19 @@ def _update_final_result(
         raise RuntimeError(f"预测数据一致性校验失败: {e}")
 
     # ══════════════════════════════════════════════════════
-    # Step 7: 保存
+    # Step 7: 保存（原子写入 JSON + DB 持久化）
     # ══════════════════════════════════════════════════════
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    from app.agents.worldcup_agent import atomic_write_json
+    atomic_write_json(out_path, existing)
     logger.info("[FullRefresh] final_agent_result.json 已写入: %s (champion=%s, prob=%.4f, run_id=%s)",
                 out_path.resolve(), top_champ, champ_prob_01, run_id)
+
+    # ── DB 持久化 ──
+    try:
+        from app.services.prediction_snapshot_service import save_prediction_snapshot
+        save_prediction_snapshot(existing)
+    except Exception as e:
+        logger.warning("[FullRefresh] DB snapshot 保存失败: %s", e)
 
 
 def _regenerate_explanation(result: Dict, surviving_teams: list, stage: str,

@@ -219,36 +219,84 @@ def latest_result():
 @router.get("/final-result")
 def final_result():
     """
-    获取 data/final_agent_result.json — 前端展示的唯一数据源。
-    如果文件不存在，返回 404 提示。
-    返回前执行一致性校验，校验失败则拒绝返回。
+    获取最终预测结果 — 前端展示的唯一数据源。
+
+    读取优先级：
+    1. PostgreSQL 最新 completed snapshot
+    2. JSON 文件 fallback（验证通过）
+    3. 两者均无效时返回 503
+
+    返回前执行一致性校验，校验失败返回 503。
     """
     from pathlib import Path
-    result_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"
-    resolved = result_path.resolve()
-    logger.info("[API] 读取路径: %s (exists=%s)", resolved, result_path.exists())
-    if not result_path.exists():
-        return {
-            "status": "no_result",
-            "message": "尚未生成预测结果，请先运行 POST /api/v1/agent/run-prediction",
-        }
-    try:
-        with open(result_path, encoding="utf-8") as f:
-            data = json.load(f)
+    from fastapi.responses import JSONResponse
 
-        # ── 返回前一致性校验 ──
+    data = None
+    source = "none"
+
+    # ── 优先级 1: PostgreSQL ──
+    try:
+        from app.services.prediction_snapshot_service import load_latest_prediction_snapshot
+        data = load_latest_prediction_snapshot()
+        if data:
+            source = "database"
+            logger.info("[API] final-result 从 DB 加载成功, top-level keys: %s",
+                        list(data.keys())[:8])
+    except Exception as e:
+        logger.warning("[API] DB 加载失败: %s", e)
+
+    # ── 优先级 2: JSON fallback ──
+    if data is None:
+        result_path = Path(__file__).parent.parent.parent / "data" / "final_agent_result.json"
+        resolved = result_path.resolve()
+        logger.info("[API] DB 无数据，尝试 JSON fallback: %s (exists=%s)", resolved, result_path.exists())
+
+        if not result_path.exists():
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "no_result",
+                    "message": "尚未生成预测结果，请先运行 POST /api/v1/agent/run-prediction",
+                },
+            )
         try:
-            from app.agents.worldcup_agent import _validate_prediction_snapshot
-            _validate_prediction_snapshot(data)
-        except AssertionError as e:
-            logger.error("[API] final-result 校验失败: %s", e)
-            return {
+            with open(result_path, encoding="utf-8") as f:
+                data = json.load(f)
+            source = "json"
+            logger.info("[API] final-result 从 JSON 加载成功, top-level keys: %s",
+                        list(data.keys())[:8])
+        except Exception as e:
+            logger.error("[API] JSON 读取失败: %s", e)
+            return JSONResponse(
+                status_code=503,
+                content={"status": "error", "message": f"JSON 读取失败: {str(e)}"},
+            )
+
+    if data is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "no_result",
+                "message": "DB 和 JSON 均无有效预测数据",
+            },
+        )
+
+    # ── 返回前一致性校验 ──
+    try:
+        from app.agents.worldcup_agent import _validate_prediction_snapshot
+        _validate_prediction_snapshot(data)
+    except AssertionError as e:
+        logger.error("[API] final-result 校验失败 (source=%s): %s", source, e)
+        return JSONResponse(
+            status_code=503,
+            content={
                 "status": "validation_failed",
                 "message": f"预测数据一致性校验失败: {str(e)}",
                 "detail": str(e),
-            }
+                "source": source,
+            },
+        )
 
-        return data
-    except Exception as e:
-        logger.error("Failed to read final_agent_result.json: %s", e)
-        return {"status": "error", "message": str(e)}
+    # 标注数据来源（便于调试）
+    data["_source"] = source
+    return data

@@ -215,8 +215,8 @@ def fix_json(dry_run: bool = False):
     for c in changes:
         print(f"  - {c}")
 
-    with open(JSON_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    from app.agents.worldcup_agent import atomic_write_json
+    atomic_write_json(JSON_PATH, data)
 
     print(f"\n[Step 6] 已保存: {JSON_PATH.resolve()}")
 
