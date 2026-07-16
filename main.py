@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.core.config import get_settings, validate_settings
 from app.db.database import init_db, engine, DB_BACKEND, check_db_connection
@@ -256,13 +256,18 @@ def root():
 
 
 # ── 存活检查（轻量，含数据库连通性）──
-@app.get("/health", tags=["health"])
-def health_check():
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["health"])
+def health_check(request: Request):
     """健康检查端点 — 检查进程存活 + 数据库连通性
 
     数据库正常: HTTP 200 {status: healthy, database: connected, backend: postgresql}
     数据库异常: HTTP 503 {status: unhealthy, database: disconnected, backend: postgresql}
+    HEAD 请求: HTTP 200 无 body（用于 UptimeRobot 等监控服务保活）
     """
+    # HEAD 请求直接返回 200，不做数据库检查（避免超时导致监控失败）
+    if request.method == "HEAD":
+        return Response(status_code=200)
+
     db_ok = check_db_connection()
     backend = DB_BACKEND or "unknown"
 
