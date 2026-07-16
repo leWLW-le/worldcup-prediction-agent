@@ -2,9 +2,8 @@ name: Keep Render Demo Awake
 
 on:
   schedule:
-    # Private repo: every 12 minutes to save Actions minutes
-    # If repo is public, change to: "3,13,23,33,43,53 * * * *"
-    - cron: "1,13,25,37,49 * * * *"
+    # Every 5 minutes to prevent Render free tier sleep (15 min timeout)
+    - cron: "0,5,10,15,20,25,30,35,40,45,50,55 * * * *"
   workflow_dispatch:
 
 permissions:
