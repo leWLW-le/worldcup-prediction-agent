@@ -4,7 +4,7 @@
 
 ## 线上演示
 
-- **前端面板**：https://worldcup-frontend.onrender.com
+- **前端面板**：https://worldcup-frontend-rpnj.onrender.com
 - **后端 API**：https://worldcup-backend-k2sn.onrender.com
 - **API 文档**：https://worldcup-backend-k2sn.onrender.com/docs
 
