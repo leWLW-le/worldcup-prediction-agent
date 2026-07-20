@@ -210,6 +210,56 @@ def _update_final_result(
     existing["status"] = "completed"
 
     # ══════════════════════════════════════════════════════
+    # Step 3b: 从 DB 实时重建 bracket_payload（修复静态快照过时问题）
+    # ══════════════════════════════════════════════════════
+    try:
+        from app.services.fixture_repository import FixtureRepository
+        from app.tools.bracket_tool import BracketTool
+        from app.tools.match_predictor_tool import MatchPredictorTool
+
+        repo = FixtureRepository()
+        db_knockout = repo.get_knockout_fixtures()
+        if db_knockout:
+            logger.info("[FullRefresh] 从 DB 读取 %d 场淘汰赛，重建 bracket_payload", len(db_knockout))
+            bracket_tool = BracketTool(seed=42)
+            predictor = MatchPredictorTool(seed=42)
+            team_features = existing.get("team_features", {})
+            empty_bracket = {"group_results": [], "third_places_ranking": []}
+            rebuilt = bracket_tool.predict_knockout_stage(empty_bracket, team_features, predictor)
+            rebuilt_bp = rebuilt.get("bracket_payload", {})
+            if rebuilt_bp:
+                existing["bracket_payload"] = rebuilt_bp
+                # 如果决赛已结束，用真实比分更新 champion
+                rebuilt_knockout = rebuilt.get("knockout_predictions", [])
+                final_matches = [m for m in rebuilt_knockout if m.get("round") == "final"]
+                if final_matches:
+                    fm = final_matches[0]
+                    f_status = (fm.get("status") or "").upper()
+                    if f_status in ("FT", "AET", "PEN", "FINISHED"):
+                        f_home = fm.get("predicted_home_score") or fm.get("home_score")
+                        f_away = fm.get("predicted_away_score") or fm.get("away_score")
+                        if f_home is not None and f_away is not None:
+                            if f_home > f_away:
+                                real_champ = fm["home_team"]
+                            elif f_away > f_home:
+                                real_champ = fm["away_team"]
+                            else:
+                                real_champ = fm.get("winner", top_champ)
+                            existing["champion"] = real_champ
+                            existing["predicted_champion"] = real_champ
+                            # 同步更新 top5 第一名
+                            if top5:
+                                top5[0]["team"] = real_champ
+                            logger.info("[FullRefresh] 决赛已结束，冠军更新为: %s (%d-%d)",
+                                        real_champ, f_home, f_away)
+            else:
+                logger.warning("[FullRefresh] bracket 重建返回空，保留已有 bracket_payload")
+        else:
+            logger.info("[FullRefresh] DB 无淘汰赛数据，保留已有 bracket_payload")
+    except Exception as e:
+        logger.warning("[FullRefresh] bracket 重建失败，保留已有 bracket_payload: %s", e)
+
+    # ══════════════════════════════════════════════════════
     # Step 4: 重新生成 explanation（使用最终 champion / probability / run_id）
     # ══════════════════════════════════════════════════════
     try:

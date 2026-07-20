@@ -314,6 +314,52 @@ def final_result():
             },
         )
 
+    # ── 从 DB 实时重建 bracket_payload（确保反映最新真实比分）──
+    # 静态快照中的 bracket 可能过时（如决赛已踢完但快照仍是预测状态）
+    try:
+        from app.services.fixture_repository import FixtureRepository
+        from app.tools.bracket_tool import BracketTool
+        from app.tools.match_predictor_tool import MatchPredictorTool
+
+        repo = FixtureRepository()
+        db_knockout = repo.get_knockout_fixtures()
+
+        if db_knockout:
+            logger.info("[API] 从 DB 读取 %d 场淘汰赛 fixtures，重建 bracket_payload", len(db_knockout))
+            bracket_tool = BracketTool(seed=42)
+            predictor = MatchPredictorTool(seed=42)
+            team_features = data.get("team_features", {})
+            # 空 bracket 表示所有淘汰赛数据都从 DB 读取
+            empty_bracket = {"group_results": [], "third_places_ranking": []}
+            rebuilt = bracket_tool.predict_knockout_stage(
+                empty_bracket, team_features, predictor
+            )
+            rebuilt_bp = rebuilt.get("bracket_payload", {})
+            if rebuilt_bp:
+                data["bracket_payload"] = rebuilt_bp
+                # 如果重建后的决赛已结束，同步更新顶层 champion
+                rebuilt_knockout = rebuilt.get("knockout_predictions", [])
+                final_matches = [m for m in rebuilt_knockout if m.get("round") == "final"]
+                if final_matches:
+                    fm = final_matches[0]
+                    f_status = (fm.get("status") or "").upper()
+                    if f_status in ("FT", "AET", "PEN", "FINISHED"):
+                        f_home_score = fm.get("predicted_home_score") or fm.get("home_score")
+                        f_away_score = fm.get("predicted_away_score") or fm.get("away_score")
+                        if f_home_score is not None and f_away_score is not None:
+                            if f_home_score > f_away_score:
+                                real_champion = fm["home_team"]
+                            elif f_away_score > f_home_score:
+                                real_champion = fm["away_team"]
+                            else:
+                                real_champion = fm.get("winner", "Unknown")
+                            data["champion"] = real_champion
+                            data["predicted_champion"] = real_champion
+                            logger.info("[API] 决赛已结束，更新冠军为: %s (%d-%d)",
+                                        real_champion, f_home_score, f_away_score)
+    except Exception as e:
+        logger.warning("[API] bracket 重建失败，使用快照中的 bracket: %s", e)
+
     # ── 淘汰赛路径标准化 + 一致性校验 ──
     # normalize 仅作用于返回副本，不修改 DB/JSON 源数据
     bp = data.get("bracket_payload", {})
