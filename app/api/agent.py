@@ -321,6 +321,17 @@ def final_result():
         from app.tools.bracket_tool import BracketTool
         from app.tools.match_predictor_tool import MatchPredictorTool
 
+        # (a) 重建前触发同步（best-effort，确保 DB 有最新数据）
+        try:
+            from app.services.data_source_manager import DataSourceManager
+            mgr = DataSourceManager()
+            sync_result = mgr.refresh_fixtures(season=2026)
+            if sync_result and sync_result.get("success"):
+                logger.info("[API] 重建前同步: inserted=%d, updated=%d",
+                            sync_result.get("inserted", 0), sync_result.get("updated", 0))
+        except Exception as sync_err:
+            logger.warning("[API] 重建前同步失败（非致命）: %s", sync_err)
+
         repo = FixtureRepository()
         db_knockout = repo.get_knockout_fixtures()
 
@@ -328,8 +339,35 @@ def final_result():
             logger.info("[API] 从 DB 读取 %d 场淘汰赛 fixtures，重建 bracket_payload", len(db_knockout))
             bracket_tool = BracketTool(seed=42)
             predictor = MatchPredictorTool(seed=42)
+
+            # (b) 加载 team_features（快照中通常不包含，从 DB 加载）
             team_features = data.get("team_features", {})
-            # 空 bracket 表示所有淘汰赛数据都从 DB 读取
+            if not team_features:
+                try:
+                    from app.models.agent_models import TeamFeature as TeamFeatureModel
+                    from app.db.database import SessionLocal
+                    _db = SessionLocal()
+                    try:
+                        tf_records = _db.query(TeamFeatureModel).order_by(
+                            TeamFeatureModel.agent_run_id.desc()
+                        ).limit(64).all()
+                        if tf_records:
+                            team_features = {}
+                            for tf in tf_records:
+                                name = tf.team_name
+                                if name and name not in team_features:
+                                    team_features[name] = {
+                                        "team_name": name,
+                                        "elo_rating": getattr(tf, "elo_rating", 1500.0) or 1500.0,
+                                        "fifa_rank": getattr(tf, "fifa_rank", 30) or 30,
+                                        "power_score": getattr(tf, "power_score", 50.0) or 50.0,
+                                    }
+                            logger.info("[API] 从 DB 加载 team_features: %d 支球队", len(team_features))
+                    finally:
+                        _db.close()
+                except Exception as tf_err:
+                    logger.warning("[API] team_features 加载失败，使用空特征: %s", tf_err)
+
             empty_bracket = {"group_results": [], "third_places_ranking": []}
             rebuilt = bracket_tool.predict_knockout_stage(
                 empty_bracket, team_features, predictor
@@ -386,6 +424,55 @@ def final_result():
             data["bracket_payload"] = bp_normalized
         except Exception as e:
             logger.warning("[API] bracket_integrity 校验异常: %s", e)
+
+    # ── 兜底：直接查询决赛 fixture，patch bracket（最终安全网）──
+    # 即使前面的重建 + normalize 都失败，这一步仍能从 DB 直接修正决赛结果
+    try:
+        from app.services.fixture_repository import FixtureRepository
+        final_fx = FixtureRepository().get_final_match()
+        if final_fx:
+            fx_hs = final_fx.get("home_score")
+            fx_as_ = final_fx.get("away_score")
+            fx_home = final_fx.get("home_team", "")
+            fx_away = final_fx.get("away_team", "")
+
+            if fx_hs is not None and fx_as_ is not None and fx_home != "TBD" and fx_away != "TBD":
+                # 检查当前 bracket_payload 中的决赛是否已正确反映
+                bp_final = data.get("bracket_payload", {}).get("final", [])
+                needs_patch = True
+                if bp_final:
+                    bf = bp_final[0]
+                    bf_status = (bf.get("status") or "").upper()
+                    bf_source = bf.get("source", "")
+                    if bf_status in ("FT", "AET", "PEN", "FINISHED") and bf_source in ("real_result", "real_data"):
+                        needs_patch = False
+
+                if needs_patch:
+                    real_winner = fx_home if fx_hs > fx_as_ else (fx_away if fx_as_ > fx_hs else final_fx.get("winner", fx_home))
+                    logger.info("[API] 兜底 patch 决赛: %s %d-%d %s, winner=%s",
+                                fx_home, fx_hs, fx_as_, fx_away, real_winner)
+
+                    # Patch bracket_payload 中的决赛
+                    if bp_final:
+                        bp_final[0]["status"] = "FINISHED"
+                        bp_final[0]["source"] = "real_result"
+                        bp_final[0]["home_score"] = fx_hs
+                        bp_final[0]["away_score"] = fx_as_
+                        bp_final[0]["winner"] = real_winner
+                        bp_final[0]["predicted_winner"] = None
+                        bp_final[0]["display_label"] = "已结束"
+                        bp_final[0]["match_source"] = "real_result"
+
+                    # 更新顶层 champion
+                    data["champion"] = real_winner
+                    data["predicted_champion"] = real_winner
+                    # 更新 top5 / top_candidates
+                    if data.get("top5"):
+                        data["top5"][0]["team"] = real_winner
+                    if data.get("top_candidates"):
+                        data["top_candidates"][0]["team"] = real_winner
+    except Exception as e:
+        logger.warning("[API] 兜底决赛 patch 失败: %s", e)
 
     # 标注数据来源（便于调试）
     data["_source"] = source

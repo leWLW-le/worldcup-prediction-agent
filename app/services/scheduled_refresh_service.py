@@ -223,7 +223,35 @@ def _update_final_result(
             logger.info("[FullRefresh] 从 DB 读取 %d 场淘汰赛，重建 bracket_payload", len(db_knockout))
             bracket_tool = BracketTool(seed=42)
             predictor = MatchPredictorTool(seed=42)
+
+            # 加载 team_features（existing 中通常不包含）
             team_features = existing.get("team_features", {})
+            if not team_features:
+                try:
+                    from app.models.agent_models import TeamFeature as TeamFeatureModel
+                    from app.db.database import SessionLocal
+                    _db = SessionLocal()
+                    try:
+                        tf_records = _db.query(TeamFeatureModel).order_by(
+                            TeamFeatureModel.agent_run_id.desc()
+                        ).limit(64).all()
+                        if tf_records:
+                            team_features = {}
+                            for tf in tf_records:
+                                name = tf.team_name
+                                if name and name not in team_features:
+                                    team_features[name] = {
+                                        "team_name": name,
+                                        "elo_rating": getattr(tf, "elo_rating", 1500.0) or 1500.0,
+                                        "fifa_rank": getattr(tf, "fifa_rank", 30) or 30,
+                                        "power_score": getattr(tf, "power_score", 50.0) or 50.0,
+                                    }
+                            logger.info("[FullRefresh] 从 DB 加载 team_features: %d 支球队", len(team_features))
+                    finally:
+                        _db.close()
+                except Exception as tf_err:
+                    logger.warning("[FullRefresh] team_features 加载失败: %s", tf_err)
+
             empty_bracket = {"group_results": [], "third_places_ranking": []}
             rebuilt = bracket_tool.predict_knockout_stage(empty_bracket, team_features, predictor)
             rebuilt_bp = rebuilt.get("bracket_payload", {})
@@ -258,6 +286,62 @@ def _update_final_result(
             logger.info("[FullRefresh] DB 无淘汰赛数据，保留已有 bracket_payload")
     except Exception as e:
         logger.warning("[FullRefresh] bracket 重建失败，保留已有 bracket_payload: %s", e)
+
+    # ══════════════════════════════════════════════════════
+    # Step 3c: 兜底 — 直接查询决赛 fixture，patch bracket
+    # ══════════════════════════════════════════════════════
+    try:
+        from app.services.fixture_repository import FixtureRepository
+        final_fx = FixtureRepository().get_final_match()
+        if final_fx:
+            fx_hs = final_fx.get("home_score")
+            fx_as_ = final_fx.get("away_score")
+            fx_home = final_fx.get("home_team", "")
+            fx_away = final_fx.get("away_team", "")
+
+            if fx_hs is not None and fx_as_ is not None and fx_home != "TBD" and fx_away != "TBD":
+                # 检查 bracket_payload 中的决赛是否已正确反映
+                bp_final = existing.get("bracket_payload", {}).get("final", [])
+                needs_patch = True
+                if bp_final:
+                    bf = bp_final[0]
+                    bf_status = (bf.get("status") or "").upper()
+                    bf_source = bf.get("source", "")
+                    if bf_status in ("FT", "AET", "PEN", "FINISHED") and bf_source in ("real_result", "real_data"):
+                        needs_patch = False
+
+                if needs_patch:
+                    real_champ = fx_home if fx_hs > fx_as_ else (fx_away if fx_as_ > fx_hs else final_fx.get("winner", top_champ))
+                    logger.info("[FullRefresh] 兜底 patch 决赛: %s %d-%d %s, winner=%s",
+                                fx_home, fx_hs, fx_as_, fx_away, real_champ)
+
+                    if bp_final:
+                        bp_final[0]["status"] = "FINISHED"
+                        bp_final[0]["source"] = "real_result"
+                        bp_final[0]["home_score"] = fx_hs
+                        bp_final[0]["away_score"] = fx_as_
+                        bp_final[0]["winner"] = real_champ
+                        bp_final[0]["predicted_winner"] = None
+                        bp_final[0]["display_label"] = "已结束"
+                        bp_final[0]["match_source"] = "real_result"
+
+                    existing["champion"] = real_champ
+                    existing["predicted_champion"] = real_champ
+                    if top5:
+                        top5[0]["team"] = real_champ
+    except Exception as e:
+        logger.warning("[FullRefresh] 兜底决赛 patch 失败: %s", e)
+
+    # ══════════════════════════════════════════════════════
+    # Step 3d: 同步 top_champ（防止 Step 4/5 覆盖回模拟值）
+    # ══════════════════════════════════════════════════════
+    if existing.get("champion") != top_champ:
+        logger.info("[FullRefresh] top_champ 同步: %s → %s (来自决赛真实结果)",
+                    top_champ, existing["champion"])
+        top_champ = existing["champion"]
+        # 同步 top5 第一名（如果还没更新的话）
+        if top5 and top5[0].get("team") != top_champ:
+            top5[0]["team"] = top_champ
 
     # ══════════════════════════════════════════════════════
     # Step 4: 重新生成 explanation（使用最终 champion / probability / run_id）

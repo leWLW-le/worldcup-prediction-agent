@@ -3,27 +3,32 @@
   "surviving_teams": [
     "Argentina",
     "England",
+    "France",
     "Spain"
   ],
   "stage": "semi_finals",
   "champion": {
-    "Argentina": 0.2534,
-    "England": 0.2487,
-    "Spain": 0.4979
+    "Argentina": 0.4772,
+    "France": 0.2635,
+    "England": 0.1541,
+    "Spain": 0.1052
   },
   "champion_counts": {
-    "Argentina": 2534,
-    "England": 2487,
-    "Spain": 4979
+    "Argentina": 4772,
+    "France": 2635,
+    "Spain": 1052,
+    "England": 1541
   },
   "semifinalist": {
+    "England": 1.0,
     "Spain": 1.0,
-    "Argentina": 1.0,
-    "England": 1.0
+    "France": 1.0,
+    "Argentina": 1.0
   },
   "semifinalist_counts": {
+    "England": 10000,
     "Spain": 10000,
-    "Argentina": 10000,
-    "England": 10000
+    "France": 10000,
+    "Argentina": 10000
   }
 }

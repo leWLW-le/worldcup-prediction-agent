@@ -404,6 +404,67 @@ class BracketTool:
 
             previous_round_winners = current_round_winners
 
+        # ── 防御性检查：直接查询决赛 fixture，确保真实结果不被遗漏 ──
+        # 当 get_knockout_fixtures 因 source 字段问题未返回决赛时，
+        # 或决赛 status 不在 _FINISHED_STATUSES 中但有真实比分时，
+        # 用直接查询兜底覆盖。
+        try:
+            final_fx = FixtureRepository().get_final_match()
+            if final_fx:
+                fx_home = final_fx.get("home_team")
+                fx_away = final_fx.get("away_team")
+                fx_hs = final_fx.get("home_score")
+                fx_as_ = final_fx.get("away_score")
+                fx_status = (final_fx.get("status") or "").upper()
+
+                logger.info("[BracketTool] 防御性决赛查询: %s vs %s, %s-%s, status=%s, source=%s",
+                            fx_home, fx_away, fx_hs, fx_as_, fx_status, final_fx.get("source"))
+
+                if fx_hs is not None and fx_as_ is not None and fx_home != "TBD" and fx_away != "TBD":
+                    # 检查当前 knockout_predictions 中的决赛是否已正确反映
+                    existing_finals = [m for m in knockout_predictions if m["round"] == "final"]
+                    needs_override = True
+                    if existing_finals:
+                        ef = existing_finals[0]
+                        ef_status = (ef.get("status") or "").upper()
+                        if ef_status in self._FINISHED_STATUSES and ef.get("source") == "real_result":
+                            needs_override = False
+
+                    if needs_override:
+                        logger.info("[BracketTool] 覆盖决赛为真实结果: %s %d-%d %s",
+                                    fx_home, fx_hs, fx_as_, fx_away)
+                        # 从比分计算 winner
+                        if fx_hs > fx_as_:
+                            final_winner = fx_home
+                        elif fx_as_ > fx_hs:
+                            final_winner = fx_away
+                        else:
+                            final_winner = final_fx.get("winner") or fx_home
+
+                        # 移除旧的决赛条目
+                        knockout_predictions = [m for m in knockout_predictions if m["round"] != "final"]
+                        # 添加正确的决赛条目
+                        knockout_predictions.append({
+                            "round": "final",
+                            "home_team": fx_home,
+                            "away_team": fx_away,
+                            "predicted_score": f"{fx_hs}-{fx_as_}",
+                            "predicted_home_score": fx_hs,
+                            "predicted_away_score": fx_as_,
+                            "winner": final_winner,
+                            "winner_decision_source": "score",
+                            "is_penalty_shootout": fx_status == "PEN",
+                            "status": "FINISHED",
+                            "source": "real_result",
+                            "confidence": 1.0,
+                            "reason_codes": ["real_result", "direct_final_query"],
+                        })
+                        # 更新 champion / runner_up（局部变量，后续构建会用到）
+                        champion = final_winner
+                        loser = fx_away if final_winner == fx_home else fx_home
+        except Exception as e:
+            logger.warning("[BracketTool] 防御性决赛查询失败: %s", e)
+
         # 构建 knockout_result（兼容旧格式）
         knockout_result = {}
         for round_key in round_order:

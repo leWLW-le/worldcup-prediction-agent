@@ -143,7 +143,7 @@ worldcup-prediction-agent/
 
 ## 详细文档
 
-- [参赛提交文档](competition-submission.md) — 完整的系统架构、算法设计、创新点说明
+- [参赛提交文档](worldcup_prediction_agent.md) — 完整的系统架构、算法设计、创新点说明
 - [项目总结](PROJECT_SUMMARY.md) — 成熟度评估与代码架构分析
 - [架构设计](ARCHITECTURE.md) — Agent + Tools 架构设计文档
 - [API 指南](API_GUIDE.md) — 完整 API 端点文档

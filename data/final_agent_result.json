@@ -1,19 +1,23 @@
 {
-  "champion": "Spain",
-  "predicted_champion": "Spain",
-  "champion_probability": 0.4979,
+  "champion": "Argentina",
+  "predicted_champion": "Argentina",
+  "champion_probability": 0.4772,
   "top5": [
     {
-      "team": "Spain",
-      "probability": 0.4979
+      "team": "Argentina",
+      "probability": 0.4772
     },
     {
-      "team": "Argentina",
-      "probability": 0.2534
+      "team": "France",
+      "probability": 0.2635
     },
     {
       "team": "England",
-      "probability": 0.2487
+      "probability": 0.1541
+    },
+    {
+      "team": "Spain",
+      "probability": 0.1052
     }
   ],
   "top_candidates": [
@@ -33,7 +37,10 @@
   "surviving_teams": [
     "Argentina",
     "England",
+    "France",
     "Spain"
   ],
-  "stage": "semi_finals"
+  "stage": "semi_finals",
+  "simulation_count": 10000,
+  "generated_at": "2026-07-17T22:00:42.874581"
 }

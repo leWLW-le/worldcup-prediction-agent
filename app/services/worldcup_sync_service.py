@@ -183,9 +183,14 @@ def upsert_fixture(db, fixture_data: Dict[str, Any]) -> bool:
 
     if existing:
         # 更新已有记录（只更新白名单字段）
+        # 受信任的外部源列表：这些 source 值不应被覆盖
+        _TRUSTED_SOURCES = {"football_data", "real_result", "api_football"}
         for key, value in fixture_data.items():
             if key in _FIXTURE_FIELDS and key not in ("fixture_id", "created_at", "fetched_at"):
                 if value is not None:
+                    # 防止 source 字段被降级覆盖（如 football_data → real_result）
+                    if key == "source" and existing.source in _TRUSTED_SOURCES:
+                        continue
                     setattr(existing, key, value)
         existing.updated_at = datetime.now(timezone.utc)
     else:

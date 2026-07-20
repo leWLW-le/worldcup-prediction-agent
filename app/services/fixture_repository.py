@@ -8,6 +8,7 @@ Fixture Repository - fixtures 表数据访问层
 """
 
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -15,6 +16,8 @@ from sqlalchemy import func
 
 from app.db.database import SessionLocal
 from app.models.agent_models import Fixture, compute_canonical_pair
+
+logger = logging.getLogger(__name__)
 
 
 class FixtureRepository:
@@ -346,25 +349,78 @@ class FixtureRepository:
     
     def get_knockout_fixtures(self) -> List[Dict[str, Any]]:
         """
-        获取淘汰赛阶段的 fixtures（从 football_data external_real 中读取）
-        
-        返回所有 stage 不是 group_stage 的 football_data external_real 记录，
+        获取淘汰赛阶段的 fixtures（从所有受信外部源中读取）
+
+        返回所有 stage 不是 group_stage 的 external_real 记录，
         包括已结束的（有真实比分）和未开始的（待预测）。
-        
+
+        注意：source 字段可能被不同同步路径覆盖（football_data ↔ real_result），
+        因此不再限制 source == "football_data"，而是接受所有受信外部源。
+
         Returns:
             fixture 字典列表，每个包含 stage, status, home_team, away_team, home_score, away_score, winner 等
         """
         db = SessionLocal()
         try:
-            # 淘汰赛 = 所有非 group_stage 的 football_data external_real 记录
+            # 淘汰赛 = 所有非 group_stage 的 external_real 记录（不限 source）
             fixtures = db.query(Fixture).filter(
-                Fixture.source == "football_data",
+                Fixture.source.in_(["football_data", "real_result", "api-sports", "api_football"]),
                 Fixture.source_level == "external_real",
                 Fixture.stage != "group_stage",
                 Fixture.stage.isnot(None),
             ).order_by(Fixture.match_date.asc()).all()
-            
-            return [self._fixture_to_dict(fx) for fx in fixtures]
+
+            result = [self._fixture_to_dict(fx) for fx in fixtures]
+
+            # 诊断日志：按 stage 统计
+            from collections import Counter
+            stage_counts = Counter(fx.get("stage") for fx in result)
+            logger.info("[FixtureRepo] get_knockout_fixtures: %d 场淘汰赛, 按 stage: %s",
+                        len(result), dict(stage_counts))
+
+            # 特别记录决赛状态
+            final_fixtures = [fx for fx in result if fx.get("stage") == "final"]
+            if final_fixtures:
+                ff = final_fixtures[0]
+                logger.info("[FixtureRepo] 决赛 fixture: %s vs %s, score=%s-%s, status=%s, source=%s",
+                            ff.get("home_team"), ff.get("away_team"),
+                            ff.get("home_score"), ff.get("away_score"),
+                            ff.get("status"), ff.get("source"))
+            else:
+                logger.warning("[FixtureRepo] 未找到决赛 fixture！")
+
+            return result
+        finally:
+            db.close()
+
+    def get_final_match(self) -> Optional[Dict[str, Any]]:
+        """直接查询决赛 fixture（不依赖 source 过滤）。
+
+        用于兜底：当 get_knockout_fixtures() 因 source 字段问题查不到决赛时，
+        直接按 stage 查询决赛记录。
+
+        Returns:
+            fixture 字典或 None
+        """
+        db = SessionLocal()
+        try:
+            fx = db.query(Fixture).filter(
+                Fixture.stage.in_(["final", "FINAL", "Final"]),
+                Fixture.source_level == "external_real",
+                Fixture.home_team != "TBD",
+                Fixture.away_team != "TBD",
+            ).order_by(Fixture.match_date.desc()).first()
+
+            if fx:
+                result = self._fixture_to_dict(fx)
+                logger.info("[FixtureRepo] get_final_match: %s vs %s, %s-%s, status=%s, source=%s",
+                            result.get("home_team"), result.get("away_team"),
+                            result.get("home_score"), result.get("away_score"),
+                            result.get("status"), result.get("source"))
+                return result
+            else:
+                logger.warning("[FixtureRepo] get_final_match: 未找到决赛记录")
+                return None
         finally:
             db.close()
     
