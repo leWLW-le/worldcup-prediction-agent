@@ -474,16 +474,6 @@ def final_result():
     except Exception as e:
         logger.warning("[API] 兜底决赛 patch 失败: %s", e)
 
-    # ── 诊断：直接查 DB 中的决赛数据 ──
-    try:
-        from app.services.fixture_repository import FixtureRepository as FR
-        _debug_final = FR().get_final_match()
-        _debug_ko_count = len(FR().get_knockout_fixtures())
-        data["_debug_final"] = _debug_final
-        data["_debug_knockout_count"] = _debug_ko_count
-    except Exception as _de:
-        data["_debug_final_error"] = str(_de)
-
     # 标注数据来源（便于调试）
     data["_source"] = source
     return data
