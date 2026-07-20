@@ -311,7 +311,30 @@ class DataSourceManager:
             full_time = score.get("fullTime", {})
             home_score = full_time.get("home")
             away_score = full_time.get("away")
-            
+
+            # ── 加时赛 / 点球比分修正 ──
+            # football-data.org 的 fullTime 仅含常规时间比分。
+            # 对于淘汰赛加时/点球，需要累加 extraTime 和 penalties 得到最终比分。
+            duration = (match.get("duration") or "").upper()
+            extra_time = score.get("extraTime", {})
+            penalties = score.get("penalties", {})
+
+            if home_score is not None and away_score is not None:
+                if duration in ("EXTRA_TIME", "ET") and extra_time:
+                    et_home = extra_time.get("home")
+                    et_away = extra_time.get("away")
+                    if et_home is not None and et_away is not None:
+                        home_score = home_score + et_home
+                        away_score = away_score + et_away
+
+                if duration in ("PENALTIES", "PEN") and penalties:
+                    pen_home = penalties.get("home")
+                    pen_away = penalties.get("away")
+                    if pen_home is not None and pen_away is not None:
+                        # 点球比分加到总分上（常规+加时+点球）
+                        home_score = home_score + pen_home
+                        away_score = away_score + pen_away
+
             # 判断胜者
             winner = None
             if home_score is not None and away_score is not None:
@@ -320,7 +343,14 @@ class DataSourceManager:
                 elif away_score > home_score:
                     winner = away_team
                 else:
-                    winner = "Draw"
+                    # 比分相同（可能点球比分也未体现）→ 用 API 的 winner 字段
+                    api_winner = match.get("winner")
+                    if api_winner == "HOME_TEAM":
+                        winner = home_team
+                    elif api_winner == "AWAY_TEAM":
+                        winner = away_team
+                    else:
+                        winner = "Draw"
             
             # 解析比赛时间
             match_date_str = match.get("utcDate")

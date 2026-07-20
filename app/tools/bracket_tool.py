@@ -326,9 +326,15 @@ class BracketTool:
                         winner_name = winner if winner and winner != "Draw" else home
                         winner_decision_source = "penalty_default"
                     else:
-                        # 真正平局（极少见于淘汰赛），默认 home
-                        winner_name = home
-                        winner_decision_source = "draw_default"
+                        # 比分相同但比赛已结束 — 可能加时/点球比分未体现在 score 字段
+                        # 优先使用 DB 的 winner（来自 API 的 winner 字段）
+                        if winner and winner != "Draw":
+                            winner_name = winner
+                            winner_decision_source = "db_winner_draw"
+                        else:
+                            # 真正平局（极少见于淘汰赛），默认 home
+                            winner_name = home
+                            winner_decision_source = "draw_default"
 
                     current_round_winners[f"{round_prefix}_{i}"] = (
                         winner_name,
@@ -510,7 +516,22 @@ class BracketTool:
             champion = "Unknown"
             loser = "Unknown"
 
+        # 判断冠军来源：如果决赛已结束，冠军为真实结果
+        final_matches = [m for m in knockout_predictions if m["round"] == "final"]
+        final_is_finished = False
+        if final_matches:
+            fm = final_matches[0]
+            f_status = (fm.get("status") or "").upper()
+            if f_status in self._FINISHED_STATUSES:
+                final_is_finished = True
+
+        if final_is_finished:
+            champion_meta = {"team": champion, "probability": None, "source": "real_result", "status": "finished"}
+        else:
+            champion_meta = {"team": champion, "probability": None, "source": "prediction", "status": "predicted"}
+
         bracket_payload = self._build_bracket_payload(knockout_predictions, champion)
+        bracket_payload["champion"] = champion_meta
 
         return {
             "knockout_predictions": knockout_predictions,
