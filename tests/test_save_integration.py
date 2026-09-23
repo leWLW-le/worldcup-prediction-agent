@@ -286,63 +286,21 @@ class TestSaveFinalAgentResultIntegration:
 # ══════════════════════════════════════════════════════════
 
 class TestFastAPIPredictionEndpoints:
-    """测试 POST /run-prediction 和 GET /final-result"""
+    """V1 must fail explicitly instead of returning stale JSON or invoking old models."""
 
-    @pytest.fixture
-    def client(self):
+    @pytest.mark.parametrize("method,path", [
+        ("post", "/api/v1/agent/run-prediction"),
+        ("get", "/api/v1/agent/final-result"),
+        ("post", "/api/v1/scenario/simulate"),
+        ("get", "/api/v1/simulation/bracket"),
+    ])
+    def test_retired_endpoints(self, method, path):
         from fastapi.testclient import TestClient
         from main import app
-        return TestClient(app)
+        response = getattr(TestClient(app), method)(path)
+        assert response.status_code == 410
+        assert "V1 retired" in response.json()["detail"]
 
-    def test_post_run_prediction_success(self, client):
-        """POST /run-prediction 成功时返回 200 + status=completed"""
-        state = _make_agent_state()
-        mock_instance = MagicMock()
-        mock_instance.run.return_value = state
-
-        with patch("app.agents.worldcup_agent.WorldCupPredictionAgent", return_value=mock_instance):
-            response = client.post("/api/v1/agent/run-prediction", json={})
-            assert response.status_code == 200
-            data = response.json()
-            assert data.get("status") == "completed"
-
-    def test_get_final_result_endpoint_reachable(self, client):
-        """GET /final-result 端点可达"""
-        response = client.get("/api/v1/agent/final-result")
-        # 测试环境中 DB 和 JSON 可能无数据，503 也是正常的
-        assert response.status_code in (200, 503)
-
-    def test_concurrent_prediction_returns_409(self, client):
-        """并发锁：第二个请求返回 409"""
-        from app.api.agent import _prediction_lock
-
-        # 手动获取锁
-        _prediction_lock.acquire(blocking=True)
-
-        try:
-            response = client.post("/api/v1/agent/run-prediction", json={})
-            assert response.status_code == 409
-            data = response.json()
-            assert data["status"] == "conflict"
-        finally:
-            _prediction_lock.release()
-
-    def test_post_returns_409_not_200(self, client):
-        """验证锁住时不返回 200"""
-        from app.api.agent import _prediction_lock
-
-        _prediction_lock.acquire(blocking=True)
-        try:
-            response = client.post("/api/v1/agent/run-prediction", json={})
-            assert response.status_code != 200
-            assert response.status_code == 409
-        finally:
-            _prediction_lock.release()
-
-
-# ══════════════════════════════════════════════════════════
-# Part 3: 并发锁单元测试
-# ══════════════════════════════════════════════════════════
 
 class TestConcurrencyLock:
     """验证 _prediction_lock 的行为"""

@@ -15,6 +15,8 @@ settings = get_settings()
 
 # 检测数据库类型
 _db_url = settings.DATABASE_URL
+if _db_url.startswith("postgres://"):
+    _db_url = "postgresql://" + _db_url[len("postgres://"):]
 _is_sqlite = _db_url.startswith("sqlite")
 DB_BACKEND = "sqlite" if _is_sqlite else "postgresql"
 
