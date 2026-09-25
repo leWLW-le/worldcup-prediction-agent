@@ -5,9 +5,11 @@
 """
 import os
 import threading
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from typing import Generator
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.core.config import get_settings
 
@@ -55,7 +57,20 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     """初始化数据库，创建所有表"""
-    Base.metadata.create_all(bind=engine)
+    global engine, SessionLocal, DB_BACKEND
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError:
+        # Render services can retain a stale DATABASE_URL after a database is
+        # removed. Keep startup deterministic only when the operator enables
+        # the explicit emergency fallback; normal production remains strict.
+        if os.getenv("DATABASE_FALLBACK_SQLITE", "false").lower() != "true":
+            raise
+        engine.dispose()
+        engine = create_engine("sqlite:///./worldcup-v2.db", connect_args={"check_same_thread": False})
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        DB_BACKEND = "sqlite-fallback"
+        Base.metadata.create_all(bind=engine)
 
 
 def check_db_connection(timeout: float = 5.0) -> bool:
