@@ -2,7 +2,7 @@
 2026 世界杯冠军预测 · 产品展示页
 深蓝 + 金色 · 卡片布局 · 全中文 · 适合答辩展示
 
-数据源：data/final_agent_result.json（通过 API /agent/final-result 提供）
+数据源：V2 API 已保存的版本化预测结果
 """
 
 import sys
@@ -646,281 +646,14 @@ def _check_api_consistency(data: Dict) -> bool:
     return True  # 无法通过模式匹配提取，放行
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def fetch_final_result() -> Dict[str, Any]:
-    """获取预测结果（前端唯一数据源）
-
-    返回统一结构：
-    {
-        "data": {...},          # 原始预测数据（champion, top5, explanation 等）
-        "source": "api" | "json_fallback",
-        "is_fallback": bool,
-        "run_id": str | None,
-        "generated_at": str | None,
-        "error": str | None,    # fallback 原因（不暴露堆栈）
-    }
-
-    优先级：API（200 + 核心字段有效）> 本地 JSON fallback
-    核心字段：champion, champion_probability, top5 或 top_candidates
-    """
-    import logging as _logging
-    _log = _logging.getLogger(__name__)
-
-    # ── 核心字段校验 ──
-    def _has_core_fields(d: Dict) -> bool:
-        if not d or not isinstance(d, dict):
-            return False
-        has_champion = bool(d.get("champion"))
-        has_prob = d.get("champion_probability") is not None
-        has_top5 = bool(d.get("top5"))
-        has_top_candidates = bool(d.get("top_candidates"))
-        return has_champion and has_prob and (has_top5 or has_top_candidates)
-
-    # ── 提取元数据 ──
-    def _extract_meta(d: Dict) -> tuple:
-        run_id = d.get("run_id") or d.get("id") or ""
-        generated_at = d.get("generated_at") or d.get("timestamp") or ""
-        return run_id, generated_at
-
-    # ══════════════════════════════════════════════
-    # 1. 尝试 API
-    # ═════════════════════════════════════════════
-    backend_url = get_api_base_url()
-    api_url = f"{backend_url}/agent/final-result"
-
-    try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        # API 返回空对象 / 错误状态 → 视为无效
-        if not data or data.get("status") in ("no_result", "error", "validation_failed"):
-            _log.info("[FinalResult] API 返回空或错误状态，跳过")
-        elif _has_core_fields(data):
-            # ── 内部一致性校验：top5[0] 应与 explanation 中的冠军一致 ──
-            _consistency_ok = _check_api_consistency(data)
-            if not _consistency_ok:
-                _log.warning(
-                    "[FinalResult] API 数据内部不一致 (top5[0] vs explanation)，跳过 API，使用 JSON fallback"
-                )
-            else:
-                run_id, generated_at = _extract_meta(data)
-                _log.info(
-                    "[FinalResult] source=api run_id=%s generated_at=%s "
-                    "champion=%s probability=%s",
-                    run_id or "—", generated_at or "—",
-                    data.get("champion"), data.get("champion_probability"),
-                )
-                return {
-                    "data": data,
-                    "source": "api",
-                    "is_fallback": False,
-                    "run_id": run_id,
-                    "generated_at": generated_at,
-                    "error": None,
-                }
-        else:
-            missing = []
-            if not data.get("champion"): missing.append("champion")
-            if data.get("champion_probability") is None: missing.append("champion_probability")
-            if not data.get("top5") and not data.get("top_candidates"): missing.append("top5/top_candidates")
-            _log.warning("[FinalResult] API 缺少核心字段: %s", ", ".join(missing))
-
-    except requests.exceptions.Timeout:
-        _log.warning("[FinalResult] API 超时")
-    except requests.exceptions.ConnectionError:
-        _log.warning("[FinalResult] API 连接失败")
-    except Exception:
-        _log.warning("[FinalResult] API 请求异常")
-
-    # ══════════════════════════════════════════════
-    # 2. Fallback: 本地 JSON
-    # ══════════════════════════════════════════════
-    if FINAL_RESULT_PATH.exists():
-        try:
-            with open(FINAL_RESULT_PATH, encoding="utf-8") as f:
-                data = json.load(f)
-            if _has_core_fields(data):
-                run_id, generated_at = _extract_meta(data)
-                _log.warning("[FinalResult] API unavailable; using JSON fallback")
-                return {
-                    "data": data,
-                    "source": "json_fallback",
-                    "is_fallback": True,
-                    "run_id": run_id,
-                    "generated_at": generated_at,
-                    "error": "API 不可用，展示本地缓存结果",
-                }
-        except Exception:
-            _log.warning("[FinalResult] 本地 JSON 读取失败")
-
-    # ══════════════════════════════════════════════
-    # 3. 全部失败
-    # ══════════════════════════════════════════════
-    _log.error("[FinalResult] API 和 JSON 均不可用")
-    return {
-        "data": {},
-        "source": "none",
-        "is_fallback": True,
-        "run_id": None,
-        "generated_at": None,
-        "error": "API 和本地缓存均不可用",
-    }
+# V2 adapters preserve the original rendering and never read legacy JSON.
+from dashboard.legacy_adapter import (
+    fetch_final_result, call_agent_api, refresh_real_data, get_data_status,
+    fetch_stage_info, fetch_scenario_pending_matches, call_scenario_simulate,
+    fetch_scenario_latest,
+)
 
 
-def call_agent_api(mode: str = "llm_planner", use_llm: bool = True) -> Optional[Dict[str, Any]]:
-    """运行预测 Agent"""
-    api_url = f"{get_api_base_url()}/agent/run-prediction"
-    try:
-        response = requests.post(
-            api_url,
-            json={"season": 2026, "mode": mode, "use_llm": use_llm},
-            timeout=180,
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.ConnectionError:
-        st.error("无法连接后端服务，请确认 FastAPI 已启动。")
-        return None
-    except requests.exceptions.Timeout:
-        st.error("请求超时")
-        return None
-    except Exception as e:
-        st.error(f"请求失败: {str(e)}")
-        return None
-
-
-def refresh_real_data() -> Optional[Dict[str, Any]]:
-    """全量刷新：刷新赛程 → 识别存活球队 → 重新模拟 → 更新结果"""
-    api_url = f"{get_api_base_url()}/data/full-refresh"
-    try:
-        response = requests.post(api_url, json={"season": 2026}, timeout=300)
-        response.raise_for_status()
-        return response.json()
-    except Exception:
-        return None
-
-
-def get_data_status() -> Optional[Dict[str, Any]]:
-    """获取 canonical 数据状态"""
-    api_url = f"{get_api_base_url()}/data/status"
-    try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception:
-        return None
-
-
-def fetch_stage_info() -> Optional[Dict[str, Any]]:
-    """获取当前赛事阶段信息（stage_info）"""
-    api_url = f"{get_api_base_url()}/scenario/stage-info"
-    try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("success"):
-            return data
-        return None
-    except Exception:
-        return None
-
-
-@st.cache_data(ttl=30, show_spinner=False)
-def fetch_scenario_pending_matches() -> Dict[str, Any]:
-    """
-    获取未结束的淘汰赛比赛列表（阶段感知）。
-    返回完整响应：{success, matches, stage, stage_label, sandbox_enabled, sandbox_message}
-
-    三种返回状态：
-    - sandbox_enabled=True, matches=[...]  → 可推演
-    - sandbox_enabled=True, matches=[]     → 暂时无法获取（非结束）
-    - sandbox_enabled=False, reason=...    → 沙盘确实已结束
-    - sandbox_enabled=None                 → API 异常，未知状态
-    """
-    import logging as _log2
-    _log2 = _log2.getLogger(__name__)
-
-    api_url = f"{get_api_base_url()}/scenario/pending-matches"
-    try:
-        response = requests.get(api_url, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-
-        matches = data.get("matches") or data.get("pending_matches") or []
-        sandbox_enabled = data.get("sandbox_enabled")
-        stage = data.get("stage", "unknown")
-
-        _log2.info(
-            "[PendingMatches] http_status=%s stage=%s sandbox_enabled=%s match_count=%d source=api",
-            response.status_code, stage, sandbox_enabled, len(matches),
-        )
-
-        return {
-            "success": data.get("success", True),
-            "matches": matches,
-            "stage": stage,
-            "stage_label": data.get("stage_label", ""),
-            "sandbox_enabled": sandbox_enabled,
-            "sandbox_message": data.get("sandbox_message", ""),
-            "source": "api",
-            "http_status": response.status_code,
-        }
-    except requests.exceptions.Timeout:
-        _log2.warning("[PendingMatches] fetch failed: error_type=timeout sandbox_status=unknown")
-        return {"success": False, "matches": [], "sandbox_enabled": None,
-                "sandbox_message": "请求超时，请稍后重试。", "source": "error", "error_type": "timeout"}
-    except requests.exceptions.ConnectionError:
-        _log2.warning("[PendingMatches] fetch failed: error_type=connection sandbox_status=unknown")
-        return {"success": False, "matches": [], "sandbox_enabled": None,
-                "sandbox_message": "无法连接后端服务，请稍后重试。", "source": "error", "error_type": "connection"}
-    except Exception as e:
-        _log2.warning("[PendingMatches] fetch failed: error_type=%s sandbox_status=unknown", type(e).__name__)
-        return {"success": False, "matches": [], "sandbox_enabled": None,
-                "sandbox_message": f"请求异常 ({type(e).__name__})，请稍后重试。",
-                "source": "error", "error_type": type(e).__name__}
-
-
-def call_scenario_simulate(match_id: str, forced_winner: str, simulation_count: int = 1000) -> Optional[Dict[str, Any]]:
-    """调用沙盘推演 API"""
-    api_url = f"{get_api_base_url()}/scenario/simulate"
-    try:
-        response = requests.post(
-            api_url,
-            json={"match_id": match_id, "forced_winner": forced_winner, "simulation_count": simulation_count},
-            timeout=300,
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        st.error("沙盘推演超时，请重试。")
-        return None
-    except Exception as e:
-        st.error(f"沙盘推演失败: {str(e)}")
-        return None
-
-
-def fetch_scenario_latest() -> Optional[Dict[str, Any]]:
-    """
-    获取最新沙盘推演结果（含过期检测）。
-    如果 is_stale=true 或 sandbox 已关闭，返回 None 并设置 session_state 提示。
-    """
-    api_url = f"{get_api_base_url()}/scenario/latest"
-    try:
-        response = requests.get(api_url, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("success"):
-            return data
-        # 过期或不可用
-        if data.get("is_stale"):
-            st.session_state["scenario_stale_message"] = data.get("message", "沙盘结果已过期。")
-        return None
-    except Exception:
-        return None
-
-
-# ==================== 辅助函数 ====================
 def normalize_stage(stage: str) -> str:
     s = stage.lower()
     if any(k in s for k in ["round_of_32", "r32", "round of 32"]):
@@ -1139,7 +872,7 @@ def display_champion_card(data: Dict):
     st.markdown(f"""
 <div class="section-card">
     <div class="section-title">🏆 正式冠军预测</div>
-    <div style="color:#8fa6c8;font-size:.86rem;margin-bottom:.6rem;">基于当前真实赛果与剩余赛程推演</div>
+    <div style="color:#8fa6c8;font-size:.86rem;margin-bottom:.6rem;">基于标注截止时间的赛事快照与模型推演</div>
     <div class="official-card">
         <div style="font-size:2.6rem;margin-bottom:.2rem;">🏆</div>
         <div class="champion-name">{champion}</div>
@@ -1231,22 +964,6 @@ def display_explanation(data: Dict):
 </div>""", unsafe_allow_html=True)
         return
 
-    # ── 动态替换正文中的百分比 ──
-    import re as _re
-    # 使用 explanation.probability 字段中的旧值替换为新值
-    expl_prob_field = explanation.get("probability")
-    if expl_prob_field is not None:
-        old_val = float(expl_prob_field)
-        old_pct = f"{old_val:.2f}"
-        new_pct = f"{prob_pct:.2f}"
-        if old_pct != new_pct:
-            content = content.replace(old_pct + "%", new_pct + "%")
-            content = content.replace(old_pct, new_pct)
-    # 安全网：替换正文中所有 XX.XX% 格式的概率为最新值
-    # （后端已确保文本正确，此处仅处理历史缓存数据）
-    if expl_prob_field is None:
-        content = _re.sub(r'\d+\.?\d*\s*%', lambda m: f"{prob_display}", content)
-
     # 清洗正文，移除重复标题
     cleaned_text = clean_explanation_text(content, champion_name)
 
@@ -1282,11 +999,11 @@ def display_top5(data: Dict):
         subtitle = "冠军已产生"
     elif stage:
         label = "🔥 队伍夺冠概率"
-        subtitle = f"当前阶段：{stage_label} · {candidate_count} 支球队仍有夺冠可能"
+        subtitle = f"当前阶段：{stage_label} · {candidate_count} 支球队的夺冠概率排名"
     else:
         # 兜底：无 stage_info
         label = "🔥 队伍夺冠概率"
-        subtitle = f"{candidate_count} 支球队仍有夺冠可能"
+        subtitle = f"{candidate_count} 支球队的夺冠概率排名"
 
     max_pct = max(float(t.get("probability", 0)) * 100 if float(t.get("probability", 0)) <= 1
                   else float(t.get("probability", 0)) for t in top5) or 1
@@ -1420,7 +1137,7 @@ def display_knockout_roadmap(data: Dict):
         <div class="road-champion-box">
             <div style="font-size:2rem;">🏆</div>
             <div style="color:#b8860b;font-size:1.1rem;font-weight:800;margin-top:.2rem;">{bracket_champion_team}</div>
-            <div style="color:#8a9bb5;font-size:.6rem;margin-top:.15rem;">淘汰赛路径胜者</div>
+            <div style="color:#8a9bb5;font-size:.6rem;margin-top:.15rem;">单次模拟路径胜者</div>
         </div>
     </div>
 </div>"""
@@ -1584,7 +1301,7 @@ def display_scenario_sandbox(data: Dict):
     
     if has_matches and sandbox_enabled is True:
         # 状态 A：可推演
-        subtitle = '选择一场未开始的半决赛，并假设其中一队晋级。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
+        subtitle = '选择快照中一场未开始的比赛，并假设其中一队获胜（小组赛为90分钟获胜）。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
         badge_text = "假设推演"
     elif is_sandbox_ended:
         # 状态 C：沙盘确实已结束
@@ -1754,7 +1471,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
         with col_b:
             forced_winner = st.radio(
-                "假设晋级队",
+                "假设获胜队",
                 [home, away],
                 key="scenario_winner_radio",
                 horizontal=True,
@@ -1803,7 +1520,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
             content_html = f"""
 <div class="sandbox-result-title">
-    沙盘推演结果：假设 {forced_winner_name} 淘汰 {forced_loser_name}
+    沙盘推演结果：假设 {forced_winner_name} 战胜 {forced_loser_name}
 </div>"""
 
             # ── 沙盘夺冠概率 ──
@@ -1989,6 +1706,9 @@ def main():
     <h1 class="hero-title" style="font-size:2rem;">2026 世界杯冠军预测</h1>
     <p class="hero-sub" style="margin-bottom:1rem;">基于历史比赛、球队实力与赛程推演的智能预测系统</p>
 </div>""", unsafe_allow_html=True)
+
+        if result.get("error"):
+            st.error(result["error"])
 
         # 检查数据状态
         ds = get_data_status() or {}

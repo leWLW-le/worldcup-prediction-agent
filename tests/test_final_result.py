@@ -102,41 +102,23 @@ class TestCanonicalTopLevelJSON:
 
 # ── Test 2: 当前真实 JSON 文件格式验证 ──
 
-class TestRealJSONFile:
-    """验证仓库中 data/final_agent_result.json 的结构"""
+class TestLegacyJSONIsolation:
+    def test_old_json_does_not_satisfy_v2_contract(self):
+        from app.pipelines.prediction import validate_result
+        data = json.loads((PROJECT_ROOT / "data" / "final_agent_result.json").read_text(encoding="utf-8"))
+        with pytest.raises((KeyError, ValueError)):
+            validate_result(data)
 
-    def test_json_file_exists(self):
-        json_path = PROJECT_ROOT / "data" / "final_agent_result.json"
-        assert json_path.exists(), "data/final_agent_result.json 不存在"
+    def test_v2_store_does_not_import_legacy_json(self):
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from app.db.database import Base
+        from app.infrastructure.store import Store
+        engine = create_engine("sqlite://")
+        Base.metadata.create_all(engine)
+        assert Store(sessionmaker(bind=engine)).results() == []
+        engine.dispose()
 
-    def test_json_file_valid(self):
-        json_path = PROJECT_ROOT / "data" / "final_agent_result.json"
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-
-        # 必须通过校验
-        _validate_prediction_snapshot(data)
-
-    def test_json_has_status_completed(self):
-        json_path = PROJECT_ROOT / "data" / "final_agent_result.json"
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-        assert data.get("status") == "completed"
-
-    def test_json_has_run_id(self):
-        json_path = PROJECT_ROOT / "data" / "final_agent_result.json"
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-        assert data.get("run_id"), "run_id 不能为空"
-
-    def test_json_has_explanation(self):
-        json_path = PROJECT_ROOT / "data" / "final_agent_result.json"
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-        assert isinstance(data.get("explanation"), dict)
-
-
-# ── Test 3: wrapper JSON 解包测试 ──
 
 class TestWrapperJSONRejection:
     """验证 _validate_prediction_snapshot 拒绝 wrapper 结构"""

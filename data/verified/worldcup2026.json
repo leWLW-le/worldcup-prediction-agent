@@ -1,0 +1,802 @@
+{
+  "groups": {
+    "A": [
+      "Czech Republic",
+      "Mexico",
+      "South Africa",
+      "South Korea"
+    ],
+    "B": [
+      "Bosnia and Herzegovina",
+      "Canada",
+      "Qatar",
+      "Switzerland"
+    ],
+    "C": [
+      "Brazil",
+      "Haiti",
+      "Morocco",
+      "Scotland"
+    ],
+    "D": [
+      "Australia",
+      "Paraguay",
+      "Turkey",
+      "United States"
+    ],
+    "E": [
+      "Curaçao",
+      "Ecuador",
+      "Germany",
+      "Ivory Coast"
+    ],
+    "F": [
+      "Japan",
+      "Netherlands",
+      "Sweden",
+      "Tunisia"
+    ],
+    "G": [
+      "Belgium",
+      "Egypt",
+      "Iran",
+      "New Zealand"
+    ],
+    "H": [
+      "Cape Verde",
+      "Saudi Arabia",
+      "Spain",
+      "Uruguay"
+    ],
+    "I": [
+      "France",
+      "Iraq",
+      "Norway",
+      "Senegal"
+    ],
+    "J": [
+      "Algeria",
+      "Argentina",
+      "Austria",
+      "Jordan"
+    ],
+    "K": [
+      "Colombia",
+      "DR Congo",
+      "Portugal",
+      "Uzbekistan"
+    ],
+    "L": [
+      "Croatia",
+      "England",
+      "Ghana",
+      "Panama"
+    ]
+  },
+  "matches": [
+    {
+      "fixture_id": "group-1",
+      "group": "A",
+      "home": "Mexico",
+      "away": "South Africa",
+      "kickoff": "2026-06-11T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-2",
+      "group": "A",
+      "home": "South Korea",
+      "away": "Czech Republic",
+      "kickoff": "2026-06-11T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-3",
+      "group": "B",
+      "home": "Canada",
+      "away": "Bosnia and Herzegovina",
+      "kickoff": "2026-06-12T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-4",
+      "group": "D",
+      "home": "United States",
+      "away": "Paraguay",
+      "kickoff": "2026-06-12T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-5",
+      "group": "B",
+      "home": "Qatar",
+      "away": "Switzerland",
+      "kickoff": "2026-06-13T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-6",
+      "group": "C",
+      "home": "Brazil",
+      "away": "Morocco",
+      "kickoff": "2026-06-13T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-7",
+      "group": "C",
+      "home": "Haiti",
+      "away": "Scotland",
+      "kickoff": "2026-06-13T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-8",
+      "group": "D",
+      "home": "Australia",
+      "away": "Turkey",
+      "kickoff": "2026-06-13T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-9",
+      "group": "E",
+      "home": "Germany",
+      "away": "Curaçao",
+      "kickoff": "2026-06-14T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-10",
+      "group": "E",
+      "home": "Ivory Coast",
+      "away": "Ecuador",
+      "kickoff": "2026-06-14T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-11",
+      "group": "F",
+      "home": "Netherlands",
+      "away": "Japan",
+      "kickoff": "2026-06-14T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-12",
+      "group": "F",
+      "home": "Sweden",
+      "away": "Tunisia",
+      "kickoff": "2026-06-14T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-13",
+      "group": "G",
+      "home": "Belgium",
+      "away": "Egypt",
+      "kickoff": "2026-06-15T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-14",
+      "group": "G",
+      "home": "Iran",
+      "away": "New Zealand",
+      "kickoff": "2026-06-15T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-15",
+      "group": "H",
+      "home": "Spain",
+      "away": "Cape Verde",
+      "kickoff": "2026-06-15T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-16",
+      "group": "H",
+      "home": "Saudi Arabia",
+      "away": "Uruguay",
+      "kickoff": "2026-06-15T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-17",
+      "group": "I",
+      "home": "France",
+      "away": "Senegal",
+      "kickoff": "2026-06-16T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-18",
+      "group": "I",
+      "home": "Iraq",
+      "away": "Norway",
+      "kickoff": "2026-06-16T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-19",
+      "group": "J",
+      "home": "Argentina",
+      "away": "Algeria",
+      "kickoff": "2026-06-16T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-20",
+      "group": "J",
+      "home": "Austria",
+      "away": "Jordan",
+      "kickoff": "2026-06-16T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-21",
+      "group": "K",
+      "home": "Portugal",
+      "away": "DR Congo",
+      "kickoff": "2026-06-17T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-22",
+      "group": "K",
+      "home": "Uzbekistan",
+      "away": "Colombia",
+      "kickoff": "2026-06-17T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-23",
+      "group": "L",
+      "home": "England",
+      "away": "Croatia",
+      "kickoff": "2026-06-17T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-24",
+      "group": "L",
+      "home": "Ghana",
+      "away": "Panama",
+      "kickoff": "2026-06-17T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-25",
+      "group": "A",
+      "home": "Czech Republic",
+      "away": "South Africa",
+      "kickoff": "2026-06-18T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-26",
+      "group": "A",
+      "home": "Mexico",
+      "away": "South Korea",
+      "kickoff": "2026-06-18T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-27",
+      "group": "B",
+      "home": "Switzerland",
+      "away": "Bosnia and Herzegovina",
+      "kickoff": "2026-06-18T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-28",
+      "group": "B",
+      "home": "Canada",
+      "away": "Qatar",
+      "kickoff": "2026-06-18T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-29",
+      "group": "C",
+      "home": "Scotland",
+      "away": "Morocco",
+      "kickoff": "2026-06-19T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-30",
+      "group": "C",
+      "home": "Brazil",
+      "away": "Haiti",
+      "kickoff": "2026-06-19T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-31",
+      "group": "D",
+      "home": "United States",
+      "away": "Australia",
+      "kickoff": "2026-06-19T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-32",
+      "group": "D",
+      "home": "Turkey",
+      "away": "Paraguay",
+      "kickoff": "2026-06-19T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-33",
+      "group": "E",
+      "home": "Germany",
+      "away": "Ivory Coast",
+      "kickoff": "2026-06-20T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-34",
+      "group": "E",
+      "home": "Ecuador",
+      "away": "Curaçao",
+      "kickoff": "2026-06-20T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-35",
+      "group": "F",
+      "home": "Netherlands",
+      "away": "Sweden",
+      "kickoff": "2026-06-20T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-36",
+      "group": "F",
+      "home": "Tunisia",
+      "away": "Japan",
+      "kickoff": "2026-06-20T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-37",
+      "group": "G",
+      "home": "Belgium",
+      "away": "Iran",
+      "kickoff": "2026-06-21T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-38",
+      "group": "G",
+      "home": "New Zealand",
+      "away": "Egypt",
+      "kickoff": "2026-06-21T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-39",
+      "group": "H",
+      "home": "Spain",
+      "away": "Saudi Arabia",
+      "kickoff": "2026-06-21T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-40",
+      "group": "H",
+      "home": "Uruguay",
+      "away": "Cape Verde",
+      "kickoff": "2026-06-21T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-41",
+      "group": "I",
+      "home": "France",
+      "away": "Iraq",
+      "kickoff": "2026-06-22T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-42",
+      "group": "I",
+      "home": "Norway",
+      "away": "Senegal",
+      "kickoff": "2026-06-22T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-43",
+      "group": "J",
+      "home": "Argentina",
+      "away": "Austria",
+      "kickoff": "2026-06-22T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-44",
+      "group": "J",
+      "home": "Jordan",
+      "away": "Algeria",
+      "kickoff": "2026-06-22T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-45",
+      "group": "K",
+      "home": "Portugal",
+      "away": "Uzbekistan",
+      "kickoff": "2026-06-23T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-46",
+      "group": "K",
+      "home": "Colombia",
+      "away": "DR Congo",
+      "kickoff": "2026-06-23T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-47",
+      "group": "L",
+      "home": "England",
+      "away": "Ghana",
+      "kickoff": "2026-06-23T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-48",
+      "group": "L",
+      "home": "Panama",
+      "away": "Croatia",
+      "kickoff": "2026-06-23T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-49",
+      "group": "A",
+      "home": "Mexico",
+      "away": "Czech Republic",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-50",
+      "group": "A",
+      "home": "South Africa",
+      "away": "South Korea",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-51",
+      "group": "B",
+      "home": "Canada",
+      "away": "Switzerland",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-52",
+      "group": "B",
+      "home": "Bosnia and Herzegovina",
+      "away": "Qatar",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-53",
+      "group": "C",
+      "home": "Scotland",
+      "away": "Brazil",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-54",
+      "group": "C",
+      "home": "Morocco",
+      "away": "Haiti",
+      "kickoff": "2026-06-24T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-55",
+      "group": "D",
+      "home": "United States",
+      "away": "Turkey",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": false
+    },
+    {
+      "fixture_id": "group-56",
+      "group": "D",
+      "home": "Paraguay",
+      "away": "Australia",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-57",
+      "group": "E",
+      "home": "Curaçao",
+      "away": "Ivory Coast",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-58",
+      "group": "E",
+      "home": "Ecuador",
+      "away": "Germany",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-59",
+      "group": "F",
+      "home": "Japan",
+      "away": "Sweden",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-60",
+      "group": "F",
+      "home": "Tunisia",
+      "away": "Netherlands",
+      "kickoff": "2026-06-25T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-61",
+      "group": "G",
+      "home": "Egypt",
+      "away": "Iran",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-62",
+      "group": "G",
+      "home": "New Zealand",
+      "away": "Belgium",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-63",
+      "group": "H",
+      "home": "Cape Verde",
+      "away": "Saudi Arabia",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-64",
+      "group": "H",
+      "home": "Uruguay",
+      "away": "Spain",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-65",
+      "group": "I",
+      "home": "Norway",
+      "away": "France",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-66",
+      "group": "I",
+      "home": "Senegal",
+      "away": "Iraq",
+      "kickoff": "2026-06-26T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-67",
+      "group": "J",
+      "home": "Algeria",
+      "away": "Austria",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-68",
+      "group": "J",
+      "home": "Jordan",
+      "away": "Argentina",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-69",
+      "group": "K",
+      "home": "Colombia",
+      "away": "Portugal",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-70",
+      "group": "K",
+      "home": "DR Congo",
+      "away": "Uzbekistan",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-71",
+      "group": "L",
+      "home": "Panama",
+      "away": "England",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    },
+    {
+      "fixture_id": "group-72",
+      "group": "L",
+      "home": "Croatia",
+      "away": "Ghana",
+      "kickoff": "2026-06-27T00:00:00Z",
+      "neutral": true
+    }
+  ],
+  "fifa_rankings": {
+    "France": [
+      1
+    ],
+    "Spain": [
+      2
+    ],
+    "Argentina": [
+      3
+    ],
+    "England": [
+      4
+    ],
+    "Portugal": [
+      5
+    ],
+    "Brazil": [
+      6
+    ],
+    "Netherlands": [
+      7
+    ],
+    "Morocco": [
+      8
+    ],
+    "Belgium": [
+      9
+    ],
+    "Germany": [
+      10
+    ],
+    "Croatia": [
+      11
+    ],
+    "Colombia": [
+      13
+    ],
+    "Senegal": [
+      14
+    ],
+    "Mexico": [
+      15
+    ],
+    "United States": [
+      16
+    ],
+    "Uruguay": [
+      17
+    ],
+    "Japan": [
+      18
+    ],
+    "Switzerland": [
+      19
+    ],
+    "Iran": [
+      21
+    ],
+    "Turkey": [
+      22
+    ],
+    "Ecuador": [
+      23
+    ],
+    "Austria": [
+      24
+    ],
+    "South Korea": [
+      25
+    ],
+    "Australia": [
+      27
+    ],
+    "Algeria": [
+      28
+    ],
+    "Egypt": [
+      29
+    ],
+    "Canada": [
+      30
+    ],
+    "Norway": [
+      31
+    ],
+    "Panama": [
+      33
+    ],
+    "Ivory Coast": [
+      34
+    ],
+    "Sweden": [
+      38
+    ],
+    "Paraguay": [
+      40
+    ],
+    "Czech Republic": [
+      41
+    ],
+    "Scotland": [
+      43
+    ],
+    "Tunisia": [
+      44
+    ],
+    "DR Congo": [
+      46
+    ],
+    "Uzbekistan": [
+      50
+    ],
+    "Qatar": [
+      55
+    ],
+    "Iraq": [
+      57
+    ],
+    "South Africa": [
+      60
+    ],
+    "Saudi Arabia": [
+      61
+    ],
+    "Jordan": [
+      63
+    ],
+    "Bosnia and Herzegovina": [
+      65
+    ],
+    "Cape Verde": [
+      69
+    ],
+    "Ghana": [
+      74
+    ],
+    "Curaçao": [
+      82
+    ],
+    "Haiti": [
+      83
+    ],
+    "New Zealand": [
+      85
+    ]
+  },
+  "ranking_date": "2026-04-01T00:00:00Z",
+  "ranking_source": "https://wildstat.com/p/7001/ddate/2026-04-01 ; publication: https://inside.fifa.com/fifa-world-ranking/men?dateId=id13433"
+}

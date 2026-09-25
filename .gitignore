@@ -1,4 +1,10 @@
 # Python
+data/verified/history.csv
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+models/v2-*/
 __pycache__/
 *.py[cod]
 *$py.class

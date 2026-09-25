@@ -1,0 +1,26 @@
+{
+  "provenance": "verified",
+  "source": "https://github.com/martj42/international_results",
+  "revision": "394fe81893b062fbc2cf6257e988ac7cc4c039a1",
+  "license": "CC0-1.0",
+  "raw_sha256": {
+    "results.csv": "df35268f8fc341ff7fb93d448b4e40356676ac35300a6b4461fd199a99ac1514",
+    "goalscorers.csv": "38cbc8007fb4aef7dd9f57e354623dca2abaf03a859530565ccf368e86a9f614"
+  },
+  "history_sha256": "044797300074ced4ff1fe1e2f422197a4257dfe67e8e5d65ca087222a65c0be7",
+  "retained": 14366,
+  "excluded": {
+    "outside_window": 17377,
+    "incomplete_goal_events": 17675,
+    "extra_time_or_ambiguous_minutes": 124,
+    "unknown_goal_minutes": 5
+  },
+  "start": "1990-01-23",
+  "end": "2026-05-29",
+  "audit": "Nonzero scores require complete team goal counts and known minutes 1-90. Extra-time/ambiguous games excluded. Scoreless labels are unchanged by extra time.",
+  "limitations": [
+    "Selection favors competitions with goal-event coverage; missingness is not random.",
+    "Retrospectively collected/corrected data, not historical publication snapshots.",
+    "Verified means schema and source checks passed, not independent verification of every event."
+  ]
+}
