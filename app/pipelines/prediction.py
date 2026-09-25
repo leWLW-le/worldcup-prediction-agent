@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from app.features.prematch import PrematchState
 from app.tournament.bracket import BracketGraph
+from app.tournament.full_simulator import simulate_full
 from app.tournament.simulator import simulate
 
 
@@ -39,7 +40,8 @@ class PredictionPipeline:
         data = self.store.get_input(request.snapshot_id)
         if data.provenance != "verified" and not self.allow_demo:
             raise ValueError("Unverified/synthetic inputs are disabled; import verified data")
-        graph = BracketGraph(data.fixtures)
+        graph = data.group_stage or BracketGraph(data.fixtures)
+        runner = simulate_full if data.group_stage else simulate
         state = PrematchState.before(data.history, data.as_of)
         forced = (
             {request.fixture_id: request.forced_winner} if hasattr(request, "fixture_id") else {}
@@ -48,7 +50,7 @@ class PredictionPipeline:
         def predict(h, a, neutral):
             return self.registry.predict(state, h, a, data.as_of, neutral)
 
-        result = simulate(
+        result = runner(
             graph,
             predict,
             request.simulation_count,
@@ -67,7 +69,8 @@ class PredictionPipeline:
                 "model_version": self.registry.version,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "status": "observed"
-                if all(f.status == "finished" for f in data.fixtures)
+                if (("104" in data.group_stage.knockout_winners) if data.group_stage
+                    else all(f.status == "finished" for f in data.fixtures))
                 else "demo"
                 if data.provenance != "verified"
                 else "baseline"
@@ -83,7 +86,7 @@ class PredictionPipeline:
         )
         if forced:
             # Same inputs/model/seed/budget, no comparison against stale global JSON.
-            baseline = simulate(
+            baseline = runner(
                 graph,
                 predict,
                 request.simulation_count,
@@ -99,6 +102,7 @@ class PredictionPipeline:
             }
         if cancelled():
             raise RuntimeError("Task cancelled before persistence")
+        result["warnings"].extend(result.get("group_assumptions", []))
         if persist:
             self.store.save_result(result, "scenario" if forced else "prediction")
         return result

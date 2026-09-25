@@ -18,6 +18,8 @@ services:
         value: production
       - key: ADMIN_API_KEY
         generateValue: true
+      - key: COMPUTE_TIMEOUT_SECONDS
+        value: "600"
       - key: ALLOW_DEMO_DATA
         value: "false"
       - key: DATABASE_URL

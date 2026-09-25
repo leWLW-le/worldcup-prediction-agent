@@ -23,6 +23,10 @@ async def lifespan(app):
     validate_settings(settings)
     init_db()
     store = Store()
+    if settings.SEED_RELEASE:
+        from app.infrastructure.release import seed_release
+
+        seed_release(store)
     registry = get_registry(settings.MODEL_BUNDLE_DIR)
     pipeline = PredictionPipeline(
         store, registry, settings.COMPUTE_TIMEOUT_SECONDS, settings.ALLOW_DEMO_DATA

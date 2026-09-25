@@ -1,6 +1,7 @@
 """One configuration source: environment > .env > defaults."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +19,10 @@ class Settings(BaseSettings):
     ADMIN_API_KEY: str = ""
     ALLOWED_ORIGINS: str = ""
     ALLOW_DEMO_DATA: bool = False
-    MODEL_BUNDLE_DIR: str | None = None
+    MODEL_BUNDLE_DIR: str | None = (
+        "models/production-v2" if Path("models/production-v2/manifest.json").exists() else None
+    )
+    SEED_RELEASE: bool = True
     COMPUTE_TIMEOUT_SECONDS: int = Field(default=120, ge=1, le=600)
     MAX_REQUEST_BYTES: int = Field(default=8_000_000, ge=1024, le=32_000_000)
     LLM_PROVIDER: str = "openai_compatible"
@@ -75,7 +79,7 @@ def get_settings():
 
 def validate_settings(settings):
     if settings.ENVIRONMENT in ("production", "prod"):
-        if len(settings.ADMIN_API_KEY) < 24:
+        if settings.ADMIN_API_KEY and len(settings.ADMIN_API_KEY) < 24:
             raise ValueError("Production ADMIN_API_KEY must contain at least 24 characters")
         if settings.ALLOW_DEMO_DATA:
             raise ValueError("Demo data cannot be enabled in production")

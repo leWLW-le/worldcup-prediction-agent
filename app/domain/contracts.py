@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.domain.groups import GroupStage
+
 
 def utc(value: datetime) -> datetime:
     return (
@@ -33,8 +35,8 @@ class HistoricalGame(StrictModel):
     date: datetime
     home: str
     away: str
-    home_score: int = Field(ge=0, le=30)
-    away_score: int = Field(ge=0, le=30)
+    home_score: int = Field(ge=0, le=99)
+    away_score: int = Field(ge=0, le=99)
     neutral: bool = True
     competition: str = "unknown"
     source: str
@@ -85,7 +87,8 @@ class TournamentInput(StrictModel):
     source: str = Field(min_length=1)
     provenance: Literal["verified", "unverified", "synthetic"]
     history: tuple[HistoricalGame, ...] = Field(default=(), max_length=100000)
-    fixtures: tuple[FixtureNode, ...] = Field(min_length=1, max_length=31)
+    fixtures: tuple[FixtureNode, ...] = Field(default=(), max_length=31)
+    group_stage: GroupStage | None = None
     warnings: tuple[str, ...] = ()
 
     @field_validator("as_of")
@@ -95,6 +98,14 @@ class TournamentInput(StrictModel):
 
     @model_validator(mode="after")
     def time_boundary(self):
+        if self.group_stage:
+            if self.season != 2026 or self.fixtures:
+                raise ValueError(
+                    "Full-group format is 2026 only and supplies its official knockout graph"
+                )
+            self.group_stage.validate_as_of(self.as_of)
+        elif not self.fixtures:
+            raise ValueError("A fixed bracket or complete group-stage input is required")
         if any(f.status == "finished" and f.kickoff >= self.as_of for f in self.fixtures):
             raise ValueError("Future result cannot be known at as_of")
         if any(f.status == "scheduled" and f.kickoff < self.as_of for f in self.fixtures):
@@ -107,7 +118,10 @@ class TournamentInput(StrictModel):
 
     @property
     def snapshot_id(self):
-        return digest(self.model_dump(mode="json"))
+        payload = self.model_dump(mode="json")
+        if self.group_stage is None:
+            payload.pop("group_stage")
+        return digest(payload)
 
 
 class PredictionRequest(StrictModel):

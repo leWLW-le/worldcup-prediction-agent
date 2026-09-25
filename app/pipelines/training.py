@@ -222,5 +222,17 @@ def train_bundle(history, destination, provenance, seed=42, epochs=40, split_dat
 
 
 def load_history(path):
+    path = Path(path)
+    if path.is_dir():
+        import csv
+        import gzip
+        import io
+        metadata = json.loads((path / "provenance.json").read_text(encoding="utf-8"))
+        raw=(path/"history.csv").read_bytes() if (path/"history.csv").exists() else gzip.decompress((path/"history.csv.gz").read_bytes())
+        if sha256(raw).hexdigest() != metadata["history_sha256"]:
+            raise ValueError("Historical data checksum mismatch")
+        with io.StringIO(raw.decode("utf-8"),newline="") as file:
+            history = [HistoricalGame.model_validate(row) for row in csv.DictReader(file)]
+        return history, metadata["provenance"]
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return [HistoricalGame.model_validate(g) for g in data["history"]], data["provenance"]

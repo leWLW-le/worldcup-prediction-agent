@@ -8,6 +8,8 @@ from app.domain.contracts import TournamentInput
 
 
 def refresh_snapshot(snapshot, api_key, transport=None):
+    if snapshot.group_stage:
+        raise ValueError("Full-tournament snapshots must be refreshed with complete scores, conduct and ranking provenance")
     if not api_key:
         raise ValueError("API_FOOTBALL is not configured")
     with httpx.Client(timeout=20, transport=transport) as client:

@@ -77,7 +77,8 @@ class Store:
     def put_input(self, snapshot):
         from app.tournament.bracket import BracketGraph
 
-        BracketGraph(snapshot.fixtures)
+        if not snapshot.group_stage:
+            BracketGraph(snapshot.fixtures)
         payload = snapshot.model_dump_json()
         with self.sessions() as db:
             if not db.get(InputRecord, snapshot.snapshot_id):
@@ -113,6 +114,7 @@ class Store:
                 "source": v["source"],
                 "provenance": v["provenance"],
                 "fixtures": v["fixtures"],
+                "group_stage": v.get("group_stage"),
             }
             for v in values
             if season is None or v["season"] == season

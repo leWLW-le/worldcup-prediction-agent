@@ -23,12 +23,12 @@
 1. 备份现有数据库、.env 与模型。使用独立分支审阅，升级后 V1 客户端收到 410。
 2. 安装 requirements.txt；面板安装 requirements-dashboard.txt。Python 使用 3.12。
 3. 配置 DATABASE_URL、ADMIN_API_KEY。已有 PostgreSQL 可保留旧表；启动时只新增已声明的 V2 表。后续表结构变更需要正式迁移，create_all 不会修改现有列。
-4. 不加载旧 feature_network/XGBoost 权重，不导入旧 final_agent_result.json。V2 初始没有快照和结果是预期行为。
+4. 不加载旧 feature_network/XGBoost 权重，不导入旧 final_agent_result.json。随包发布候选会幂等载入真实数据赛前回放快照和结果。
 5. 根据供应商已确认的签表构建 fixtures；使用 canonical team 名称/ID，API 刷新时名称需精确映射。每个来源为 team:<球队> 或 winner:<前序比赛ID>。以两场半决赛加决赛的 demo 生成器作为格式示例。
 6. 历史数据要有 match_id/date/home/away/home_score/away_score/neutral/source/score_basis。比分只能是常规 90 分钟；供应商含加时的比分必须先拆分或剔除。原 import_historical_data.py 生成合成数据，禁止改标 verified。
 7. 数据审查后导入真实快照，先运行基线。训练与回测使用同一标准化数据；只在审阅样本量、时间切分、模型对比及校准后发布模型包。
 8. 运行新测试与历史回归测试。通过 /ready 核对实际模型模式；在面板核对数据截止、来源、完整概率、情景和历史对比。
-9. 部署前在目标 Linux/PostgreSQL 环境验收。当前实现没有自动替你部署、触发生产付费 API 或训练真实模型。
+9. 部署前在目标 Linux/PostgreSQL 环境验收。真实数据训练与回测已完成；生产部署和外部 API 仍需目标环境验收。
 
 ## 时间和模型语义
 
@@ -52,4 +52,4 @@
 
 ## 尚未完成的研究/数据工作
 
-真实数据清洗及授权确认、真实 walk-forward 指标、特征消融、训练模型发布、完整小组赛规则、球队注册表/供应商别名治理、球员与伤停特征、独立加时/点球模型、生产可观测性及云部署验收。它们没有被合成测试或基线冒充完成。
+已完成的数据清洗、真实 walk-forward 指标、训练模型工件和完整小组赛规则见 RELEASE_MODEL_CARD.md。仍需特征消融、球队注册表/供应商别名治理、球员与伤停特征、独立加时/点球模型、生产可观测性及云部署验收。

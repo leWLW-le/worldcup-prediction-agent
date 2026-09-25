@@ -19,6 +19,20 @@ from app.infrastructure.store import BusyError
 router = APIRouter()
 
 
+@router.get("/model-info")
+def model_info():
+    import json
+    from pathlib import Path
+
+    root = get_settings().MODEL_BUNDLE_DIR
+    path = Path(root) / "evaluation.json" if root else None
+    return {
+        "evaluation": json.loads(path.read_text(encoding="utf-8"))
+        if path and path.exists()
+        else None
+    }
+
+
 def authorize(x_api_key: str | None = Header(default=None)):
     from secrets import compare_digest
 

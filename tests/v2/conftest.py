@@ -4,7 +4,6 @@ from types import SimpleNamespace
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.db.database import Base
 from app.domain.contracts import FixtureNode, HistoricalGame, TournamentInput
@@ -71,9 +70,9 @@ def snapshot():
 
 
 @pytest.fixture
-def service(snapshot):
+def service(snapshot, tmp_path):
     engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+        "sqlite:///" + str(tmp_path / "test.db"), connect_args={"check_same_thread": False}
     )
     Base.metadata.create_all(engine)
     store = Store(sessionmaker(bind=engine))
