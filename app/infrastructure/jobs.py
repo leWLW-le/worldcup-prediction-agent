@@ -50,3 +50,48 @@ class Jobs:
     def close(self):
         # Running jobs retain their persisted lease; their loops obey the time budget.
         self.pool.shutdown(wait=True, cancel_futures=True)
+
+    def submit_refresh(self, request, settings, synchronous=False, force=False):
+        """The same global computation slot covers fetching, validation and prediction."""
+        job_id, _ = self.store.create_job(uuid4().hex, "refresh-and-predict")
+
+        def execute():
+            from datetime import datetime, timezone
+
+            from app.data.football_sync import sync
+            from app.domain.contracts import PredictionRequest
+
+            try:
+                original = self.store.get_input(request.snapshot_id)
+                feed = self.store.feed(original.season) or {}
+                age = (
+                    datetime.now(timezone.utc)
+                    - datetime.fromisoformat(feed.get("fetched_at", "2000-01-01T00:00:00+00:00"))
+                ).total_seconds()
+                if force or age > 300 or not feed.get("snapshot_id") or feed.get("last_error"):
+                    feed = sync(self.store, settings, original)
+                if not feed.get("prediction_ready") or feed.get("last_error"):
+                    raise ValueError(
+                        feed.get("prediction_error") or feed.get("last_error") or "赛事数据未就绪"
+                    )
+                updated = PredictionRequest(
+                    snapshot_id=feed["snapshot_id"],
+                    simulation_count=request.simulation_count,
+                    seed=request.seed,
+                )
+                return self.execute(job_id, updated)
+            except Exception as exc:
+                self.store.finish(job_id, error=str(exc))
+                return self.store.job(job_id)
+
+        if synchronous:
+            status = execute()
+            if status["status"] == "completed":
+                return self.store.result(status["run_id"])
+            return status
+        try:
+            self.pool.submit(execute)
+        except RuntimeError:
+            self.store.finish(job_id, error="Worker is shutting down")
+            raise
+        return self.store.job(job_id)

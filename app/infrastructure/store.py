@@ -51,9 +51,29 @@ class DailyBudget(Base):
     used = Column(Integer, nullable=False, default=0)
 
 
+class ProviderFeed(Base):
+    __tablename__ = "v2_provider_feed"
+    season = Column(Integer, primary_key=True)
+    payload = Column(Text, nullable=False)
+
+
 class Store:
     def __init__(self, session_factory=SessionLocal):
         self.sessions = session_factory
+
+    def save_feed(self, season, payload):
+        with self.sessions() as db:
+            row = db.get(ProviderFeed, season)
+            if row is None:
+                row = ProviderFeed(season=season)
+                db.add(row)
+            row.payload = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+            db.commit()
+
+    def feed(self, season=2026):
+        with self.sessions() as db:
+            row = db.get(ProviderFeed, season)
+            return json.loads(row.payload) if row else None
 
     def consume_budget(self, name, limit):
         key = name + ":" + datetime.now(timezone.utc).date().isoformat()
@@ -115,6 +135,7 @@ class Store:
                 "provenance": v["provenance"],
                 "fixtures": v["fixtures"],
                 "group_stage": v.get("group_stage"),
+                "provider_fixtures": v.get("provider_fixtures", []),
             }
             for v in values
             if season is None or v["season"] == season

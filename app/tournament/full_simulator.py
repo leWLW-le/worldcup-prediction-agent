@@ -16,7 +16,14 @@ def simulate_full(
         raise ValueError("Simulation count must be between 100 and 20000")
     forced = forced or {}
     by_id = {m.fixture_id: m for m in stage.matches}
+    knockout_ids = {m[0] for m in KNOCKOUT}
     for match_id, team in forced.items():
+        if match_id in knockout_ids:
+            if match_id in stage.knockout_winners:
+                raise ValueError("Cannot override a completed knockout match")
+            if any(m.home_score is None for m in stage.matches):
+                raise ValueError("Knockout scenarios require completed groups")
+            continue
         if match_id not in by_id or by_id[match_id].home_score is not None:
             raise ValueError("Full-tournament scenarios target unplayed group matches")
         if team not in (by_id[match_id].home, by_id[match_id].away):
@@ -99,6 +106,10 @@ def simulate_full(
                         "Observed knockout winner conflicts with qualified participants"
                     )
                 winner = observed
+            elif match_id in forced:
+                if forced[match_id] not in (h, a):
+                    raise ValueError("Scenario participant is not guaranteed to reach this match")
+                winner = forced[match_id]
             else:
                 dist = get(h, a)
                 winner = (

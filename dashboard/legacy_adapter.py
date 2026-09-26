@@ -29,6 +29,15 @@ def adapt_result(result):
         "user_message": f"数据截止：{result['as_of']} · 赛前历史回放，并非实时赛果 · {result['simulation_count']} 次模拟",
     }
     data["stage_info"] = {"stage": "group", "stage_label": "赛前快照"}
+    if result.get("actual_fixtures"):
+        completed = result.get("status") == "observed"
+        data["data_status"]["user_message"] = (
+            f"API-Football 数据截止：{result['as_of']} · 已完赛结果锁定 · {result['simulation_count']} 次模拟"
+        )
+        data["stage_info"] = {
+            "stage": "completed" if completed else "in_progress",
+            "stage_label": "赛事结束" if completed else "赛事进行中",
+        }
     data["explanation"] = {
         "run_id": result["run_id"],
         "champion": result["champion"],
@@ -60,6 +69,10 @@ def adapt_result(result):
             "status": "completed",
         },
     ]
+    if result.get("status") == "observed":
+        data["explanation"]["content"] = (
+            f"{result['champion']} 是数据源记录的实际冠军。100% 表示赛果已知，不是赛前预测准确率。"
+        )
     return data
 
 
@@ -70,8 +83,24 @@ def fetch_final_result():
         result = next((r for r in results if not r.get("constraints")), None)
         if result is None:
             raise RuntimeError("尚无已保存的正式预测")
+        data = adapt_result(result)
+        feed = fetch_live_feed()
+        data["live_feed"] = feed
+        if feed.get("fixtures"):
+            same = feed.get("snapshot_id") == result["snapshot_id"]
+            count = sum(r["status"] in ("FT", "AET", "PEN") for r in feed["fixtures"])
+            data["data_status"] = {
+                "source_level": "external_real",
+                "fixtures_count": len(feed["fixtures"]),
+                "user_message": f"API-Football · 抓取时间 {feed['fetched_at']} · {count} 场已结束"
+                + (
+                    " · 预测已同步"
+                    if same
+                    else f" · 下方预测仍基于 {result['as_of']}，尚未同步最新赛果"
+                ),
+            }
         return {
-            "data": adapt_result(result),
+            "data": data,
             "source": "api",
             "is_fallback": False,
             "run_id": result["run_id"],
@@ -90,7 +119,61 @@ def fetch_final_result():
 
 
 def get_data_status():
-    return fetch_final_result().get("data", {}).get("data_status", {})
+    feed = fetch_live_feed()
+    return {
+        "source_level": "external_real" if feed.get("fixtures") else "unavailable",
+        "fixtures_count": len(feed.get("fixtures", [])),
+        "user_message": feed.get("last_error")
+        or feed.get("prediction_error")
+        or "请刷新 API-Football 比赛数据",
+    }
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def fetch_live_feed():
+    try:
+        return api("GET", "/data/status")
+    except Exception as exc:
+        return {"fixtures": [], "last_error": str(exc)}
+
+
+def display_real_fixtures():
+    feed = fetch_live_feed()
+    if feed.get("last_error") or feed.get("prediction_error"):
+        st.warning(feed.get("last_error") or feed.get("prediction_error"))
+    if feed.get("configured") is False:
+        st.warning("后端尚未配置 API-Football 密钥，当前不能获取真实赛事数据。")
+    rows = feed.get("fixtures", [])
+    if not rows:
+        return
+
+    def score(pair):
+        return (
+            "—"
+            if pair.get("home") is None or pair.get("away") is None
+            else f"{pair['home']}–{pair['away']}"
+        )
+
+    with st.expander("📡 真实赛程与比分 · API-Football", expanded=True):
+        st.caption(f"上次成功抓取：{feed.get('fetched_at')}；比分来自赛事接口，非模型模拟。")
+        st.dataframe(
+            [
+                {
+                    "开球时间": r["kickoff"],
+                    "阶段": r["round"],
+                    "主队": r["home"],
+                    "客队": r["away"],
+                    "状态": r["status"],
+                    "比分": score(r["score"]),
+                    "90分钟": score(r["score_90"]),
+                    "加时": score(r["score_extra_time"]),
+                    "点球": score(r["score_penalties"]),
+                }
+                for r in sorted(rows, key=lambda r: r["kickoff"])
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 def fetch_stage_info():
@@ -113,6 +196,16 @@ def fetch_scenario_pending_matches():
             for m in (snapshot.get("group_stage") or {}).get("matches", [])
             if m["home_score"] is None
         ]
+        matches.extend(
+            {
+                "match_id": m["official_match_id"],
+                "home_team": m["home"],
+                "away_team": m["away"],
+                "stage": "淘汰赛",
+            }
+            for m in snapshot.get("provider_fixtures", [])
+            if m.get("official_match_id") and m["status"] in ("NS", "TBD", "PST")
+        )
         return {
             "matches": matches,
             "sandbox_enabled": bool(matches),
@@ -147,8 +240,10 @@ def _run(path, body):
     while time.monotonic() < deadline:
         status = api("GET", "/jobs/" + job["job_id"])
         if status["status"] == "completed":
+            st.cache_data.clear()
             return api("GET", "/results/" + status["run_id"])
         if status["status"] in ("failed", "cancelled"):
+            st.cache_data.clear()
             raise RuntimeError(status.get("error") or status["status"])
         time.sleep(1)
     raise RuntimeError("计算仍在后台进行，请稍后刷新结果。")
@@ -156,19 +251,48 @@ def _run(path, body):
 
 def call_agent_api(mode="llm_planner", use_llm=True):
     try:
-        data = fetch_final_result()["data"]
-        return _run(
-            "/predictions",
-            {"snapshot_id": data["snapshot_id"], "simulation_count": 2000, "seed": 42},
+        snapshots = api("GET", "/tournament-state")["snapshots"]
+        current = next(s for s in snapshots if s.get("group_stage"))
+        result = _run(
+            "/data/refresh",
+            {"snapshot_id": current["snapshot_id"], "simulation_count": 2000, "seed": 42},
         )
+        if use_llm:
+            try:
+                explanation = api(
+                    "POST",
+                    "/coordinator",
+                    _token(),
+                    json={
+                        "message": f"只调用 generate_explanation，解释已保存结果 {result['run_id']}；不要重新预测。"
+                    },
+                )
+                st.session_state["llm_explanation"] = {
+                    "run_id": result["run_id"],
+                    "content": explanation.get("narrative", ""),
+                }
+            except Exception:
+                st.info("预测已完成，LLM 暂不可用，显示基于真实模型结果的模板解释。")
+        return result
     except Exception as exc:
         st.error(str(exc))
         return None
 
 
 def refresh_real_data():
-    # A partial provider refresh must not overwrite the complete tournament snapshot.
-    st.info("完整赛事需要通过 V2 快照导入接口更新已核验赛果；当前历史回放不会伪装成实时数据。")
+    result = call_agent_api(use_llm=False)
+    if result:
+        return {
+            "success": True,
+            "steps": {
+                "identify_surviving": {
+                    "stage": "赛事结束" if result.get("status") == "observed" else "赛事进行中",
+                    "surviving_teams": [
+                        t for t, p in result["champion_distribution"].items() if p > 0
+                    ],
+                }
+            },
+        }
     return None
 
 

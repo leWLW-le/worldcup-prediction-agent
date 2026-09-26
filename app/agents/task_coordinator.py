@@ -24,16 +24,20 @@ class ChatRequest(StrictModel):
     message: str = Field(min_length=1, max_length=4000)
 
 
+class WorkflowRequest(PredictionRequest):
+    refresh_data: bool = True
+
+
 TOOL_MODELS = {
     "query_tournament_state": StateRequest,
-    "run_prediction_workflow": PredictionRequest,
+    "run_prediction_workflow": WorkflowRequest,
     "run_scenario_workflow": ScenarioRequest,
     "compare_historical_results": CompareRequest,
     "generate_explanation": ExplainRequest,
 }
 DESCRIPTIONS = {
     "query_tournament_state": "List imported immutable tournament snapshots, fixture IDs and recent run IDs.",
-    "run_prediction_workflow": "Run the complete deterministic prediction pipeline using a known snapshot ID.",
+    "run_prediction_workflow": "Refresh API-Football scores and run prediction on the new snapshot. Set refresh_data=false only for an explicitly requested historical replay.",
     "run_scenario_workflow": "Run a scenario and matching baseline with a forced participant advancing.",
     "compare_historical_results": "Compare saved runs from the same season, noting model and data changes.",
     "generate_explanation": "Get backend-owned numeric facts and an explanation for a saved run.",
@@ -91,7 +95,12 @@ class TaskCoordinator:
             raise ValueError("Tool is not allowed")
         args = TOOL_MODELS[name].model_validate(arguments)
         if name == "query_tournament_state":
+            from app.core.config import get_settings
+            from app.data.football_sync import public_feed
+
+            feed = public_feed(self.store, get_settings(), args.season or 2026)
             return {
+                "provider_status": {k: v for k, v in feed.items() if k != "fixtures"},
                 "snapshots": self.store.inputs(args.season)[:5],
                 "recent_runs": [
                     {
@@ -105,6 +114,12 @@ class TaskCoordinator:
                 ],
             }
         if name in ("run_prediction_workflow", "run_scenario_workflow"):
+            if name == "run_prediction_workflow":
+                if args.refresh_data and self.store.get_input(args.snapshot_id).group_stage:
+                    from app.core.config import get_settings
+
+                    return self.jobs.submit_refresh(args, get_settings(), synchronous=True)
+                args = PredictionRequest.model_validate(args.model_dump(exclude={"refresh_data"}))
             return self.jobs.submit(args, synchronous=True)
         if name == "compare_historical_results":
             return self.pipeline.compare(args.run_ids)

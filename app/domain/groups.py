@@ -79,7 +79,7 @@ class GroupStage(BaseModel):
                     raise ValueError("Completed knockout match has an unresolved predecessor")
         return self
 
-    def validate_as_of(self, as_of):
+    def validate_as_of(self, as_of, provider_fixtures=()):
         def utc(value):
             return (
                 value.replace(tzinfo=timezone.utc)
@@ -93,4 +93,13 @@ class GroupStage(BaseModel):
             raise ValueError("Knockout result was unavailable at snapshot time")
         for match in self.matches:
             if (match.home_score is None) != (utc(match.kickoff) >= as_of):
+                evidence = next(
+                    (r for r in provider_fixtures if r.get("fixture_id") == match.fixture_id), None
+                )
+                if (
+                    match.home_score is None
+                    and evidence
+                    and evidence.get("status") in ("NS", "TBD", "PST")
+                ):
+                    continue
                 raise ValueError("Group result availability conflicts with as_of")
