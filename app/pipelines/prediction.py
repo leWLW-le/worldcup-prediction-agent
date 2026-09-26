@@ -69,8 +69,11 @@ class PredictionPipeline:
                 "model_version": self.registry.version,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "status": "observed"
-                if (("104" in data.group_stage.knockout_winners) if data.group_stage
-                    else all(f.status == "finished" for f in data.fixtures))
+                if (
+                    ("104" in data.group_stage.knockout_winners)
+                    if data.group_stage
+                    else all(f.status == "finished" for f in data.fixtures)
+                )
                 else "demo"
                 if data.provenance != "verified"
                 else "baseline"
@@ -84,6 +87,36 @@ class PredictionPipeline:
                 ),
             }
         )
+        result["data_source"] = data.source
+        result["actual_fixtures"] = list(data.provider_fixtures)
+        actual = {
+            r.get("official_match_id"): r
+            for r in data.provider_fixtures
+            if r.get("official_match_id")
+        }
+        for match in result.get("representative_path", []):
+            observed = actual.get(match["fixture_id"])
+            if observed:
+                for key in (
+                    "score",
+                    "score_90",
+                    "score_extra_time",
+                    "score_penalties",
+                    "status",
+                    "kickoff",
+                ):
+                    match[key] = observed[key]
+                match["home_score"] = (
+                    observed["score"]["home"]
+                    if match["home"] == observed["home"]
+                    else observed["score"]["away"]
+                )
+                match["away_score"] = (
+                    observed["score"]["away"]
+                    if match["away"] == observed["away"]
+                    else observed["score"]["home"]
+                )
+                match.pop("score")  # Legacy UI expects a string, not a provider score object.
         if forced:
             # Same inputs/model/seed/budget, no comparison against stale global JSON.
             baseline = runner(

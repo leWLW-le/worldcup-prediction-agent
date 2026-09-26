@@ -68,7 +68,7 @@ def init_db() -> None:
             raise
         engine.dispose()
         engine = create_engine("sqlite:///./worldcup-v2.db", connect_args={"check_same_thread": False})
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        SessionLocal.configure(bind=engine)
         DB_BACKEND = "sqlite-fallback"
         Base.metadata.create_all(bind=engine)
 

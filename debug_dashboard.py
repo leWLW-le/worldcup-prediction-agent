@@ -650,7 +650,7 @@ def _check_api_consistency(data: Dict) -> bool:
 from dashboard.legacy_adapter import (
     fetch_final_result, call_agent_api, refresh_real_data, get_data_status,
     fetch_stage_info, fetch_scenario_pending_matches, call_scenario_simulate,
-    fetch_scenario_latest,
+    fetch_scenario_latest, display_real_fixtures,
 )
 
 
@@ -869,10 +869,16 @@ def display_champion_card(data: Dict):
     else:
         strength_label = "潜在黑马"
 
+    observed = data.get("status") == "observed"
+    card_title = "实际世界杯冠军" if observed else "正式冠军预测"
+    card_caption = "赛果已知，100% 不代表赛前预测准确率" if observed else "基于标注截止时间的赛事快照与模型推演"
+    if observed:
+        strength_label = "已确认赛果"
+
     st.markdown(f"""
 <div class="section-card">
-    <div class="section-title">🏆 正式冠军预测</div>
-    <div style="color:#8fa6c8;font-size:.86rem;margin-bottom:.6rem;">基于标注截止时间的赛事快照与模型推演</div>
+    <div class="section-title">🏆 {card_title}</div>
+    <div style="color:#8fa6c8;font-size:.86rem;margin-bottom:.6rem;">{card_caption}</div>
     <div class="official-card">
         <div style="font-size:2.6rem;margin-bottom:.2rem;">🏆</div>
         <div class="champion-name">{champion}</div>
@@ -939,6 +945,9 @@ def display_explanation(data: Dict):
     动态替换正文中的百分比为最新 champion_probability。
     """
     explanation = data.get("explanation", {})
+    narrative = st.session_state.get("llm_explanation", {})
+    if narrative.get("run_id") == data.get("run_id") and narrative.get("content"):
+        explanation = {**explanation, "content": narrative["content"]}
     if not explanation:
         return
     content = explanation.get("content", "")
@@ -969,12 +978,13 @@ def display_explanation(data: Dict):
 
     # 解析为带层次的 HTML
     expl_html = render_explanation_html(cleaned_text, champion_name)
+    explanation_title = f"已确认 {champion_name} 夺冠" if data.get("status") == "observed" else f"为什么预测 {champion_name} 夺冠？"
 
     st.markdown(f"""
 <div class="section-card">
     <div class="section-title">💡 AI 冠军解读</div>
     <div class="ai-card">
-        <h3 style="color:#ffd866;margin:0 0 .6rem 0;font-size:1.1rem;font-weight:800;">为什么预测 {champion_name} 夺冠？ <span style="color:#e8f2ff;font-size:1.05rem;">（{prob_display}）</span></h3>
+        <h3 style="color:#ffd866;margin:0 0 .6rem 0;font-size:1.1rem;font-weight:800;">{explanation_title} <span style="color:#e8f2ff;font-size:1.05rem;">（{prob_display}）</span></h3>
         {expl_html}
     </div>
 </div>""", unsafe_allow_html=True)
@@ -1762,6 +1772,7 @@ def main():
                     st.rerun()
                 else:
                     st.warning("全量刷新部分失败，已使用当前可用数据。")
+        display_real_fixtures()
         return
 
     # ── 有结果：渲染展示页 ──
@@ -1814,6 +1825,7 @@ def main():
 
     # 3. 数据状态提示
     display_data_status_bar(data)
+    display_real_fixtures()
 
     # 3.5 Fallback 缓存提示 + 数据一致性校验
     render_fallback_banner(result)

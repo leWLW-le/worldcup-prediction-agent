@@ -89,6 +89,7 @@ class TournamentInput(StrictModel):
     history: tuple[HistoricalGame, ...] = Field(default=(), max_length=100000)
     fixtures: tuple[FixtureNode, ...] = Field(default=(), max_length=31)
     group_stage: GroupStage | None = None
+    provider_fixtures: tuple[dict, ...] = ()
     warnings: tuple[str, ...] = ()
 
     @field_validator("as_of")
@@ -103,7 +104,7 @@ class TournamentInput(StrictModel):
                 raise ValueError(
                     "Full-group format is 2026 only and supplies its official knockout graph"
                 )
-            self.group_stage.validate_as_of(self.as_of)
+            self.group_stage.validate_as_of(self.as_of, self.provider_fixtures)
         elif not self.fixtures:
             raise ValueError("A fixed bracket or complete group-stage input is required")
         if any(f.status == "finished" and f.kickoff >= self.as_of for f in self.fixtures):
@@ -121,6 +122,8 @@ class TournamentInput(StrictModel):
         payload = self.model_dump(mode="json")
         if self.group_stage is None:
             payload.pop("group_stage")
+        if not self.provider_fixtures:
+            payload.pop("provider_fixtures")
         return digest(payload)
 
 

@@ -4,6 +4,15 @@
 def explain_result(result):
     champion, p = result["champion"], result["champion_probability"]
     path = result["representative_path_champion"]
+    if result.get("status") == "observed":
+        return {
+            "run_id": result["run_id"],
+            "source": "observed",
+            "champion": champion,
+            "champion_probability": p,
+            "text": f"{champion} 是接口记录的实际冠军；100% 表示赛果已知，不是赛前预测准确率。",
+            "warnings": result["warnings"],
+        }
     return {
         "run_id": result["run_id"],
         "source": "template",

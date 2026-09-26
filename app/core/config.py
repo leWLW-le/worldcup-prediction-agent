@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     API_FOOTBALL_KEY: str = ""
     APISPORTS_KEY: str = ""
     API_FOOTBALL_MAX_DAILY_CALLS: int = Field(default=100, ge=0, le=100000)
+    AUTO_REFRESH_DATA: bool = False
+    DATA_REFRESH_INTERVAL_SECONDS: int = Field(default=3600, ge=300)
     LLM_MAX_DAILY_CALLS: int = Field(default=200, ge=0, le=100000)
     DATA_DIR: str = "data"
     MODEL_PATH: str = "models/feature_network_v2_latest.pth"

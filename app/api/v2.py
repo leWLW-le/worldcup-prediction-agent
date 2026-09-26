@@ -58,16 +58,49 @@ def tournament_state(season: int | None = None, service=Depends(services)):
     return {"snapshots": service.store.inputs(season)}
 
 
+@router.get("/data/status")
+def data_status(season: int = 2026, service=Depends(services)):
+    from app.data.football_sync import public_feed
+
+    return public_feed(service.store, get_settings(), season)
+
+
+@router.post("/data/refresh", status_code=202, dependencies=[Depends(authorize)])
+def refresh_and_predict(payload: PredictionRequest, force: bool = False, service=Depends(services)):
+    service.store.get_input(payload.snapshot_id)
+    try:
+        return service.jobs.submit_refresh(payload, get_settings(), force=force)
+    except BusyError as exc:
+        raise HTTPException(409, str(exc))
+
+
 @router.post("/snapshots/{snapshot_id}/refresh", dependencies=[Depends(authorize)])
 def refresh(snapshot_id: str, service=Depends(services)):
     from app.data.v2_provider import refresh_snapshot
+
+    original = service.store.get_input(snapshot_id)
+    if original.group_stage:
+        from app.data.football_sync import sync
+
+        try:
+            job_id, _ = service.store.create_job(uuid4().hex, "refresh", slot="compute")
+        except BusyError as exc:
+            raise HTTPException(409, str(exc))
+        try:
+            feed = sync(service.store, get_settings(), original)
+            if not feed.get("prediction_ready"):
+                raise ValueError(feed.get("prediction_error"))
+            service.store.finish(job_id)
+            return {"snapshot_id": feed["snapshot_id"]}
+        except Exception as exc:
+            service.store.finish(job_id, error=str(exc))
+            raise
 
     try:
         job_id, _ = service.store.create_job(uuid4().hex, "refresh", slot="refresh")
     except BusyError:
         raise HTTPException(429, "Fixture refresh is busy")
     try:
-        original = service.store.get_input(snapshot_id)
         service.store.consume_budget("api-football", get_settings().API_FOOTBALL_MAX_DAILY_CALLS)
         updated = refresh_snapshot(original, get_settings().api_football_key)
         return {"snapshot_id": service.store.put_input(updated)}
