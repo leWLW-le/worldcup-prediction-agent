@@ -357,6 +357,8 @@ def sync(store, settings, original, transport=None):
         if len({r["fixture_id"] for r in fixtures}) != len(fixtures):
             raise ValueError("API-Football 返回重复比赛 ID")
         feed.update(
+            provider="API-Football",
+            primary_error=None,
             fixtures=fixtures,
             fetched_at=stamp,
             snapshot_id=None,
@@ -415,12 +417,34 @@ def sync(store, settings, original, transport=None):
             "API-Football 网络请求失败" if isinstance(exc, httpx.HTTPError) else str(exc)
         )
         if settings.football_data_api_key:
-            from app.data.football_fallback import fetch_fallback
+            from app.data.football_fallback import completed_snapshot, fetch_fallback
 
             fallback = fetch_fallback(store, settings, original.season, transport)
             if fallback.get("error") and (previous.get("fallback") or {}).get("fixtures"):
                 fallback = {**previous["fallback"], "error": fallback["error"]}
             feed["fallback"] = fallback
+            if fallback.get("fixtures") and not fallback.get("error"):
+                try:
+                    snapshot = completed_snapshot(original, fallback)
+                    snapshot_id = store.put_input(snapshot)
+                    fallback["prediction_ready"] = True
+                    fallback["limitation"] = (
+                        "保留原有已完赛淘汰赛路径；实际赛果已验证，不重算缺少纪律证据的小组排名。"
+                    )
+                    feed.update(
+                        provider="football-data.org",
+                        primary_error=feed["last_error"],
+                        last_error=None,
+                        prediction_error=None,
+                        prediction_ready=True,
+                        snapshot_id=snapshot_id,
+                        fixtures=list(snapshot.provider_fixtures),
+                        fetched_at=fallback["fetched_at"],
+                    )
+                    store.save_feed(original.season, feed)
+                    return feed
+                except ValueError as conversion_error:
+                    fallback["prediction_error"] = str(conversion_error)
         store.save_feed(original.season, feed)
         raise ValueError(feed["last_error"]) from None
     finally:
@@ -429,8 +453,12 @@ def sync(store, settings, original, transport=None):
 
 def public_feed(store, settings, season=2026):
     feed = store.feed(season) or {}
+    fixtures = feed.get("fixtures", [])
+    completed = sum(
+        1 for fixture in fixtures if str(fixture.get("status", "")).upper() in {"FT", "AET", "PEN", "FINISHED"}
+    )
     return {
-        "provider": "API-Football",
+        "provider": feed.get("provider", "API-Football"),
         "configured": bool(settings.api_football_key),
         "manual_operations_configured": bool(settings.ADMIN_API_KEY),
         "fallback_configured": bool(settings.football_data_api_key),
@@ -441,10 +469,14 @@ def public_feed(store, settings, season=2026):
                 "fetched_at",
                 "last_attempt_at",
                 "last_error",
+                "primary_error",
                 "prediction_error",
                 "snapshot_id",
                 "prediction_ready",
             )
         },
         "fixtures": feed.get("fixtures", []),
+        "fixtures_count": len(fixtures),
+        "completed_fixtures_count": completed,
     }
+

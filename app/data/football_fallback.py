@@ -86,3 +86,82 @@ def fetch_fallback(store, settings, season, transport=None):
     except (httpx.HTTPError, ValueError, KeyError, RuntimeError):
         result["error"] = "football-data.org 请求失败或未返回可核验的该赛季比赛"
     return result
+
+
+def completed_snapshot(original, fallback):
+    """Keep the legacy fixed-bracket path for fully observed competitions.
+
+    This does not infer group rankings from missing conduct data: the provider's
+    actual knockout participants and winners must form a complete consistent tree.
+    """
+    from collections import Counter
+    from copy import deepcopy
+
+    from app.domain.contracts import FixtureNode, TournamentInput
+    from app.tournament.bracket import BracketGraph
+
+    rows = deepcopy(fallback["fixtures"])
+    expected = {
+        "GROUP_STAGE": 72,
+        "LAST_32": 16,
+        "LAST_16": 8,
+        "QUARTER_FINALS": 4,
+        "SEMI_FINALS": 2,
+        "THIRD_PLACE": 1,
+        "FINAL": 1,
+    }
+    if Counter(r["round"] for r in rows) != expected or any(
+        r["status"] not in ("FT", "AET", "PEN") for r in rows
+    ):
+        raise ValueError(
+            "备用通道仅在完整 104 场赛果已确认时生成已结束赛事结果；赛中完整规则仍需纪律数据"
+        )
+    nodes, parents = [], {}
+    stages = [
+        ("LAST_32", "round_of_32"),
+        ("LAST_16", "round_of_16"),
+        ("QUARTER_FINALS", "quarter_finals"),
+        ("SEMI_FINALS", "semi_finals"),
+        ("FINAL", "final"),
+    ]
+    for label, stage in stages:
+        next_parents = {}
+        for r in [r for r in rows if r["round"] == label]:
+            if not r["home"] or not r["away"] or r["winner"] not in (r["home"], r["away"]):
+                raise ValueError("真实淘汰赛参与者或胜者缺失")
+            sources = []
+            for team in (r["home"], r["away"]):
+                if stage == "round_of_32":
+                    sources.append("team:" + team)
+                elif team in parents:
+                    sources.append("winner:" + parents[team])
+                else:
+                    raise ValueError("真实淘汰赛对阵与上一轮胜者不一致")
+            node = FixtureNode(
+                fixture_id=r["fixture_id"],
+                stage=stage,
+                home_source=sources[0],
+                away_source=sources[1],
+                kickoff=r["kickoff"],
+                status="finished",
+                actual_winner=r["winner"],
+            )
+            nodes.append(node)
+            next_parents[r["winner"]] = r["fixture_id"]
+            r["official_match_id"] = r["fixture_id"]
+        parents = next_parents
+    BracketGraph(nodes)
+    return TournamentInput(
+        season=original.season,
+        as_of=fallback["fetched_at"],
+        provenance="verified",
+        source="football-data.org current World Cup results; validated complete observed knockout tree",
+        history=original.history,
+        fixtures=tuple(nodes),
+        provider_fixtures=tuple(rows),
+        warnings=(
+            "104 场真实赛果已获取；淘汰赛对阵和胜者逐轮校验。",
+            "已结束赛事：冠军为已确认赛果，不是赛前预测准确率。",
+            "缺少纪律证据，因此本通道保留实际淘汰赛图，不重算小组排名；原有完整小组赛引擎仍保留。",
+        ),
+    )
