@@ -144,6 +144,14 @@ def display_real_fixtures():
     if feed.get("configured") is False:
         st.warning("后端尚未配置 API-Football 密钥，当前不能获取真实赛事数据。")
     rows = feed.get("fixtures", [])
+    source = "API-Football"
+    if not rows and (feed.get("fallback") or {}).get("fixtures"):
+        feed = feed["fallback"]
+        rows = feed["fixtures"]
+        source = feed["provider"]
+        st.info(feed["limitation"])
+    elif (feed.get("fallback") or {}).get("error"):
+        st.warning(feed["fallback"]["error"])
     if not rows:
         return
 
@@ -154,7 +162,7 @@ def display_real_fixtures():
             else f"{pair['home']}–{pair['away']}"
         )
 
-    with st.expander("📡 真实赛程与比分 · API-Football", expanded=True):
+    with st.expander("📡 真实赛程与比分 · " + source, expanded=True):
         st.caption(f"上次成功抓取：{feed.get('fetched_at')}；比分来自赛事接口，非模型模拟。")
         st.dataframe(
             [
@@ -226,6 +234,9 @@ def _request_token():
 
 
 def _token():
+    if fetch_live_feed().get("manual_operations_configured") is False:
+        st.error("后端管理员操作密钥尚未配置，手动刷新暂不可用；自动刷新状态见数据提示。")
+        st.stop()
     token = st.session_state.get("operator_token", "")
     if not token:
         _request_token()

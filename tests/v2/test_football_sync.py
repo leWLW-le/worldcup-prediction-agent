@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from app.core.config import Settings
-from app.data.football_sync import conduct, normalize, sync, to_snapshot
+from app.data.football_sync import conduct, normalize, provider_error, sync, to_snapshot
 from app.domain.contracts import PredictionRequest
 from app.models.distributions import from_matrix, poisson_matrix
 from app.tournament.full_simulator import simulate_full
@@ -233,3 +233,58 @@ def test_full_observed_tournament_locks_champion_and_rejects_wrong_pair(service,
     feed["fixtures"][-1]["home"] = "Unknown team"
     with pytest.raises(ValueError, match="不一致"):
         to_snapshot(original, feed)
+
+
+def test_provider_error_classification_never_echoes_credentials():
+    assert "套餐" in provider_error(
+        {"plan": "Free plans do not have access to this season, try from 2022 to 2024"}
+    )
+    assert "2022" in provider_error(
+        {"plan": "Free plans do not have access to this season, try from 2022 to 2024"}
+    )
+    assert "配额" in provider_error({"requests": "You have reached the request limit for the day"})
+    assert "认证" in provider_error({"token": "Invalid API key: secret-do-not-echo"})
+    assert "secret" not in provider_error({"unexpected": "secret-do-not-echo"})
+
+
+def test_secondary_api_remains_available_when_primary_rejects(service, original):
+    def respond(request):
+        if request.url.host == "v3.football.api-sports.io":
+            return httpx.Response(
+                200, json={"errors": {"plan": "No access to season on free plan"}}
+            )
+        assert request.url.params["season"] == "2026"
+        assert request.headers["X-Auth-Token"] == "secondary-test"
+        return httpx.Response(
+            200,
+            json={
+                "matches": [
+                    {
+                        "id": 1,
+                        "competition": {"code": "WC"},
+                        "utcDate": "2026-06-11T19:00:00Z",
+                        "status": "FINISHED",
+                        "stage": "GROUP_STAGE",
+                        "homeTeam": {"name": "Mexico"},
+                        "awayTeam": {"name": "South Africa"},
+                        "score": {
+                            "duration": "REGULAR",
+                            "winner": "HOME_TEAM",
+                            "fullTime": {"home": 2, "away": 0},
+                        },
+                    }
+                ]
+            },
+        )
+
+    with pytest.raises(ValueError, match="套餐"):
+        sync(
+            service.store,
+            Settings(API_FOOTBALL="primary-test", FOOTBALL_DATA_API="secondary-test"),
+            original,
+            httpx.MockTransport(respond),
+        )
+    feed = service.store.feed(2026)
+    assert feed["fallback"]["fixtures"][0]["score_90"] == {"home": 2, "away": 0}
+    assert feed["fallback"]["provider"] == "football-data.org"
+    assert not feed["fallback"]["prediction_ready"]

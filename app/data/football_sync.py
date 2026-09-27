@@ -4,6 +4,7 @@ Scores remain visible even when missing provider coverage prevents prediction.
 The API key is used only as a request header, never persisted in feed/error data.
 """
 
+import re
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
@@ -139,8 +140,7 @@ class FootballClient:
             raise ValueError(f"API-Football HTTP {response.status_code}；请检查账号权限或配额")
         payload = response.json()
         if payload.get("errors"):
-            # Provider error text can contain request parameters: do not echo it.
-            raise ValueError("API-Football 拒绝请求；请检查密钥、套餐覆盖年份或请求配额")
+            raise ValueError(provider_error(payload["errors"]))
         if payload.get("paging", {}).get("total", 1) > 1:
             raise ValueError("API-Football 返回分页数据；未把部分赛程当成完整数据")
         rows = payload.get("response")
@@ -150,6 +150,29 @@ class FootballClient:
 
     def close(self):
         self.client.close()
+
+
+def provider_error(errors):
+    """Classify the provider's response without exposing arbitrary text or secrets."""
+    message = str(errors).lower()
+    if "season" in message and any(
+        s in message for s in ("plan", "access", "free", "subscription")
+    ):
+        years = sorted(set(re.findall(r"\b20\d{2}\b", message)))
+        hint = "；接口提示可访问年份：" + "、".join(years) if years else ""
+        return "API-Football 套餐不允许访问请求的赛季" + hint
+    if any(
+        s in message for s in ("request limit", "rate limit", "too many", "quota", "requests limit")
+    ):
+        return "API-Football 请求配额或速率限制已触发"
+    if any(
+        s in message
+        for s in ("invalid key", "missing key", "api key", "api-key", "token", "authentication")
+    ):
+        return "API-Football 密钥无效、缺失或认证失败"
+    if any(s in message for s in ("subscription", "plan", "access")):
+        return "API-Football 当前订阅无权访问此接口"
+    return "API-Football 拒绝请求（非已识别的套餐/配额/认证错误）"
 
 
 def conduct(raw):
@@ -391,6 +414,13 @@ def sync(store, settings, original, transport=None):
         feed["last_error"] = (
             "API-Football 网络请求失败" if isinstance(exc, httpx.HTTPError) else str(exc)
         )
+        if settings.football_data_api_key:
+            from app.data.football_fallback import fetch_fallback
+
+            fallback = fetch_fallback(store, settings, original.season, transport)
+            if fallback.get("error") and (previous.get("fallback") or {}).get("fixtures"):
+                fallback = {**previous["fallback"], "error": fallback["error"]}
+            feed["fallback"] = fallback
         store.save_feed(original.season, feed)
         raise ValueError(feed["last_error"]) from None
     finally:
@@ -402,6 +432,9 @@ def public_feed(store, settings, season=2026):
     return {
         "provider": "API-Football",
         "configured": bool(settings.api_football_key),
+        "manual_operations_configured": bool(settings.ADMIN_API_KEY),
+        "fallback_configured": bool(settings.football_data_api_key),
+        "fallback": feed.get("fallback"),
         **{
             key: feed.get(key)
             for key in (
