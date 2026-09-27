@@ -90,6 +90,27 @@ class TaskCoordinator:
         self.store, self.pipeline, self.jobs, self.llm = store, pipeline, jobs, llm
         self.max_steps = max_steps
 
+    @staticmethod
+    def _state_narrative(result):
+        """Render provider facts from the backend; never let the LLM invent them."""
+        status = result.get("provider_status") or {}
+        provider = status.get("provider") or "未配置"
+        primary_error = status.get("primary_error")
+        fixtures = status.get("fixtures_count")
+        completed = status.get("completed_fixtures_count")
+        ready = status.get("prediction_ready")
+        parts = [f"当前真实赛事数据源：{provider}。"]
+        if primary_error:
+            parts.append(f"API-Football 当前不可用：{primary_error}。")
+        if fixtures is not None:
+            parts.append(f"已导入 {fixtures} 场赛事记录。")
+        if completed is not None:
+            parts.append(f"其中 {completed} 场已有明确完赛结果。")
+        parts.append(
+            "当前数据可用于预测工作流。" if ready else "当前数据不足以安全运行完整预测工作流。"
+        )
+        return "".join(parts)
+
     def dispatch(self, name, arguments):
         if name not in TOOL_MODELS:
             raise ValueError("Tool is not allowed")
@@ -145,9 +166,19 @@ class TaskCoordinator:
             answer = self.llm.complete(messages, schemas)
             calls = answer.get("tool_calls") or []
             if not calls:
+                state_results = [
+                    t["result"]
+                    for t in trace
+                    if t["success"] and t["tool"] == "query_tournament_state"
+                ]
+                narrative = (
+                    self._state_narrative(state_results[-1])
+                    if state_results
+                    else answer.get("content") or ""
+                )
                 return {
                     "status": "completed",
-                    "narrative": answer.get("content") or "",
+                    "narrative": narrative,
                     "authoritative_results": [t["result"] for t in trace if t["success"]],
                     "trace": trace,
                 }
@@ -194,3 +225,4 @@ class TaskCoordinator:
                 }
             )
         return {"status": "budget_exceeded", "trace": trace}
+

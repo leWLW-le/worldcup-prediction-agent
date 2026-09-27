@@ -453,6 +453,10 @@ def sync(store, settings, original, transport=None):
 
 def public_feed(store, settings, season=2026):
     feed = store.feed(season) or {}
+    fixtures = feed.get("fixtures", [])
+    completed = sum(
+        1 for fixture in fixtures if str(fixture.get("status", "")).upper() in {"FT", "AET", "PEN", "FINISHED"}
+    )
     return {
         "provider": feed.get("provider", "API-Football"),
         "configured": bool(settings.api_football_key),
@@ -472,4 +476,7 @@ def public_feed(store, settings, season=2026):
             )
         },
         "fixtures": feed.get("fixtures", []),
+        "fixtures_count": len(fixtures),
+        "completed_fixtures_count": completed,
     }
+
