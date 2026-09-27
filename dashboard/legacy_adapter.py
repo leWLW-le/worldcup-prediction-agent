@@ -32,7 +32,7 @@ def adapt_result(result):
     if result.get("actual_fixtures"):
         completed = result.get("status") == "observed"
         data["data_status"]["user_message"] = (
-            f"API-Football 数据截止：{result['as_of']} · 已完赛结果锁定 · {result['simulation_count']} 次模拟"
+            f"真实赛事数据截止：{result['as_of']} · 已完赛结果锁定 · {result['simulation_count']} 次模拟"
         )
         data["stage_info"] = {
             "stage": "completed" if completed else "in_progress",
@@ -92,7 +92,7 @@ def fetch_final_result():
             data["data_status"] = {
                 "source_level": "external_real",
                 "fixtures_count": len(feed["fixtures"]),
-                "user_message": f"API-Football · 抓取时间 {feed['fetched_at']} · {count} 场已结束"
+                "user_message": f"{feed.get('provider', 'API-Football')} · 抓取时间 {feed['fetched_at']} · {count} 场已结束"
                 + (
                     " · 预测已同步"
                     if same
@@ -139,12 +139,14 @@ def fetch_live_feed():
 
 def display_real_fixtures():
     feed = fetch_live_feed()
+    if feed.get("primary_error"):
+        st.warning(feed["primary_error"] + "；当前采用原有 football-data.org 通道。")
     if feed.get("last_error") or feed.get("prediction_error"):
         st.warning(feed.get("last_error") or feed.get("prediction_error"))
     if feed.get("configured") is False:
         st.warning("后端尚未配置 API-Football 密钥，当前不能获取真实赛事数据。")
     rows = feed.get("fixtures", [])
-    source = "API-Football"
+    source = feed.get("provider", "API-Football")
     if not rows and (feed.get("fallback") or {}).get("fixtures"):
         feed = feed["fallback"]
         rows = feed["fixtures"]

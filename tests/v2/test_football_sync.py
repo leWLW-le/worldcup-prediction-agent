@@ -288,3 +288,49 @@ def test_secondary_api_remains_available_when_primary_rejects(service, original)
     assert feed["fallback"]["fixtures"][0]["score_90"] == {"home": 2, "away": 0}
     assert feed["fallback"]["provider"] == "football-data.org"
     assert not feed["fallback"]["prediction_ready"]
+
+
+def test_complete_secondary_results_use_validated_observed_bracket(original):
+    from app.data.football_fallback import completed_snapshot
+    from app.tournament.bracket import BracketGraph
+    from app.tournament.simulator import simulate
+
+    dist = from_matrix(poisson_matrix(1, 1))
+    result = simulate_full(original.group_stage, lambda *args: dist, count=100)
+    rows = []
+    for m in result["representative_group_matches"]:
+        rows.append({"fixture_id": m["fixture_id"], "round": "GROUP_STAGE", "status": "FT"})
+    labels = {
+        "round_of_32": "LAST_32",
+        "round_of_16": "LAST_16",
+        "quarter_finals": "QUARTER_FINALS",
+        "semi_finals": "SEMI_FINALS",
+        "third_place": "THIRD_PLACE",
+        "final": "FINAL",
+    }
+    for m in result["representative_path"]:
+        rows.append(
+            {
+                **m,
+                "round": labels[m["stage"]],
+                "status": "FT",
+                "kickoff": (
+                    datetime(2026, 6, 28, tzinfo=timezone.utc)
+                    + timedelta(days=int(m["fixture_id"]) - 73)
+                ).isoformat(),
+            }
+        )
+    # Test observations are synthetic; this checks graph logic, not real match outcomes.
+    snap = completed_snapshot(
+        original, {"fixtures": rows, "fetched_at": "2026-09-01T00:00:00+00:00"}
+    )
+
+    def no_prediction(*args):
+        raise AssertionError("Known results must never call the model")
+
+    observed = simulate(BracketGraph(snap.fixtures), no_prediction, count=100)
+    assert observed["champion"] == result["representative_path_champion"]
+    assert observed["champion_probability"] == 1
+    rows[-1]["home"] = "Unknown"
+    with pytest.raises(ValueError):
+        completed_snapshot(original, {"fixtures": rows, "fetched_at": "2026-09-01T00:00:00+00:00"})
