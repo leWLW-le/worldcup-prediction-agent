@@ -1050,7 +1050,7 @@ def display_knockout_roadmap(data: Dict):
     if not bp:
         st.markdown(
             '<div class="section-card" style="text-align:center;color:#5a7090;padding:1rem 0;">'
-            "暂无淘汰赛数据，请先运行预测。</div>",
+            "暂无实际淘汰赛赛程。</div>",
             unsafe_allow_html=True,
         )
         return
@@ -1077,7 +1077,7 @@ def display_knockout_roadmap(data: Dict):
 <div class="section-title">🧭 淘汰赛晋级路线</div>
 <div style="margin-bottom:.4rem;"><span style="color:#8a9bb5;font-size:.75rem;margin-left:.2rem;">
 <span style="color:#28a745;">■</span> 已结束
-<span style="color:#ffc107;margin-left:.5rem;">■</span> 预测</span></div>
+<span style="color:#ffc107;margin-left:.5rem;">■</span> 未完赛</span></div>
 """
 
     # 构建各轮 HTML
@@ -1108,7 +1108,7 @@ def display_knockout_roadmap(data: Dict):
                 border_cls = "road-match-yellow"
                 score_cls = "road-score-predict"
                 tag_cls = "road-tag-predict"
-                tag_text = "预测"
+                tag_text = "未完赛"
 
             hc = "road-team-winner" if winner and home == winner else ""
             ac = "road-team-winner" if winner and away == winner else ""
@@ -1147,7 +1147,7 @@ def display_knockout_roadmap(data: Dict):
         <div class="road-champion-box">
             <div style="font-size:2rem;">🏆</div>
             <div style="color:#b8860b;font-size:1.1rem;font-weight:800;margin-top:.2rem;">{bracket_champion_team}</div>
-            <div style="color:#8a9bb5;font-size:.6rem;margin-top:.15rem;">单次模拟路径胜者</div>
+            <div style="color:#8a9bb5;font-size:.6rem;margin-top:.15rem;">实际赛果</div>
         </div>
     </div>
 </div>"""
