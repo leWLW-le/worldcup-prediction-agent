@@ -7,6 +7,9 @@ import streamlit as st
 
 from dashboard.api_client import api
 
+# Immutable June 1 input used by the published pre-tournament model replay.
+PRE_TOURNAMENT_SNAPSHOT = "9e4760a6cc97914613b898c9f013370c9750f092c7e4ec5e6e0118612c7131ba"
+
 
 def adapt_result(result):
     data = dict(result)
@@ -26,7 +29,7 @@ def adapt_result(result):
     data["data_status"] = {
         "source_level": "verified_cache",
         "fixtures_count": 104,
-        "user_message": f"赛前预测 · 数据截至 {result['as_of'][:10]}",
+        "user_message": f"赛前预测回放 · 数据截至 {result['as_of'][:10]}",
     }
     data["stage_info"] = {"stage": "group", "stage_label": "赛前快照"}
     if result.get("actual_fixtures"):
@@ -79,26 +82,15 @@ def adapt_result(result):
 @st.cache_data(ttl=30, show_spinner=False)
 def fetch_final_result():
     try:
-        results = api("GET", "/results")["results"]
-        result = next((r for r in results if not r.get("constraints")), None)
+        results = api("GET", "/results", params={"snapshot_id": PRE_TOURNAMENT_SNAPSHOT})["results"]
+        result = next((r for r in results if not r.get("constraints")
+                       and r.get("snapshot_id") == PRE_TOURNAMENT_SNAPSHOT
+                       and r.get("status") == "completed"), None)
         if result is None:
-            raise RuntimeError("尚无已保存的正式预测")
+            raise RuntimeError("尚无已保存的赛前预测")
         data = adapt_result(result)
         feed = fetch_live_feed()
         data["live_feed"] = feed
-        if feed.get("fixtures"):
-            same = feed.get("snapshot_id") == result["snapshot_id"]
-            count = sum(r["status"] in ("FT", "AET", "PEN") for r in feed["fixtures"])
-            data["data_status"] = {
-                "source_level": "external_real",
-                "fixtures_count": len(feed["fixtures"]),
-                "user_message": f"{feed.get('provider', 'API-Football')} · {count} 场已结束"
-                + (
-                    " · 预测已同步"
-                    if same
-                    else " · 预测尚未同步最新赛果"
-                ),
-            }
         return {
             "data": data,
             "source": "api",
@@ -263,13 +255,11 @@ def _run(path, body):
     raise RuntimeError("计算仍在后台进行，请稍后刷新结果。")
 
 
-def call_agent_api(mode="llm_planner", use_llm=True):
+def call_agent_api(mode="llm_planner", use_llm=True, refresh_data=False):
     try:
-        snapshots = api("GET", "/tournament-state")["snapshots"]
-        current = next(s for s in snapshots if s.get("group_stage"))
         result = _run(
-            "/data/refresh",
-            {"snapshot_id": current["snapshot_id"], "simulation_count": 2000, "seed": 42},
+            "/data/refresh" if refresh_data else "/predictions",
+            {"snapshot_id": PRE_TOURNAMENT_SNAPSHOT, "simulation_count": 2000, "seed": 42},
         )
         if use_llm:
             try:
@@ -294,7 +284,7 @@ def call_agent_api(mode="llm_planner", use_llm=True):
 
 
 def refresh_real_data():
-    result = call_agent_api(use_llm=False)
+    result = call_agent_api(use_llm=False, refresh_data=True)
     if result:
         return {
             "success": True,
