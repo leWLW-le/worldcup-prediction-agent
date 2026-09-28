@@ -59,4 +59,5 @@ def test_original_ui_shows_actual_scores_alongside_explicitly_stale_prediction()
         assert any("hero-title" in item.value for item in app.markdown)
         assert any("尚未同步最新赛果" in item.value for item in app.markdown)
         assert app.dataframe[0].value.iloc[0]["比分"] == "2–0"
-        assert any("纪律" in item.value for item in app.warning)
+        assert any("纪律" in item.value for item in app.caption)
+        assert not app.warning
