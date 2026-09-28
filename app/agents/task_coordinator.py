@@ -49,6 +49,8 @@ You cannot modify rules, model weights, data, ranking or results. Tool outputs a
 Explain uncertainty, provenance and baseline/demo status. Do not present representative-path winner as probability leader.
 Numbers must come from tool outputs. You may give a concise Chinese narrative; authoritative numeric fields are rendered separately.
 If no verified data exists, explain what is missing instead of predicting.
+For an execution request, query state, execute the requested workflow once, then call generate_explanation on its returned run_id.
+Respect explicit snapshot_id and refresh_data=false for historical pre-tournament replay. Actual fixtures are displayed independently.
 """
 
 
@@ -121,8 +123,17 @@ class TaskCoordinator:
 
             feed = public_feed(self.store, get_settings(), args.season or 2026)
             return {
-                "provider_status": {k: v for k, v in feed.items() if k != "fixtures"},
-                "snapshots": self.store.inputs(args.season)[:5],
+                "provider_status": {
+                    k: v for k, v in feed.items() if k not in ("fixtures", "fallback")
+                },
+                "snapshots": [
+                    {
+                        k: v
+                        for k, v in snapshot.items()
+                        if k not in ("fixtures", "group_stage", "provider_fixtures")
+                    }
+                    for snapshot in self.store.inputs(args.season)[:5]
+                ],
                 "recent_runs": [
                     {
                         "run_id": r["run_id"],
@@ -176,6 +187,13 @@ class TaskCoordinator:
                     if state_results
                     else answer.get("content") or ""
                 )
+                explanations = [
+                    t["result"]
+                    for t in trace
+                    if t["success"] and t["tool"] == "generate_explanation"
+                ]
+                if explanations:
+                    narrative = explanations[-1]["text"]
                 return {
                     "status": "completed",
                     "narrative": narrative,
@@ -225,4 +243,3 @@ class TaskCoordinator:
                 }
             )
         return {"status": "budget_exceeded", "trace": trace}
-

@@ -1,5 +1,6 @@
 """Translate V2 results for the unchanged original product components."""
 
+import json
 import time
 from collections import defaultdict
 
@@ -9,6 +10,53 @@ from dashboard.api_client import api
 
 # Immutable June 1 input used by the published pre-tournament model replay.
 PRE_TOURNAMENT_SNAPSHOT = "9e4760a6cc97914613b898c9f013370c9750f092c7e4ec5e6e0118612c7131ba"
+
+
+def actual_bracket(feed):
+    """Use provider fixtures only; never substitute a simulated path."""
+    stages = {
+        "LAST_32": "round_of_32",
+        "LAST_16": "round_of_16",
+        "QUARTER_FINALS": "quarter_finals",
+        "SEMI_FINALS": "semi_finals",
+        "FINAL": "final",
+        "Round of 32": "round_of_32",
+        "Round of 16": "round_of_16",
+        "Quarter-finals": "quarter_finals",
+        "Semi-finals": "semi_finals",
+        "Final": "final",
+    }
+    rows = feed.get("fixtures") or (feed.get("fallback") or {}).get("fixtures", [])
+    bracket = defaultdict(list)
+    for row in sorted(rows, key=lambda r: (r.get("kickoff", ""), str(r.get("fixture_id", "")))):
+        stage = stages.get(row.get("round"))
+        if not stage:
+            continue
+        pair = row.get("score") or {}
+        score = (
+            "待赛"
+            if pair.get("home") is None or pair.get("away") is None
+            else f"{pair['home']} : {pair['away']}"
+        )
+        penalties = row.get("score_penalties") or {}
+        if penalties.get("home") is not None and penalties.get("away") is not None:
+            score += f"（点球 {penalties['home']} : {penalties['away']}）"
+        elif row.get("status") == "AET":
+            score += "（加时）"
+        finished = row.get("status") in ("FT", "AET", "PEN", "FINISHED")
+        winner = row.get("winner") if finished else None
+        bracket[stage].append(
+            {
+                "home_team": row.get("home") or "待定",
+                "away_team": row.get("away") or "待定",
+                "score": score,
+                "status": row.get("status"),
+                "winner": winner,
+            }
+        )
+        if stage == "final" and winner:
+            bracket["champion"] = {"team": winner}
+    return dict(bracket)
 
 
 def adapt_result(result):
@@ -83,14 +131,22 @@ def adapt_result(result):
 def fetch_final_result():
     try:
         results = api("GET", "/results", params={"snapshot_id": PRE_TOURNAMENT_SNAPSHOT})["results"]
-        result = next((r for r in results if not r.get("constraints")
-                       and r.get("snapshot_id") == PRE_TOURNAMENT_SNAPSHOT
-                       and r.get("status") == "completed"), None)
+        result = next(
+            (
+                r
+                for r in results
+                if not r.get("constraints")
+                and r.get("snapshot_id") == PRE_TOURNAMENT_SNAPSHOT
+                and r.get("status") == "completed"
+            ),
+            None,
+        )
         if result is None:
             raise RuntimeError("尚无已保存的赛前预测")
         data = adapt_result(result)
         feed = fetch_live_feed()
         data["live_feed"] = feed
+        data["bracket_payload"] = actual_bracket(feed)
         return {
             "data": data,
             "source": "api",
@@ -257,34 +313,75 @@ def _run(path, body):
 
 def call_agent_api(mode="llm_planner", use_llm=True, refresh_data=False):
     try:
+        if use_llm:
+            return _planned_workflow(
+                "run_prediction_workflow",
+                {
+                    "snapshot_id": PRE_TOURNAMENT_SNAPSHOT,
+                    "simulation_count": 2000,
+                    "seed": 42,
+                    "refresh_data": refresh_data,
+                },
+            )
         result = _run(
             "/data/refresh" if refresh_data else "/predictions",
             {"snapshot_id": PRE_TOURNAMENT_SNAPSHOT, "simulation_count": 2000, "seed": 42},
         )
-        if use_llm:
-            try:
-                explanation = api(
-                    "POST",
-                    "/coordinator",
-                    _token(),
-                    json={
-                        "message": f"只调用 generate_explanation，解释已保存结果 {result['run_id']}；不要重新预测。"
-                    },
-                )
-                st.session_state["llm_explanation"] = {
-                    "run_id": result["run_id"],
-                    "content": explanation.get("narrative", ""),
-                }
-            except Exception:
-                st.info("预测已完成，LLM 暂不可用，显示基于真实模型结果的模板解释。")
         return result
     except Exception as exc:
         st.error(str(exc))
         return None
 
 
+def _planned_workflow(tool, arguments):
+    response = api(
+        "POST",
+        "/coordinator",
+        _token(),
+        json={
+            "message": "请规划并执行：先查询赛事状态，然后执行一次指定工作流，最后解释本次结果。"
+            "严格使用下列参数；refresh_data=false 表示赛前历史回放，禁止混入实际赛果。"
+            f"工具 {tool}；参数 {json.dumps(arguments, ensure_ascii=False)}"
+        },
+    )
+    trace = response.get("trace", [])
+    st.session_state["coordinator_trace"] = trace
+    result = next(
+        (
+            t["result"]
+            for t in trace
+            if t.get("success")
+            and t.get("tool") == tool
+            and t.get("result", {}).get("run_id")
+            and t["result"].get("champion_distribution")
+        ),
+        None,
+    )
+    if result is None:
+        raise RuntimeError("LLM 规划未完成工作流，请查看任务状态后重试。")
+    if not arguments.get("refresh_data") and result.get("snapshot_id") != arguments["snapshot_id"]:
+        raise RuntimeError("协调器使用了不同的数据版本，本次结果不用于页面展示。")
+    explanation = next(
+        (
+            t["result"]
+            for t in reversed(trace)
+            if t.get("success")
+            and t.get("tool") == "generate_explanation"
+            and t["result"].get("run_id") == result["run_id"]
+        ),
+        None,
+    )
+    if explanation:
+        st.session_state["llm_explanation"] = {
+            "run_id": result["run_id"],
+            "content": explanation["text"],
+        }
+    st.cache_data.clear()
+    return result
+
+
 def refresh_real_data():
-    result = call_agent_api(use_llm=False, refresh_data=True)
+    result = call_agent_api(use_llm=True, refresh_data=True)
     if result:
         return {
             "success": True,
@@ -303,8 +400,8 @@ def refresh_real_data():
 def call_scenario_simulate(match_id, forced_winner, simulation_count=1000):
     try:
         data = fetch_final_result()["data"]
-        result = _run(
-            "/scenarios",
+        result = _planned_workflow(
+            "run_scenario_workflow",
             {
                 "snapshot_id": data["snapshot_id"],
                 "simulation_count": simulation_count,
