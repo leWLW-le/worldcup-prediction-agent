@@ -57,7 +57,24 @@ def test_original_ui_shows_actual_scores_alongside_explicitly_stale_prediction()
         app = AppTest.from_file("dashboard/app.py").run()
         assert not app.exception
         assert any("hero-title" in item.value for item in app.markdown)
-        assert any("尚未同步最新赛果" in item.value for item in app.markdown)
+        assert any("赛前预测回放" in item.value for item in app.markdown)
         assert app.dataframe[0].value.iloc[0]["比分"] == "2–0"
         assert any("纪律" in item.value for item in app.caption)
         assert not app.warning
+
+
+def test_observed_champion_cannot_replace_pre_tournament_prediction():
+    from dashboard.legacy_adapter import fetch_final_result, PRE_TOURNAMENT_SNAPSHOT
+    result = json.loads(Path("data/verified/release-result.json").read_text(encoding="utf-8"))
+    observed = {**result, "status": "observed", "champion": "Spain",
+                "champion_probability": 1, "snapshot_id": "live-results"}
+    def read(method, path, **kwargs):
+        if path == "/results":
+            assert kwargs["params"]["snapshot_id"] == PRE_TOURNAMENT_SNAPSHOT
+            return {"results": [observed, result]}
+        return {"fixtures": []}
+    st.cache_data.clear()
+    with patch("dashboard.legacy_adapter.api", side_effect=read):
+        displayed = fetch_final_result()["data"]
+    assert displayed["champion"] == result["champion"]
+    assert displayed["champion_probability"] == result["champion_probability"]
