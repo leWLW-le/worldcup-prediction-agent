@@ -26,7 +26,7 @@ def adapt_result(result):
     data["data_status"] = {
         "source_level": "verified_cache",
         "fixtures_count": 104,
-        "user_message": f"数据截止：{result['as_of']} · 赛前历史回放，并非实时赛果 · {result['simulation_count']} 次模拟",
+        "user_message": f"赛前预测 · 数据截至 {result['as_of'][:10]}",
     }
     data["stage_info"] = {"stage": "group", "stage_label": "赛前快照"}
     if result.get("actual_fixtures"):
@@ -92,11 +92,11 @@ def fetch_final_result():
             data["data_status"] = {
                 "source_level": "external_real",
                 "fixtures_count": len(feed["fixtures"]),
-                "user_message": f"{feed.get('provider', 'API-Football')} · 抓取时间 {feed['fetched_at']} · {count} 场已结束"
+                "user_message": f"{feed.get('provider', 'API-Football')} · {count} 场已结束"
                 + (
                     " · 预测已同步"
                     if same
-                    else f" · 下方预测仍基于 {result['as_of']}，尚未同步最新赛果"
+                    else " · 预测尚未同步最新赛果"
                 ),
             }
         return {
@@ -139,22 +139,21 @@ def fetch_live_feed():
 
 def display_real_fixtures():
     feed = fetch_live_feed()
-    if feed.get("primary_error"):
-        st.warning(feed["primary_error"] + "；当前采用原有 football-data.org 通道。")
-    if feed.get("last_error") or feed.get("prediction_error"):
-        st.warning(feed.get("last_error") or feed.get("prediction_error"))
-    if feed.get("configured") is False:
-        st.warning("后端尚未配置 API-Football 密钥，当前不能获取真实赛事数据。")
+    details = [feed.get(k) for k in ("primary_error", "last_error", "prediction_error")]
     rows = feed.get("fixtures", [])
     source = feed.get("provider", "API-Football")
     if not rows and (feed.get("fallback") or {}).get("fixtures"):
         feed = feed["fallback"]
         rows = feed["fixtures"]
         source = feed["provider"]
-        st.info(feed["limitation"])
+        details.append(feed.get("limitation"))
     elif (feed.get("fallback") or {}).get("error"):
-        st.warning(feed["fallback"]["error"])
+        details.append(feed["fallback"]["error"])
     if not rows:
+        with st.expander("数据状态", expanded=False):
+            st.caption("暂无可用赛事数据；当前展示赛前预测。")
+            for detail in filter(None, details):
+                st.caption(detail)
         return
 
     def score(pair):
@@ -164,8 +163,10 @@ def display_real_fixtures():
             else f"{pair['home']}–{pair['away']}"
         )
 
-    with st.expander("📡 真实赛程与比分 · " + source, expanded=True):
-        st.caption(f"上次成功抓取：{feed.get('fetched_at')}；比分来自赛事接口，非模型模拟。")
+    with st.expander("赛程与比分 · " + source, expanded=False):
+        st.caption(f"更新时间：{feed.get('fetched_at', '未知')}")
+        for detail in filter(None, details):
+            st.caption(detail)
         st.dataframe(
             [
                 {
