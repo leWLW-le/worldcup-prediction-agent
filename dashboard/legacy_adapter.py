@@ -1,6 +1,7 @@
 """Translate V2 results for the unchanged original product components."""
 
 import json
+import os
 import time
 from collections import defaultdict
 
@@ -275,23 +276,11 @@ def fetch_scenario_pending_matches():
         return {"matches": [], "sandbox_enabled": None, "source": "error"}
 
 
-@st.dialog("操作授权")
-def _request_token():
-    token = st.text_input("操作密钥", type="password", key="operator_token_input")
-    st.caption("仅用于本次浏览会话，不向匿名访客提供服务端密钥。")
-    if st.button("保存到当前会话"):
-        st.session_state["operator_token"] = token
-        st.rerun()
-
-
 def _token():
-    if fetch_live_feed().get("manual_operations_configured") is False:
-        st.error("后端管理员操作密钥尚未配置，手动刷新暂不可用；自动刷新状态见数据提示。")
-        st.stop()
-    token = st.session_state.get("operator_token", "")
+    # Streamlit executes on the server; never send this credential to the browser.
+    token = os.getenv("BACKEND_API_KEY", "").strip()
     if not token:
-        _request_token()
-        st.stop()
+        raise RuntimeError("预测服务暂未就绪，请稍后重试。")
     return token
 
 

@@ -2,10 +2,22 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from dashboard.legacy_adapter import adapt_result
+
+
+def test_operation_auth_uses_server_configuration_without_prompt(monkeypatch):
+    from dashboard.legacy_adapter import _token
+    monkeypatch.setenv("BACKEND_API_KEY", "server-test-key")
+    with patch("streamlit.text_input") as prompt:
+        assert _token() == "server-test-key"
+    prompt.assert_not_called()
+    monkeypatch.delenv("BACKEND_API_KEY")
+    with pytest.raises(RuntimeError, match="预测服务暂未就绪"):
+        _token()
 
 
 def test_dashboard_empty_state_and_backend_failure():
