@@ -6,11 +6,22 @@ BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8001").rstrip("/")
 
 
 def api(method, path, token="", **kwargs):
+    combined = os.getenv("COMBINED_SERVICE", "false").lower() == "true"
+    base_url = BASE_URL
+    if combined:
+        from dashboard.local_backend import backend_url
+
+        base_url = backend_url()
     headers = {"X-API-Key": token} if token else {}
     timeout = httpx.Timeout(15 if method == "GET" else 180, connect=5)
     try:
         response = httpx.request(
-            method, BASE_URL + "/api/v2" + path, headers=headers, timeout=timeout, **kwargs
+            method,
+            base_url + "/api/v2" + path,
+            headers=headers,
+            timeout=timeout,
+            trust_env=not combined,
+            **kwargs,
         )
     except httpx.TimeoutException:
         raise RuntimeError("后端暂时没有响应，请稍后刷新页面。") from None
