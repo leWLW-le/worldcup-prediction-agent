@@ -14,10 +14,22 @@ def api(method, path, token="", **kwargs):
         )
     except httpx.TimeoutException:
         raise RuntimeError("后端暂时没有响应，请稍后刷新页面。") from None
+    except httpx.RequestError:
+        raise RuntimeError("暂时无法连接预测服务，请稍后重试。") from None
+    content_type = response.headers.get("content-type", "").lower()
+    if "text/html" in content_type or response.text.lstrip().lower().startswith(
+        ("<!doctype html", "<html")
+    ):
+        raise RuntimeError("预测服务连接被网络验证拦截，请稍后重试。")
     if not response.is_success:
         try:
-            detail = response.json().get("detail", response.text)
+            detail = response.json().get("detail")
         except ValueError:
-            detail = response.text
+            detail = None
+        if not isinstance(detail, str) or len(detail) > 300 or "<" in detail:
+            detail = f"预测服务请求失败（HTTP {response.status_code}），请稍后重试。"
         raise RuntimeError(str(detail))
-    return response.json()
+    try:
+        return response.json()
+    except ValueError:
+        raise RuntimeError("预测服务返回了无效响应，请稍后重试。") from None
