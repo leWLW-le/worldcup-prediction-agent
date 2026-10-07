@@ -947,7 +947,7 @@ def display_explanation(data: Dict):
     explanation = data.get("explanation", {})
     narrative = st.session_state.get("llm_explanation", {})
     if narrative.get("run_id") == data.get("run_id") and narrative.get("content"):
-        explanation = {**explanation, "content": narrative["content"]}
+        explanation = {**explanation, **narrative}
     if not explanation:
         return
     content = explanation.get("content", "")
@@ -974,10 +974,13 @@ def display_explanation(data: Dict):
         return
 
     # 清洗正文，移除重复标题
-    cleaned_text = clean_explanation_text(content, champion_name)
+    import html
+    cleaned_text = html.escape(clean_explanation_text(content, champion_name))
 
     # 解析为带层次的 HTML
     expl_html = render_explanation_html(cleaned_text, champion_name)
+    provenance = "由 LLM 根据本次模型结果生成" if explanation.get("source") == "llm" else explanation.get("fallback_reason") or "模型结果摘要"
+    expl_html += f'<div class="expl-body" style="opacity:.6;font-size:.8rem">{html.escape(provenance)}</div>'
     explanation_title = f"已确认 {champion_name} 夺冠" if data.get("status") == "observed" else f"为什么预测 {champion_name} 夺冠？"
 
     st.markdown(f"""

@@ -7,6 +7,7 @@ from collections import defaultdict
 
 import streamlit as st
 
+from app.explanation.service import explain_result
 from dashboard.api_client import api
 
 # Immutable June 1 input used by the published pre-tournament model replay.
@@ -94,12 +95,8 @@ def adapt_result(result):
         "run_id": result["run_id"],
         "champion": result["champion"],
         "champion_probability": result["champion_probability"],
-        "content": (
-            f"在 {result['simulation_count']} 次完整赛事模拟中，{result['champion']} 的夺冠概率为 "
-            f"{result['champion_probability']:.1%}。这是模型概率最高的球队，并非确定冠军。\n"
-            "晋级路线展示一次独立模拟，其胜者可以与概率最高的球队不同。\n"
-            "解释依据已保存的模型结果生成；未调用 LLM。"
-        ),
+        "content": explain_result(result)["text"],
+        "source": explain_result(result)["source"],
     }
     data["agent_steps_summary"] = [
         {
@@ -145,6 +142,11 @@ def fetch_final_result():
         if result is None:
             raise RuntimeError("尚无已保存的赛前预测")
         data = adapt_result(result)
+        try:
+            explanation = api("POST", f"/results/{result['run_id']}/explanation", token=_token())
+            data["explanation"].update(content=explanation["text"], source=explanation["source"], fallback_reason=explanation.get("fallback_reason"))
+        except RuntimeError:
+            data["explanation"]["fallback_reason"] = "LLM 解读暂不可用，本次显示模型结果摘要。"
         feed = fetch_live_feed()
         data["live_feed"] = feed
         data["bracket_payload"] = actual_bracket(feed)
@@ -364,6 +366,8 @@ def _planned_workflow(tool, arguments):
         st.session_state["llm_explanation"] = {
             "run_id": result["run_id"],
             "content": explanation["text"],
+            "source": explanation.get("source", "template"),
+            "fallback_reason": explanation.get("fallback_reason"),
         }
     st.cache_data.clear()
     return result

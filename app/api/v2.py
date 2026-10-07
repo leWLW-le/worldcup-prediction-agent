@@ -173,6 +173,13 @@ def compare(payload: CompareRequest, service=Depends(services)):
     return service.pipeline.compare(payload.run_ids)
 
 
+@router.post("/results/{run_id}/explanation", dependencies=[Depends(authorize)])
+def generate_result_explanation(run_id: str, service=Depends(services)):
+    from app.core.config import get_settings
+    from app.explanation.llm import generate_explanation
+    return generate_explanation(service.store.result(run_id), get_settings(), service.store)
+
+
 @router.post("/coordinator", dependencies=[Depends(authorize)])
 def coordinate(payload: ChatRequest, service=Depends(services)):
     try:
