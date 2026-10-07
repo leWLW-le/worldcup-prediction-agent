@@ -13,7 +13,6 @@ from app.domain.contracts import (
     ScenarioRequest,
     StrictModel,
 )
-from app.explanation.service import explain_result
 
 
 class StateRequest(StrictModel):
@@ -155,7 +154,9 @@ class TaskCoordinator:
             return self.jobs.submit(args, synchronous=True)
         if name == "compare_historical_results":
             return self.pipeline.compare(args.run_ids)
-        return explain_result(self.store.result(args.run_id))
+        from app.core.config import get_settings
+        from app.explanation.llm import generate_explanation
+        return generate_explanation(self.store.result(args.run_id), get_settings(), self.store)
 
     def run(self, message):
         schemas = [
