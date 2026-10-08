@@ -1,101 +1,149 @@
-# World Cup Prediction Agent V2
+# World Cup Prediction Agent
 
-LLM 任务协调器 + 可复现预测工作流。LLM 可查询赛事、启动预测、分析情景、对比历史及生成解释；数值由后端模型和固定签表模拟产生。
+面向 2026 世界杯的预测与赛事分析应用：用统计模型计算概率，用真实赛事接口更新赛程，用 LLM 规划任务并生成解读。保留深蓝与金色的原有 Streamlit 界面。
 
-**当前发布候选已完成真实数据训练和三折扩展窗口回测，支持 2026 年完整小组赛和淘汰赛。保留原版深蓝＋金色 UI。** 随包结果是截至 **2026-06-01** 的赛前历史回放，不是当前实时赛事。生产上线状态需以部署验证为准。
+> 首页冠军卡片展示 **截至 2026-06-01 的赛前预测回放**，不是当前实际冠军。淘汰赛路线独立读取赛事接口；没有可用数据时显示缺失，不用模拟路线冒充真实赛果。
 
-真实数据筛选后保留 14,366 场比赛；独立测试集 3,398 场，集成 Log Loss 0.8648。数据覆盖偏差、回溯修订和淘汰赛平局后 50% 晋级假设仍存在，不能把概率排名当成已验证的冠军结论。详见 [模型与数据说明](docs/RELEASE_MODEL_CARD.md)。
+## 功能与边界
 
-## 框架
+| 模块 | 当前行为 |
+| --- | --- |
+| 冠军预测 | 固定种子的 Monte Carlo 模拟，输出冠军分布、各轮晋级概率与情景差异 |
+| 真实赛程 | API-Football 主来源，football-data.org 备用来源；权限与字段完整性决定可用范围 |
+| LLM 协调器 | 查询状态、执行预测、情景分析、历史对比、生成解释五个受限工具 |
+| 冠军解读 | 调用配置的 LLM，成功后按结果缓存；失败明确标注模型摘要降级 |
+| 原有 UI | 展示赛前预测、真实赛程、解读及情景沙盘，无访客手填密钥 |
+| 训练评估 | 历史真实比赛训练、时间切分、概率校准与扩展窗口回测 |
 
-```mermaid
-flowchart TD
-    U[Dashboard / HTTP] --> C[可选 LLM 任务协调器]
-    C --> T[五个白名单业务工具]
-    U --> P[确定性 PredictionPipeline]
-    T --> P
-    S[不可变赛事快照] --> P
-    P --> F[按日期重放赛前特征]
-    F --> M[ModelRegistry / 概率模型]
-    M --> B[固定 BracketGraph / Monte Carlo]
-    B --> R[不可变结果 / 情景差异 / 历史对比]
-    R --> E[事实解释与前端展示]
-```
+LLM 不负责计算概率，也没有修改模型权重、执行任意代码或 SQL 的工具。解读是基于模型结果的自然语言分析，不是经过验证的因果解释。
 
-- **数据**：明确来源、赛季、截止时间、90 分钟比分和签表依赖；拒绝重复 ID、非法路径、未处理的进行中比赛。按整日截止保守排除当天和未来赛果。
-- **特征**：25 主队 + 25 客队 + 17 差值，再加入中立场标记，共 68 维。训练与推理共用构造器，代理变量不会称作真实射门数据。
-- **候选模型**：经验 Poisson、基于赛前 ELO 差与中立场的多分类逻辑回归、XGBoost、普通 MLP。XGBoost 使用原始特征；MLP 的标准化仅训练集拟合且推理只执行一次。
-- **模型选择**：时间顺序训练/验证/校准/测试；验证选择单模型或非负加权集成，独立校准集拟合温度，测试集报告 Log Loss、Brier、Accuracy、Macro-F1、可靠性分桶。提供扩展窗口回测。
-- **比赛概率**：完整 Poisson 比分矩阵与胜平负边际一致；集成后按结果类别重标比分矩阵。晋级基线为 P(90 分钟胜) + 0.5 × P(平)，加时/点球尚无独立拟合模型。
-- **赛事模拟**：固定真实签表，已完赛结果锁定；显式种子，100–20,000 次；统计各轮参赛、决赛配对和完整冠军分布。冠军与 Top5 来自同一分布；代表路径单独展示。
-- **运行保障**：鉴权、请求体预算、数据库全局计算槽、幂等、取消、超时与原子落库；数据、模型和签表版本可追溯。API-Football 刷新有每日额度，失败不覆盖旧快照。
-- **LLM 边界**：最多 6 次响应、每步一个工具、一次昂贵工作流；无任意代码/SQL/权重修改工具。自然语言解释可能出错，界面另列后端权威数值。LLM 未配置时基础功能仍可使用。
+## 快速开始
 
-## 本地运行（Python 3.12）
+需要 **Python 3.12**。在仓库根目录执行以下命令；当前锁定的 PyTorch 等依赖不能直接用于 Python 3.14。
 
 ```bash
 python -m venv .venv
-# 激活虚拟环境后
-pip install -r requirements-dev.txt
-# 将 .env.example 复制为 .env，设置私人 ADMIN_API_KEY
-python -m uvicorn main:app --host 127.0.0.1 --port 8001
-# 另一终端，在仓库根目录执行
-python -m streamlit run dashboard/app.py
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# macOS / Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-首次启动会幂等载入随包赛事快照和预测。原版页面点击计算操作后可输入当前会话的操作密钥；快照导入和 LLM 协调器通过 V2 API 使用。OpenAPI 文档在后端 `/docs`。LLM 另行配置 `LLM_API_KEY / LLM_BASE_URL / LLM_MODEL`，兼容旧 OPENAI 变量；环境变量优先于 .env。
+把 [.env.example](.env.example) 复制为 `.env`，设置：
 
-### 无真实数据的演示
+```dotenv
+COMBINED_SERVICE=true
+ADMIN_API_KEY=replace-with-a-private-random-string-at-least-24-characters
+BACKEND_API_KEY=replace-with-the-same-private-random-string
+MODEL_BUNDLE_DIR=models/production-v2
+SEED_RELEASE=true
+ALLOW_DEMO_DATA=false
+```
+
+两个密钥必须相同，请自行生成，勿使用示例文本。它们用于服务器内部请求，不发送给浏览器访客。
 
 ```bash
-python -m scripts.demo_v2 demo-snapshot.json
+python -m streamlit run debug_dashboard.py
 ```
 
-仅本地将 `ALLOW_DEMO_DATA=true`，导入生成的快照。它是虚构的四队比赛，结果标记 demo；生产环境禁止启用。程序不会用网络当前日期伪造 2026 年赛果。
+打开终端打印的网址。合并模式会在同一进程启动仅监听 `127.0.0.1:8765` 的 API。加载随包结果不需要赛事密钥；实时数据和 LLM 功能需要对应服务配置。
 
-## API
+## 配置外部服务
 
-| 接口 | 行为 |
-|---|---|
-| GET /api/v2/tournament-state | 查询快照、来源与签表 |
-| POST /api/v2/snapshots | 验证、导入不可变快照，需要 X-API-Key |
-| POST /api/v2/snapshots/{id}/refresh | 刷新已有 API-Football 比赛 ID，生成新快照，需要密钥 |
-| POST /api/v2/predictions | 提交预测，202 返回 job_id，需要密钥 |
-| POST /api/v2/scenarios | 提交已知参赛双方的晋级假设，需要密钥 |
-| GET /api/v2/jobs/{id} | 查询完成、失败或取消状态 |
-| DELETE /api/v2/jobs/{id} | 请求取消，需要密钥 |
-| GET /api/v2/results | 查询预测及情景结果 |
-| GET /api/v2/results/{id} | 完整运行记录 |
-| GET /api/v2/results/{id}/explanation | 无需 LLM 的事实解释 |
-| POST /api/v2/compare | 对比 2–5 条同赛季记录 |
-| POST /api/v2/coordinator | 五工具 LLM 协调器，需要密钥 |
+| 变量 | 用途 |
+| --- | --- |
+| `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` | OpenAI 兼容的聊天接口；默认地址与模型见示例配置 |
+| `API_FOOTBALL` | API-Football 密钥；有密钥不代表订阅包含 2026 赛季 |
+| `FOOTBALL_DATA_API` | football-data.org 备用赛事来源 |
+| `AUTO_REFRESH_DATA` | 是否启动后台周期刷新 |
+| `DATA_REFRESH_INTERVAL_SECONDS` | 刷新间隔，默认 3600 秒 |
+| `LLM_MAX_DAILY_CALLS` | LLM 调用预算，默认 200 |
+| `COMPUTE_TIMEOUT_SECONDS` | 预测计算预算，完整赛事可配置为 600 |
+| `DATABASE_URL` | SQLite 或 PostgreSQL 连接；默认使用本地 SQLite |
 
-预测请求：`{"snapshot_id":"64位SHA256","simulation_count":1000,"seed":42}`。可加 `Idempotency-Key` 防重复提交；相同键用于不同参数会失败。情景请求另加 `fixture_id` 与 `forced_winner`，与同种子基线比较。公开读取接口适合公开赛事数据，私有数据部署应在网关增加读取鉴权。
+本地 dashboard 与后端读取根目录 `.env`，已设置的环境变量优先。Streamlit Cloud 使用 Secrets，值按示例作为顶层字符串配置。不要提交 `.env`、Secrets、数据库或运行缓存。
 
-## 训练和回测
+## 架构
 
-输入 JSON 含 `history` 与 `provenance`。每场历史记录必须声明 `score_basis="90_minutes"`。数据管理员必须先核对来源、授权、球队映射、加时和点球语义；`verified` 是管理员确认，不是程序自动认证。
+```mermaid
+flowchart TD
+  UI[原有 Streamlit UI] --> API[V2 API]
+  API --> C[LLM 任务协调器]
+  C --> T[五个白名单工具]
+  API --> P[确定性预测工作流]
+  T --> P
+  D[API-Football / football-data.org] --> S[数据校验与赛事快照]
+  S --> P
+  H[历史比赛数据] --> M[训练 / 校准 / 模型包]
+  M --> P
+  P --> R[版本化预测结果]
+  R --> E[LLM 解读 / 缓存 / 显式降级]
+  R --> UI
+  E --> UI
+  S --> UI
+```
+
+详细职责、兼容代码边界见 [架构说明](docs/architecture.md)。
+
+## 项目结构
+
+```text
+main.py                    # 兼容后端入口，保持 main:app 部署命令
+debug_dashboard.py         # 原有 UI 实现与兼容入口
+app/
+  server.py                # FastAPI 应用、生命周期、健康检查
+  api/v2.py                # 当前 HTTP 接口
+  agents/task_coordinator.py # LLM 工具规划
+  core/                    # 配置与运行约束
+  data/                    # 数据源获取、规范化与完整性检查
+  domain/                  # 输入输出契约
+  features/                # 训练与推理共用特征
+  models/                  # 模型注册、概率分布与模型实现
+  tournament/              # 小组赛排名、签表和赛事模拟
+  pipelines/               # 预测与情景工作流
+  infrastructure/          # 存储、任务与额度
+  explanation/             # LLM 解读和确定性摘要
+dashboard/                 # UI 配置、API 客户端、V2 结果适配
+data/verified/             # 发布快照与评估报告
+models/production-v2/      # 发布模型工件
+scripts/                   # 训练、准备数据及历史维护脚本
+tests/v2/                  # V2 契约与集成测试
+docs/                      # 当前文档及历史资料索引
+```
+
+旧版模块仍有回归测试与兼容引用，暂不机械删除；存在某个旧文件不代表它仍在生产请求链中。旧脚本使用前先查 [维护指南](CONTRIBUTING.md)。
+
+## 训练与评估
+
+发布模型使用经过筛选的 14,366 场历史国际比赛，独立测试集 3,398 场，记录的集成 Log Loss 为 0.864782。这不是世界杯冠军命中率，也不证明加入 LLM 提高了准确率。来源、筛选偏差和模型限制见 [模型卡](docs/RELEASE_MODEL_CARD.md)。
 
 ```bash
 python -m scripts.train_v2 verified-history.json models/v2-candidate --epochs 40
 python -m scripts.train_v2 verified-history.json models/v2-backtest --walk-forward-folds 3
 ```
 
-输出包含 estimators.joblib、mlp.pt、manifest.json、evaluation.json；回测另含逐折报告。输出目录必须尚不存在。人工审阅真实数据评估后，配置 `MODEL_BUNDLE_DIR` 指向候选包并重启。只加载管理员可信文件，禁止上传任意 joblib。加载核对依赖、特征、来源、权重和文件摘要；预测时间必须晚于所有模型选择/校准数据日期。
+输入必须满足历史数据契约；输出目录应不存在。不能用测试集挑选模型，不能把模型训练数据当作实时赛事接口。只加载可信模型包。
 
-## 验证与部署
+## 测试与开发
 
 ```bash
-pytest tests -q
-# 只验证新运行路径
-pytest tests/v2 -q
-docker compose up --build
+python -m pip install -r requirements-dev.txt
+python -m pytest tests -q
 ```
 
-Compose 仅把后台凭据交给后端；前端用户自行输入密钥。生产密钥如配置须至少 24 字符；未配置时写接口拒绝访问。禁止 demo 数据与通配 CORS。默认装载随包 production-v2 模型，不使用旧权重。Render 蓝图将前后端依赖分开；需要设置实际 BACKEND_URL，LLM/API-Football 凭据可选。尚未执行真实容器构建、PostgreSQL 集成或云部署；不要把配置文件视为部署成功证据。
+静态检查范围与 CI 保持一致，见 [.github/workflows/v2-tests.yml](.github/workflows/v2-tests.yml)。测试通过不等于云端部署或数据权限已通过验收。
 
-## 迁移与边界
+## 部署与接口
 
-详见 [V2 迁移与验收](docs/V2_MIGRATION.md)。V1 路由返回 410；旧接口客户端必须升级。新表以 v2_ 开头，不重写旧 JSON、不转换旧预测。旧模型/工具/脚本暂留作迁移参考，已退出生产调用链；旧架构与部署文档只适用于 V1。
+- [Streamlit 与本地部署](docs/deployment.md)：Python 版本、Secrets、两种运行方式、上线检查。
+- [V2 API 索引](docs/api-v2.md)：预测任务、查询结果、LLM 解读与协调器。
+- [故障排查](docs/troubleshooting.md)：缺失赛程、LLM 降级、任务忙与依赖失败。
+- [完整文档索引](docs/README.md)：当前文档和历史文档的使用范围。
 
-已实现 12 组积分、递归相互战绩同分规则、公平竞赛积分与 FIFA 排名，以及官方 Annex C 的 495 种第三名晋级分配。尚未实现伤停与首发、实时比赛、独立加时/点球模型及全自动事实核验。当前概率是模型条件概率；模拟标准误只反映采样误差，不代表真实世界总不确定性。
+## 已知限制
+
+- 赛事 API 的订阅权限与缺失字段会限制刷新；备用接口并不总能替代完整预测输入。
+- 当前加时/点球基线对常规时间打平的双方各给 50% 晋级概率；不是独立拟合的加时模型。
+- 首发、伤停和战术信息尚未系统接入训练；LLM 不应虚构这些优势。
+- 协调器采用同步请求和全局占用槽，可能返回忙或超时；尚无完善的前端任务恢复体验。
+- 合并部署的 SQLite 和解读文件缓存位于本地磁盘，云端重建可能丢失。
+- LLM 输出可能误读字段或数字；页面概率卡片以结构化模型结果为准。

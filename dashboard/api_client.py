@@ -2,6 +2,9 @@ import os
 
 import httpx
 
+from dashboard.config import load_dashboard_environment
+
+load_dashboard_environment()
 BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8001").rstrip("/")
 
 
