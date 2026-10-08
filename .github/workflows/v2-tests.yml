@@ -10,5 +10,5 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements-dev.txt
-      - run: ruff check app/domain app/features app/models/distributions.py app/models/mlp.py app/models/registry.py app/tournament app/infrastructure app/pipelines app/explanation app/agents/task_coordinator.py app/api/v2.py app/data/v2_provider.py app/core/config.py dashboard main.py scripts/train_v2.py scripts/demo_v2.py tests/v2
+      - run: ruff check app/domain app/features app/models/distributions.py app/models/mlp.py app/models/registry.py app/tournament app/infrastructure app/pipelines app/explanation app/agents/task_coordinator.py app/api/v2.py app/data/v2_provider.py app/core/config.py app/server.py dashboard main.py scripts/train_v2.py scripts/demo_v2.py tests/v2
       - run: pytest tests -q
