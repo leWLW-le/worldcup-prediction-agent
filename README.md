@@ -4,6 +4,8 @@
 
 围绕赛前冠军预测、赛事状态查询和情景推演，整合真实比赛数据、概率模型、赛事模拟与自然语言解读，提供可追溯的分析结果和交互式可视化界面。
 
+**在线体验：[打开世界杯预测网站](https://worldcup-prediction-agent-k2nxfoeb6vjqdyyppvlbyu.streamlit.app/)**
+
 [快速开始](#快速开始) · [Agent 工作流](#agent-工作流) · [模型与评估](#模型与评估) · [部署指南](docs/deployment.md) · [API 文档](docs/api-v2.md)
 
 ## 核心能力
