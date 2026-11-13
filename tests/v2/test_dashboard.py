@@ -155,3 +155,82 @@ def test_prediction_enters_llm_planner_before_computation():
     deterministic.assert_not_called()
     assert api_mock.call_args.args[:2] == ("POST", "/coordinator")
     assert '"refresh_data": false' in api_mock.call_args.kwargs["json"]["message"]
+
+
+def test_prediction_mode_switch_routes_the_dashboard_button(monkeypatch):
+    monkeypatch.setenv("BACKEND_API_KEY", "test")
+    result = json.loads(Path("data/verified/release-result.json").read_text(encoding="utf-8"))
+
+    def respond(method, path, token="", **kwargs):
+        if path == "/results":
+            return {"results": [result]}
+        if path == "/predictions":
+            return {"job_id": "job-test"}
+        if path == "/jobs/job-test":
+            return {"status": "completed", "run_id": result["run_id"]}
+        if path == f"/results/{result['run_id']}":
+            return result
+        if path.endswith("/explanation"):
+            return {"text": "测试摘要", "source": "template"}
+        if path == "/coordinator":
+            return {
+                "status": "completed",
+                "trace": [{"tool": "run_prediction_workflow", "success": True, "result": result}],
+            }
+        return {"snapshots": [], "fixtures": []}
+
+    st.cache_data.clear()
+    with patch("dashboard.legacy_adapter.api", side_effect=respond) as api_mock:
+        app = AppTest.from_file("dashboard/app.py", default_timeout=10).run()
+        next(button for button in app.button if "重新预测" in button.label).click().run()
+        assert not app.exception
+        assert [call.args[1] for call in api_mock.call_args_list if call.args[0] == "POST"] == [
+            "/predictions"
+        ]
+
+        app.sidebar.radio[0].set_value("llm_planner").run()
+        api_mock.reset_mock()
+        next(button for button in app.button if "重新预测" in button.label).click().run()
+        assert not app.exception
+        posts = [call.args[1] for call in api_mock.call_args_list if call.args[0] == "POST"]
+        assert "/coordinator" in posts
+        assert "/predictions" not in posts
+
+        api_mock.reset_mock()
+        message = "查询当前赛事状态"
+        app.sidebar.text_area[0].set_value(message)
+        next(button for button in app.sidebar.button if button.label == "执行任务").click().run()
+        assert not app.exception
+        coordinator = next(
+            call for call in api_mock.call_args_list if call.args[:2] == ("POST", "/coordinator")
+        )
+        assert coordinator.kwargs["json"] == {"message": message}
+
+
+@pytest.mark.parametrize("use_llm", [False, True])
+def test_scenario_mode_routes_the_same_parameters(use_llm):
+    from dashboard.legacy_adapter import call_scenario_simulate
+
+    match = {"match_id": "m1", "home_team": "Spain", "away_team": "Argentina"}
+    prediction = {
+        "champion_distribution": {"Spain": 0.6},
+        "baseline_champion_distribution": {"Spain": 0.4},
+        "probability_change": {"Spain": 0.2},
+    }
+    with (
+        patch("dashboard.legacy_adapter.fetch_final_result", return_value={"data": {"snapshot_id": "snap"}}),
+        patch("dashboard.legacy_adapter.fetch_scenario_pending_matches", return_value={"matches": [match]}),
+        patch("dashboard.legacy_adapter._run", return_value=prediction) as workflow,
+        patch("dashboard.legacy_adapter._planned_workflow", return_value=prediction) as planner,
+    ):
+        assert call_scenario_simulate("m1", "Spain", use_llm=use_llm)["success"]
+    arguments = {
+        "snapshot_id": "snap", "simulation_count": 1000, "seed": 42,
+        "fixture_id": "m1", "forced_winner": "Spain",
+    }
+    if use_llm:
+        planner.assert_called_once_with("run_scenario_workflow", arguments)
+        workflow.assert_not_called()
+    else:
+        workflow.assert_called_once_with("/scenarios", arguments)
+        planner.assert_not_called()

@@ -650,7 +650,7 @@ def _check_api_consistency(data: Dict) -> bool:
 from dashboard.legacy_adapter import (
     fetch_final_result, call_agent_api, refresh_real_data, get_data_status,
     fetch_stage_info, fetch_scenario_pending_matches, call_scenario_simulate,
-    fetch_scenario_latest, display_real_fixtures,
+    fetch_scenario_latest, display_real_fixtures, submit_planner_task,
 )
 
 
@@ -937,7 +937,7 @@ def render_explanation_html(text: str, champion_name: str) -> str:
     return "\n".join(html_parts)
 
 
-def display_explanation(data: Dict):
+def display_explanation(data: Dict, use_llm: bool):
     """AI 冠军解读 — 使用 ai-card 样式
 
     权威字段：data["champion"] 和 data["champion_probability"]
@@ -945,7 +945,7 @@ def display_explanation(data: Dict):
     动态替换正文中的百分比为最新 champion_probability。
     """
     explanation = data.get("explanation", {})
-    narrative = st.session_state.get("llm_explanation", {})
+    narrative = st.session_state.get("llm_explanation", {}) if use_llm else {}
     if narrative.get("run_id") == data.get("run_id") and narrative.get("content"):
         explanation = {**explanation, **narrative}
     if not explanation:
@@ -1278,7 +1278,7 @@ def _format_sandbox_explanation(text: str) -> str:
     return "\n".join(html_parts)
 
 
-def display_scenario_sandbox(data: Dict):
+def display_scenario_sandbox(data: Dict, use_llm: bool):
     """冠军路径沙盘模块 — 交互式推演，仅按钮点击后展示结果"""
 
     # ── 交互式沙盘状态管理 ──
@@ -1290,7 +1290,7 @@ def display_scenario_sandbox(data: Dict):
         st.session_state["scenario_last_run_key"] = None
 
     # ─ 获取阶段感知的比赛列表 ─
-    pending_response = fetch_scenario_pending_matches()
+    pending_response = fetch_scenario_pending_matches(use_llm=use_llm)
     sandbox_enabled = pending_response.get("sandbox_enabled")  # None=未知, True=开启, False=结束
     sandbox_message = pending_response.get("sandbox_message", "")
     pending_matches = pending_response.get("matches", [])
@@ -1495,7 +1495,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             run_clicked = st.button("开始推演", use_container_width=True, key="scenario_run_btn")
 
         # ─ 选择变化检测：切换比赛或晋级队后隐藏旧结果 ──
-        _current_key = f"{match_id}:{forced_winner}"
+        _current_key = (data["snapshot_id"], match_id, forced_winner, use_llm)
         if st.session_state.get("scenario_last_run_key") != _current_key:
             st.session_state["scenario_result_visible"] = False
 
@@ -1509,11 +1509,11 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
                 st.warning("请选择比赛和假设晋级队。")
             else:
                 with st.spinner("正在进行沙盘推演（1000 次模拟）..."):
-                    result = call_scenario_simulate(match_id, forced_winner)
+                    result = call_scenario_simulate(match_id, forced_winner, use_llm=use_llm)
                 if result and result.get("success"):
                     st.session_state["scenario_result"] = result
                     st.session_state["scenario_result_visible"] = True
-                    st.session_state["scenario_last_run_key"] = f"{match_id}:{forced_winner}"
+                    st.session_state["scenario_last_run_key"] = _current_key
                     st.rerun()
                 elif result:
                     st.session_state["scenario_result_visible"] = False
@@ -1667,14 +1667,60 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
 
 # ==================== 主函数 ====================
+def display_planner_task():
+    with st.sidebar.form("planner_task"):
+        message = st.text_area(
+            "Planner 任务", placeholder="例如：查询当前赛事状态和已有预测。", max_chars=1500
+        )
+        submitted = st.form_submit_button("执行任务")
+    if submitted:
+        st.session_state.pop("planner_task_result", None)
+        if not message.strip():
+            st.sidebar.warning("请输入要执行的任务。")
+        else:
+            try:
+                with st.sidebar, st.spinner("正在规划和执行任务…"):
+                    response = submit_planner_task(message.strip())
+                st.session_state["planner_task_result"] = response
+                fetch_final_result.clear()
+                fetch_scenario_pending_matches.clear()
+            except RuntimeError as exc:
+                st.sidebar.error(str(exc))
+
+    response = st.session_state.get("planner_task_result")
+    if response:
+        if response.get("status") != "completed":
+            st.sidebar.warning(response.get("error") or "Planner 未完成任务，请查看工具执行记录。")
+        if response.get("narrative"):
+            st.sidebar.write(response["narrative"])
+        with st.sidebar.expander("工具执行记录"):
+            for step in response.get("trace", []):
+                status = "成功" if step["success"] else "失败"
+                st.text(f"{step['tool']} · {status}")
+                if not step["success"] and step["result"].get("error"):
+                    st.text(step["result"]["error"])
+                if step["success"] and step["result"].get("run_id"):
+                    st.text(f"运行 ID  {step['result']['run_id']}")
+
+
 def main():
     import logging as _logging
     _log = _logging.getLogger(__name__)
 
+    mode = st.sidebar.radio(
+        "运行模式",
+        ("workflow", "llm_planner"),
+        format_func={"workflow": "固定工作流", "llm_planner": "LLM Planner"}.get,
+        key="prediction_execution_mode",
+    )
+    use_llm = mode == "llm_planner"
+    if use_llm:
+        display_planner_task()
+
     # ══════════════════════════════════════════════════════
     # 单次调用 fetch_final_result()，所有组件共享同一结果
     # ══════════════════════════════════════════════════════
-    result = fetch_final_result()
+    result = fetch_final_result(use_llm=use_llm)
     data = result.get("data", {}) if result else {}
 
     # 保存到 session_state（正式预测专用）
@@ -1756,7 +1802,7 @@ def main():
             allow_pred = fc > 0 and sl in ("external_real", "verified_cache")
             if st.button("🏆 开始预测", use_container_width=True, disabled=not allow_pred):
                 with st.spinner("正在运行预测，请稍候..."):
-                    res = call_agent_api(mode="llm_planner_safe", use_llm=True)
+                    res = call_agent_api(mode=mode)
                 if res:
                     _clear_prediction_state()
                     st.success("预测完成")
@@ -1766,7 +1812,7 @@ def main():
 
             if st.button(" 刷新比赛数据", use_container_width=True):
                 with st.spinner("正在全量刷新（赛程→存活球队→模拟→结果）..."):
-                    res = refresh_real_data()
+                    res = refresh_real_data(use_llm=use_llm)
                 if res and res.get("success"):
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
@@ -1800,7 +1846,7 @@ def main():
         with c1:
             if st.button("🔄 重新预测", use_container_width=True):
                 with st.spinner("正在运行预测，请稍候..."):
-                    res = call_agent_api(mode="llm_planner_safe", use_llm=True)
+                    res = call_agent_api(mode=mode)
                 if res:
                     clear_official_prediction_state()  # 仅清除正式预测，保留沙盘
                     st.success("预测完成")
@@ -1810,7 +1856,7 @@ def main():
         with c2:
             if st.button("📡 刷新数据", use_container_width=True):
                 with st.spinner("正在全量刷新（赛程→存活球队→模拟→结果）..."):
-                    res = refresh_real_data()
+                    res = refresh_real_data(use_llm=use_llm)
                 if res and res.get("success"):
                     surviving = res.get("steps", {}).get("identify_surviving", {}).get("surviving_teams", [])
                     stage = res.get("steps", {}).get("identify_surviving", {}).get("stage", "")
@@ -1839,7 +1885,7 @@ def main():
     display_champion_card(data)
 
     # 5. AI 冠军解读
-    display_explanation(data)
+    display_explanation(data, use_llm)
 
     # 6. 淘汰赛晋级路线
     display_knockout_roadmap(data)
@@ -1848,7 +1894,7 @@ def main():
     display_top5(data)
 
     # 8. 冠军路径沙盘（独立数据源，不干扰正式预测）
-    display_scenario_sandbox(data)
+    display_scenario_sandbox(data, use_llm)
 
     # 9. AI 分析过程（默认折叠）
     display_ai_analysis_process(data)
