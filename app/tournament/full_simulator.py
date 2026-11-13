@@ -6,29 +6,47 @@ from collections import Counter, defaultdict
 import numpy as np
 
 from app.domain.contracts import digest
-from app.tournament.group_rules import KNOCKOUT, qualified_slots, rank_group
+from app.tournament.group_rules import KNOCKOUT, KNOCKOUT_ROUNDS, qualified_slots, rank_group
 
 
 def simulate_full(
-    stage, distribution, count=1000, seed=42, forced=None, cancelled=lambda: False, timeout=120
+    stage, distribution, count=1000, seed=42, forced=None, cancelled=lambda: False, timeout=120,
+    *, reference=None,
 ):
     if not 100 <= count <= 20000:
         raise ValueError("Simulation count must be between 100 and 20000")
     forced = forced or {}
     by_id = {m.fixture_id: m for m in stage.matches}
-    knockout_ids = {m[0] for m in KNOCKOUT}
+    reference_scores, reference_winners = {}, {}
+    if reference:
+        target = reference["fixture_id"]
+        if target not in KNOCKOUT_ROUNDS:
+            raise ValueError("参考签表只适用于淘汰赛。")
+        reference_scores = {
+            m["fixture_id"]: (m["home_score"], m["away_score"])
+            for m in reference["representative_group_matches"]
+        }
+        reference_winners = {
+            m["fixture_id"]: m["winner"]
+            for m in reference["representative_path"]
+            if int(m["fixture_id"]) < int(target)
+            and KNOCKOUT_ROUNDS[m["fixture_id"]] != KNOCKOUT_ROUNDS[target]
+            and KNOCKOUT_ROUNDS[m["fixture_id"]] != "third_place"
+        }
+        if set(reference_scores) != set(by_id):
+            raise ValueError("参考签表缺少完整的小组赛结果。")
     for match_id, team in forced.items():
-        if match_id in knockout_ids:
+        if match_id in KNOCKOUT_ROUNDS:
             if match_id in stage.knockout_winners:
                 raise ValueError("Cannot override a completed knockout match")
-            if any(m.home_score is None for m in stage.matches):
+            if not reference and any(m.home_score is None for m in stage.matches):
                 raise ValueError("Knockout scenarios require completed groups")
             continue
         if match_id not in by_id or by_id[match_id].home_score is not None:
             raise ValueError("Full-tournament scenarios target unplayed group matches")
         if team not in (by_id[match_id].home, by_id[match_id].away):
             raise ValueError("Forced winner is not a participant")
-    if not set(stage.knockout_winners) <= {m[0] for m in KNOCKOUT}:
+    if not set(stage.knockout_winners) <= KNOCKOUT_ROUNDS.keys():
         raise ValueError("Unknown official knockout match ID")
     teams = sorted(t for members in stage.groups.values() for t in members)
     champion, reached, finals = Counter(), defaultdict(Counter), Counter()
@@ -46,6 +64,8 @@ def simulate_full(
     def group_score(match, path):
         if match.home_score is not None:
             return match.home_score, match.away_score
+        if reference:
+            return reference_scores[match.fixture_id]
         dist = get(match.home, match.away, match.neutral)
         if match.fixture_id in forced:
             mask = (
@@ -85,27 +105,16 @@ def simulate_full(
         representative = []
         for match_id, home_slot, away_slot in KNOCKOUT:
             h, a = slots[home_slot], slots[away_slot]
-            num = int(match_id)
-            round_name = (
-                "round_of_32"
-                if num <= 88
-                else "round_of_16"
-                if num <= 96
-                else "quarter_finals"
-                if num <= 100
-                else "semi_finals"
-                if num <= 102
-                else "third_place"
-                if num == 103
-                else "final"
-            )
+            round_name = KNOCKOUT_ROUNDS[match_id]
             observed = stage.knockout_winners.get(match_id)
-            if observed:
-                if observed not in (h, a):
+            prior_winner = observed or reference_winners.get(match_id)
+            if prior_winner:
+                if prior_winner not in (h, a):
                     raise ValueError(
                         "Observed knockout winner conflicts with qualified participants"
+                        if observed else "Reference knockout winner conflicts with qualified participants"
                     )
-                winner = observed
+                winner = prior_winner
             elif match_id in forced:
                 if forced[match_id] not in (h, a):
                     raise ValueError("Scenario participant is not guaranteed to reach this match")
@@ -131,7 +140,8 @@ def simulate_full(
                         "home": h,
                         "away": a,
                         "winner": winner,
-                        "source": "observed" if observed else "representative",
+                        "source": "observed" if observed else "scenario" if match_id in forced
+                        else "representative",
                     }
                 )
             else:

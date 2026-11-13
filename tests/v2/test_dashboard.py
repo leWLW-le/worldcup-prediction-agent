@@ -229,6 +229,8 @@ def test_scenario_mode_routes_the_same_parameters(use_llm):
 
     match = {"match_id": "m1", "home_team": "Spain", "away_team": "Argentina"}
     prediction = {
+        "champion": "Spain",
+        "champion_probability": 0.6,
         "champion_distribution": {"Spain": 0.6},
         "baseline_champion_distribution": {"Spain": 0.4},
         "probability_change": {"Spain": 0.2},
@@ -250,3 +252,43 @@ def test_scenario_mode_routes_the_same_parameters(use_llm):
     else:
         workflow.assert_called_once_with("/scenarios", arguments)
         planner.assert_not_called()
+
+
+def test_sandbox_selects_round_fixture_and_winner_and_displays_champion():
+    result = json.loads(Path("data/verified/release-result.json").read_text(encoding="utf-8"))
+    snapshot = {
+        "snapshot_id": result["snapshot_id"],
+        "group_stage": {
+            "matches": [{**result["representative_group_matches"][0], "home_score": None}],
+        },
+    }
+    final = next(m for m in result["representative_path"] if m["stage"] == "final")
+    predicted = {"success": True, "champion": final["away"], "champion_probability": 1.0}
+
+    def read(method, path, **kwargs):
+        return {
+            "/results": {"results": [result]},
+            "/tournament-state": {"snapshots": [snapshot]},
+            "/data/status": {},
+        }[path]
+
+    st.cache_data.clear()
+    with (
+        patch("dashboard.legacy_adapter.api", side_effect=read),
+        patch("dashboard.legacy_adapter.call_scenario_simulate", return_value=predicted) as simulate,
+    ):
+        app = AppTest.from_file("dashboard/app.py", default_timeout=10).run()
+        rounds = app.selectbox(key="scenario_round")
+        assert "4 强赛（半决赛）" in rounds.options
+        assert "8 强赛（四分之一决赛）" in rounds.options
+        rounds.set_value("semi_finals").run()
+        assert len(app.selectbox(key="scenario_match_semi_finals").options) == 2
+        app.selectbox(key="scenario_round").set_value("final").run()
+        assert app.selectbox(key="scenario_match_final").options == [f"{final['home']} vs {final['away']}"]
+        app.radio(key="scenario_winner_104").set_value(final["away"])
+        app.button(key="scenario_run_btn").click().run()
+        assert not app.exception
+        assert any(m.label == "最可能夺冠" and m.value == final["away"] for m in app.metric)
+        simulate.assert_called_once_with(
+            "104", final["away"], use_llm=False, reference_run_id=result["run_id"],
+        )

@@ -650,7 +650,7 @@ def _check_api_consistency(data: Dict) -> bool:
 from dashboard.legacy_adapter import (
     fetch_final_result, call_agent_api, refresh_real_data, get_data_status,
     fetch_stage_info, fetch_scenario_pending_matches, call_scenario_simulate,
-    fetch_scenario_latest, display_real_fixtures, submit_planner_task,
+    fetch_scenario_latest, display_real_fixtures, submit_planner_task, SCENARIO_ROUNDS,
 )
 
 
@@ -1294,7 +1294,6 @@ def display_scenario_sandbox(data: Dict, use_llm: bool):
     sandbox_enabled = pending_response.get("sandbox_enabled")  # None=未知, True=开启, False=结束
     sandbox_message = pending_response.get("sandbox_message", "")
     pending_matches = pending_response.get("matches", [])
-    stage_label = pending_response.get("stage_label", "")
     source = pending_response.get("source", "unknown")
 
     # 仅从 session_state 读取（按钮点击后写入），不自动加载 API 缓存
@@ -1314,7 +1313,7 @@ def display_scenario_sandbox(data: Dict, use_llm: bool):
     
     if has_matches and sandbox_enabled is True:
         # 状态 A：可推演
-        subtitle = '选择快照中一场未开始的比赛，并假设其中一队获胜（小组赛为90分钟获胜）。点击"开始推演"后，系统会重新模拟剩余赛程，展示可能决赛对阵、沙盘夺冠概率和概率变化。'
+        subtitle = '选择轮次、比赛和假设胜者，查看推演后的冠军和夺冠概率。'
         badge_text = "假设推演"
     elif is_sandbox_ended:
         # 状态 C：沙盘确实已结束
@@ -1444,18 +1443,6 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 </div>""", unsafe_allow_html=True)
         return
 
-    # ── 构建选项 ──
-    stage_cn = {"semi_finals": "半决赛", "quarter_finals": "8强", "round_of_16": "16强",
-                "round_of_32": "32强", "final": "决赛"}
-    match_options = []
-    match_map = {}
-    for m in pending_matches:
-        label = f"{m['home_team']} vs {m['away_team']}"
-        stage_lbl = stage_cn.get(m.get("stage", ""), m.get("stage", ""))
-        display = f"{label}（{stage_lbl}）"
-        match_options.append(display)
-        match_map[display] = m
-
     with st.container():
         st.markdown('<div id="sandbox-container-marker" style="display:none;"></div>', unsafe_allow_html=True)
 
@@ -1472,21 +1459,32 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 </div>""", unsafe_allow_html=True)
 
         # ── 表单 ──
-        col_a, col_b, col_c = st.columns([2, 1.2, 1])
+        col_round, col_a, col_b, col_c = st.columns([1.3, 2, 1.2, 1])
+        with col_round:
+            available_rounds = {match["stage"] for match in pending_matches}
+            round_id = st.selectbox(
+                "比赛轮次", [stage for stage in SCENARIO_ROUNDS if stage in available_rounds],
+                format_func=SCENARIO_ROUNDS.__getitem__, key="scenario_round",
+            )
+
+        match_map = {m["match_id"]: m for m in pending_matches if m["stage"] == round_id}
 
         with col_a:
-            selected_match_label = st.selectbox("选择比赛", match_options, key="scenario_match_select")
+            match_id = st.selectbox(
+                "选择比赛", list(match_map),
+                format_func=lambda key: f"{match_map[key]['home_team']} vs {match_map[key]['away_team']}",
+                key=f"scenario_match_{round_id}",
+            )
 
-        selected_match = match_map.get(selected_match_label, {})
-        home = selected_match.get("home_team", "")
-        away = selected_match.get("away_team", "")
-        match_id = selected_match.get("match_id", "")
+        selected_match = match_map[match_id]
+        home, away = selected_match["home_team"], selected_match["away_team"]
+        reference_run_id = selected_match.get("reference_run_id")
 
         with col_b:
             forced_winner = st.radio(
                 "假设获胜队",
                 [home, away],
-                key="scenario_winner_radio",
+                key=f"scenario_winner_{match_id}",
                 horizontal=True,
             )
 
@@ -1494,8 +1492,11 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
             st.markdown('<div style="margin-top:1.55rem;"></div>', unsafe_allow_html=True)
             run_clicked = st.button("开始推演", use_container_width=True, key="scenario_run_btn")
 
+        if reference_run_id:
+            st.caption("此对阵来自预测签表。推演沿用该轮之前的模拟赛果，重新模拟该轮及后续比赛。")
+
         # ─ 选择变化检测：切换比赛或晋级队后隐藏旧结果 ──
-        _current_key = (data["snapshot_id"], match_id, forced_winner, use_llm)
+        _current_key = (data["snapshot_id"], reference_run_id, match_id, forced_winner, use_llm)
         if st.session_state.get("scenario_last_run_key") != _current_key:
             st.session_state["scenario_result_visible"] = False
 
@@ -1509,7 +1510,9 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
                 st.warning("请选择比赛和假设晋级队。")
             else:
                 with st.spinner("正在进行沙盘推演（1000 次模拟）..."):
-                    result = call_scenario_simulate(match_id, forced_winner, use_llm=use_llm)
+                    result = call_scenario_simulate(
+                        match_id, forced_winner, use_llm=use_llm, reference_run_id=reference_run_id,
+                    )
                 if result and result.get("success"):
                     st.session_state["scenario_result"] = result
                     st.session_state["scenario_result_visible"] = True
@@ -1527,6 +1530,7 @@ div[data-testid="stVerticalBlock"]:has(#sandbox-container-marker) .warning-note 
 
         # ─ 结果内容（仅按钮推演成功后展示） ──
         if st.session_state.get("scenario_result_visible") and scenario:
+            st.metric("最可能夺冠", scenario["champion"], f"夺冠概率 {scenario['champion_probability']:.1%}", delta_color="off")
             sc = scenario.get("scenario", {})
             forced_winner_name = sc.get("forced_winner", "")
             forced_loser_name = sc.get("forced_loser", "")

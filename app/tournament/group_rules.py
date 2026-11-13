@@ -155,3 +155,16 @@ KNOCKOUT = [
     ("103", "L101", "L102"),
     ("104", "W101", "W102"),
 ]
+
+KNOCKOUT_ROUNDS = {
+    str(match_id): stage
+    for stage, start, end in (
+        ("round_of_32", 73, 88),
+        ("round_of_16", 89, 96),
+        ("quarter_finals", 97, 100),
+        ("semi_finals", 101, 102),
+        ("third_place", 103, 103),
+        ("final", 104, 104),
+    )
+    for match_id in range(start, end + 1)
+}
