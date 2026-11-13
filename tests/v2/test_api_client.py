@@ -42,3 +42,13 @@ def test_valid_error_remains_readable():
     ):
         with pytest.raises(RuntimeError, match="Coordinator is busy"):
             api("POST", "/coordinator")
+
+
+def test_outdated_scenario_contract_returns_restart_message():
+    response = httpx.Response(422, json={"detail": [{
+        "type": "extra_forbidden", "loc": ["body", "reference_run_id"], "input": "private",
+    }]})
+    with patch("dashboard.api_client.httpx.request", return_value=response):
+        with pytest.raises(RuntimeError, match="旧版接口") as error:
+            api("POST", "/scenarios")
+    assert "private" not in str(error.value)

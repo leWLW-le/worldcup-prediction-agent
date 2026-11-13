@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
+from app.infrastructure.release import seed_release
 from main import app
 
 
@@ -41,6 +42,33 @@ def test_env_precedes_dotenv(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("LLM_MODEL", "from_env")
     assert Settings().LLM_MODEL == "from_env"
+
+
+def test_semifinal_scenario_http_contract(service, monkeypatch):
+    from time import monotonic, sleep
+
+    seed_release(service.store)
+    reference = next(r for r in service.store.results() if r.get("format") == "fifa_2026_full")
+    match = next(m for m in reference["representative_path"] if m["fixture_id"] == "102")
+    assert {match["home"], match["away"]} == {"England", "Argentina"}
+    app.state.services = service
+    monkeypatch.setattr(get_settings(), "ADMIN_API_KEY", "test-key")
+    client = TestClient(app)
+    response = client.post("/api/v2/scenarios", headers={"X-API-Key": "test-key"}, json={
+        "snapshot_id": reference["snapshot_id"], "reference_run_id": reference["run_id"],
+        "fixture_id": "102", "forced_winner": "Argentina", "simulation_count": 100,
+    })
+    assert response.status_code == 202, response.text
+    deadline = monotonic() + 20
+    while monotonic() < deadline:
+        job = client.get(f"/api/v2/jobs/{response.json()['job_id']}").json()
+        if job["status"] != "running":
+            break
+        sleep(0.05)
+    assert job["status"] == "completed", job
+    result = client.get(f"/api/v2/results/{job['run_id']}").json()
+    assert result["constraints"] == {"102": "Argentina"}
+    assert result["champion"]
 
 
 def test_missing_llm_does_not_disable_prediction(service, monkeypatch):
