@@ -192,7 +192,7 @@ def coordinate(payload: ChatRequest, service=Depends(services)):
             service.pipeline,
             service.jobs,
             CompatibleLLM(get_settings(), service.store),
-        ).run(payload.message)
+        ).run(payload.message, action=payload.action)
     except BusyError as exc:
         raise HTTPException(429, str(exc))
     except (RuntimeError, httpx.HTTPError) as exc:

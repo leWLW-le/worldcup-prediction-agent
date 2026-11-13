@@ -1716,6 +1716,9 @@ def main():
     use_llm = mode == "llm_planner"
     if use_llm:
         display_planner_task()
+    fallback_notice = st.session_state.pop("planner_fallback_notice", None)
+    if fallback_notice:
+        st.warning(fallback_notice)
 
     # ══════════════════════════════════════════════════════
     # 单次调用 fetch_final_result()，所有组件共享同一结果

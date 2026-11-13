@@ -1,6 +1,5 @@
 """Translate V2 results for the unchanged original product components."""
 
-import json
 import os
 import time
 from collections import defaultdict
@@ -331,15 +330,17 @@ def call_agent_api(mode="llm_planner", use_llm=True, refresh_data=False):
         return None
 
 
-def submit_planner_task(message):
-    return api("POST", "/coordinator", _token(), json={"message": message})
+def submit_planner_task(message, *, action=None):
+    payload = {"message": message}
+    if action is not None:
+        payload["action"] = action
+    return api("POST", "/coordinator", _token(), json=payload)
 
 
 def _planned_workflow(tool, arguments):
     response = submit_planner_task(
-        "请规划并执行：先查询赛事状态，然后执行一次指定工作流，最后解释本次结果。"
-        "严格使用下列参数；refresh_data=false 表示赛前历史回放，禁止混入实际赛果。"
-        f"工具 {tool}；参数 {json.dumps(arguments, ensure_ascii=False)}"
+        f"请调用 {tool} 执行页面提交的任务。根据返回的运行 ID 解读结果。",
+        action=arguments,
     )
     trace = response.get("trace", [])
     st.session_state["coordinator_trace"] = trace
@@ -355,9 +356,25 @@ def _planned_workflow(tool, arguments):
         None,
     )
     if result is None:
-        raise RuntimeError("LLM 规划未完成工作流，请查看任务状态后重试。")
+        failure = next(
+            (
+                step["result"].get("error")
+                for step in reversed(trace)
+                if step["tool"] == tool and not step["success"]
+            ),
+            None,
+        )
+        raise RuntimeError(failure or response.get("error") or "Planner 未执行所选工作流。")
     if not arguments.get("refresh_data") and result.get("snapshot_id") != arguments["snapshot_id"]:
         raise RuntimeError("协调器使用了不同的数据版本，本次结果不用于页面展示。")
+    if tool == "run_scenario_workflow" and result.get("constraints") != {
+        arguments["fixture_id"]: arguments["forced_winner"]
+    }:
+        raise RuntimeError("推演结果与页面选择的比赛或假设胜者不一致。")
+    if response.get("fallback_reason"):
+        st.session_state["planner_fallback_notice"] = (
+            f"{response['fallback_reason']} 本次已由固定工作流完成。"
+        )
     explanation = next(
         (
             t["result"]

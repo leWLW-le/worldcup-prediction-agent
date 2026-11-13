@@ -154,7 +154,23 @@ def test_prediction_enters_llm_planner_before_computation():
         assert call_agent_api()["run_id"] == result["run_id"]
     deterministic.assert_not_called()
     assert api_mock.call_args.args[:2] == ("POST", "/coordinator")
-    assert '"refresh_data": false' in api_mock.call_args.kwargs["json"]["message"]
+    assert api_mock.call_args.kwargs["json"]["action"]["refresh_data"] is False
+
+
+def test_sandbox_displays_workflow_error_instead_of_incomplete_plan():
+    from dashboard.legacy_adapter import _planned_workflow
+
+    reply = {
+        "status": "completed",
+        "trace": [
+            {"tool": "run_scenario_workflow", "success": False, "result": {"error": "比赛已结束"}}
+        ],
+    }
+    with (
+        patch("dashboard.legacy_adapter.submit_planner_task", return_value=reply),
+        pytest.raises(RuntimeError, match="比赛已结束"),
+    ):
+        _planned_workflow("run_scenario_workflow", {})
 
 
 def test_prediction_mode_switch_routes_the_dashboard_button(monkeypatch):
