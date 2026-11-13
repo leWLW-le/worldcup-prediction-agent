@@ -40,6 +40,20 @@ def api(method, path, token="", **kwargs):
             detail = response.json().get("detail")
         except ValueError:
             detail = None
+        if response.status_code == 422 and isinstance(detail, list):
+            validation = [item for item in detail if isinstance(item, dict)]
+            if any(
+                item.get("type") == "extra_forbidden"
+                and item.get("loc", [])[-1:] in (["reference_run_id"], ["action"])
+                for item in validation
+            ):
+                raise RuntimeError("预测后端仍在使用旧版接口，请重启应用加载最新版本后重试。")
+            fields = sorted({
+                part for item in validation for part in item.get("loc", [])[1:]
+                if isinstance(part, str) and len(part) <= 48 and part.isidentifier()
+            })
+            if fields:
+                raise RuntimeError(f"预测请求参数校验失败（HTTP 422）：{', '.join(fields[:6])}。")
         if not isinstance(detail, str) or len(detail) > 300 or "<" in detail:
             detail = f"预测服务请求失败（HTTP {response.status_code}），请稍后重试。"
         raise RuntimeError(str(detail))
