@@ -19,12 +19,13 @@ class StateRequest(StrictModel):
     season: int | None = Field(default=None, ge=1930, le=2200)
 
 
-class ChatRequest(StrictModel):
-    message: str = Field(min_length=1, max_length=4000)
-
-
 class WorkflowRequest(PredictionRequest):
     refresh_data: bool = True
+
+
+class ChatRequest(StrictModel):
+    message: str = Field(min_length=1, max_length=4000)
+    action: ScenarioRequest | WorkflowRequest | None = None
 
 
 TOOL_MODELS = {
@@ -149,35 +150,69 @@ class TaskCoordinator:
                 if args.refresh_data and self.store.get_input(args.snapshot_id).group_stage:
                     from app.core.config import get_settings
 
-                    return self.jobs.submit_refresh(args, get_settings(), synchronous=True)
-                args = PredictionRequest.model_validate(args.model_dump(exclude={"refresh_data"}))
-            return self.jobs.submit(args, synchronous=True)
+                    result = self.jobs.submit_refresh(args, get_settings(), synchronous=True)
+                else:
+                    request = PredictionRequest.model_validate(args.model_dump(exclude={"refresh_data"}))
+                    result = self.jobs.submit(request, synchronous=True)
+            else:
+                result = self.jobs.submit(args, synchronous=True)
+            if not result.get("run_id"):
+                raise RuntimeError(result.get("error") or "预测任务未完成。")
+            return result
         if name == "compare_historical_results":
             return self.pipeline.compare(args.run_ids)
         from app.core.config import get_settings
         from app.explanation.llm import generate_explanation
         return generate_explanation(self.store.result(args.run_id), get_settings(), self.store)
 
-    def run(self, message):
+    def run(self, message, action=None):
+        target = (
+            "run_scenario_workflow" if isinstance(action, ScenarioRequest)
+            else "run_prediction_workflow" if action is not None else None
+        )
         schemas = [
             {
                 "type": "function",
                 "function": {
                     "name": name,
                     "description": DESCRIPTIONS[name],
-                    "parameters": model.model_json_schema(),
+                    "parameters": (
+                        {"type": "object", "properties": {}, "additionalProperties": False}
+                        if name == target else model.model_json_schema()
+                    ),
                 },
             }
             for name, model in TOOL_MODELS.items()
+            if target is None or name in (target, "query_tournament_state", "generate_explanation")
         ]
         messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": message}]
+        if target:
+            messages[0]["content"] += (
+                f"\nThis button requests {target}. Its parameters are already validated and bound. "
+                "Call it with an empty object; do not ask for IDs or try to replace its parameters. "
+                "A state query is optional for this button."
+            )
         trace, workflow_used, started = [], False, time.monotonic()
-        for _ in range(self.max_steps):
+        planner_error = None
+        error_status = "invalid_plan"
+        for step in range(self.max_steps):
             if time.monotonic() - started > 150:
-                return {"status": "budget_exceeded", "trace": trace}
-            answer = self.llm.complete(messages, schemas)
+                break
+            if target and not workflow_used and step >= 2:
+                break
+            try:
+                answer = self.llm.complete(messages, schemas)
+            except (RuntimeError, httpx.HTTPError):
+                if target is None:
+                    raise
+                planner_error = "模型服务暂不可用。"
+                error_status = "model_unavailable"
+                break
             calls = answer.get("tool_calls") or []
             if not calls:
+                if target and not workflow_used:
+                    planner_error = "模型未调用选定的业务工具。"
+                    break
                 state_results = [
                     t["result"]
                     for t in trace
@@ -202,11 +237,8 @@ class TaskCoordinator:
                     "trace": trace,
                 }
             if len(calls) != 1:
-                return {
-                    "status": "invalid_plan",
-                    "error": "One tool call per step required",
-                    "trace": trace,
-                }
+                planner_error = "One tool call per step required"
+                break
             call = calls[0]
             if (
                 not isinstance(call, dict)
@@ -220,13 +252,19 @@ class TaskCoordinator:
                     )
                 )
             ):
-                return {"status": "invalid_plan", "error": "Malformed tool call", "trace": trace}
+                planner_error = "Malformed tool call"
+                break
             name = call["function"]["name"]
             messages.append(
                 {"role": "assistant", "content": answer.get("content"), "tool_calls": calls}
             )
             try:
-                arguments = json.loads(call["function"]["arguments"])
+                if target and name not in (target, "query_tournament_state", "generate_explanation"):
+                    raise ValueError("Tool is not allowed for this button")
+                arguments = (
+                    action.model_dump(mode="json") if name == target
+                    else json.loads(call["function"]["arguments"])
+                )
                 if name in ("run_prediction_workflow", "run_scenario_workflow"):
                     if workflow_used:
                         raise ValueError("Only one computation workflow per request")
@@ -243,4 +281,15 @@ class TaskCoordinator:
                     "content": json.dumps(item["result"], ensure_ascii=False, allow_nan=False),
                 }
             )
+        if target and not workflow_used:
+            reason = planner_error or "模型未在规划步数内调用选定工具。"
+            try:
+                result = self.dispatch(target, action.model_dump(mode="json"))
+                trace.append({"tool": target, "success": True, "result": result})
+                return {"status": "completed", "trace": trace, "fallback_reason": reason}
+            except (ValueError, KeyError, RuntimeError) as exc:
+                trace.append({"tool": target, "success": False, "result": {"error": str(exc)}})
+                return {"status": "failed", "trace": trace, "fallback_reason": reason}
+        if planner_error:
+            return {"status": error_status, "error": planner_error, "trace": trace}
         return {"status": "budget_exceeded", "trace": trace}

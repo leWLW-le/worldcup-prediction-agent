@@ -154,4 +154,141 @@ def test_prediction_enters_llm_planner_before_computation():
         assert call_agent_api()["run_id"] == result["run_id"]
     deterministic.assert_not_called()
     assert api_mock.call_args.args[:2] == ("POST", "/coordinator")
-    assert '"refresh_data": false' in api_mock.call_args.kwargs["json"]["message"]
+    assert api_mock.call_args.kwargs["json"]["action"]["refresh_data"] is False
+
+
+def test_sandbox_displays_workflow_error_instead_of_incomplete_plan():
+    from dashboard.legacy_adapter import _planned_workflow
+
+    reply = {
+        "status": "completed",
+        "trace": [
+            {"tool": "run_scenario_workflow", "success": False, "result": {"error": "比赛已结束"}}
+        ],
+    }
+    with (
+        patch("dashboard.legacy_adapter.submit_planner_task", return_value=reply),
+        pytest.raises(RuntimeError, match="比赛已结束"),
+    ):
+        _planned_workflow("run_scenario_workflow", {})
+
+
+def test_prediction_mode_switch_routes_the_dashboard_button(monkeypatch):
+    monkeypatch.setenv("BACKEND_API_KEY", "test")
+    result = json.loads(Path("data/verified/release-result.json").read_text(encoding="utf-8"))
+
+    def respond(method, path, token="", **kwargs):
+        if path == "/results":
+            return {"results": [result]}
+        if path == "/predictions":
+            return {"job_id": "job-test"}
+        if path == "/jobs/job-test":
+            return {"status": "completed", "run_id": result["run_id"]}
+        if path == f"/results/{result['run_id']}":
+            return result
+        if path.endswith("/explanation"):
+            return {"text": "测试摘要", "source": "template"}
+        if path == "/coordinator":
+            return {
+                "status": "completed",
+                "trace": [{"tool": "run_prediction_workflow", "success": True, "result": result}],
+            }
+        return {"snapshots": [], "fixtures": []}
+
+    st.cache_data.clear()
+    with patch("dashboard.legacy_adapter.api", side_effect=respond) as api_mock:
+        app = AppTest.from_file("dashboard/app.py", default_timeout=10).run()
+        next(button for button in app.button if "重新预测" in button.label).click().run()
+        assert not app.exception
+        assert [call.args[1] for call in api_mock.call_args_list if call.args[0] == "POST"] == [
+            "/predictions"
+        ]
+
+        app.sidebar.radio[0].set_value("llm_planner").run()
+        api_mock.reset_mock()
+        next(button for button in app.button if "重新预测" in button.label).click().run()
+        assert not app.exception
+        posts = [call.args[1] for call in api_mock.call_args_list if call.args[0] == "POST"]
+        assert "/coordinator" in posts
+        assert "/predictions" not in posts
+
+        api_mock.reset_mock()
+        message = "查询当前赛事状态"
+        app.sidebar.text_area[0].set_value(message)
+        next(button for button in app.sidebar.button if button.label == "执行任务").click().run()
+        assert not app.exception
+        coordinator = next(
+            call for call in api_mock.call_args_list if call.args[:2] == ("POST", "/coordinator")
+        )
+        assert coordinator.kwargs["json"] == {"message": message}
+
+
+@pytest.mark.parametrize("use_llm", [False, True])
+def test_scenario_mode_routes_the_same_parameters(use_llm):
+    from dashboard.legacy_adapter import call_scenario_simulate
+
+    match = {"match_id": "m1", "home_team": "Spain", "away_team": "Argentina"}
+    prediction = {
+        "champion": "Spain",
+        "champion_probability": 0.6,
+        "champion_distribution": {"Spain": 0.6},
+        "baseline_champion_distribution": {"Spain": 0.4},
+        "probability_change": {"Spain": 0.2},
+    }
+    with (
+        patch("dashboard.legacy_adapter.fetch_final_result", return_value={"data": {"snapshot_id": "snap"}}),
+        patch("dashboard.legacy_adapter.fetch_scenario_pending_matches", return_value={"matches": [match]}),
+        patch("dashboard.legacy_adapter._run", return_value=prediction) as workflow,
+        patch("dashboard.legacy_adapter._planned_workflow", return_value=prediction) as planner,
+    ):
+        assert call_scenario_simulate("m1", "Spain", use_llm=use_llm)["success"]
+    arguments = {
+        "snapshot_id": "snap", "simulation_count": 1000, "seed": 42,
+        "fixture_id": "m1", "forced_winner": "Spain",
+    }
+    if use_llm:
+        planner.assert_called_once_with("run_scenario_workflow", arguments)
+        workflow.assert_not_called()
+    else:
+        workflow.assert_called_once_with("/scenarios", arguments)
+        planner.assert_not_called()
+
+
+def test_sandbox_selects_round_fixture_and_winner_and_displays_champion():
+    result = json.loads(Path("data/verified/release-result.json").read_text(encoding="utf-8"))
+    snapshot = {
+        "snapshot_id": result["snapshot_id"],
+        "group_stage": {
+            "matches": [{**result["representative_group_matches"][0], "home_score": None}],
+        },
+    }
+    final = next(m for m in result["representative_path"] if m["stage"] == "final")
+    predicted = {"success": True, "champion": final["away"], "champion_probability": 1.0}
+
+    def read(method, path, **kwargs):
+        return {
+            "/results": {"results": [result]},
+            "/tournament-state": {"snapshots": [snapshot]},
+            "/data/status": {},
+        }[path]
+
+    st.cache_data.clear()
+    with (
+        patch("dashboard.legacy_adapter.api", side_effect=read),
+        patch("dashboard.legacy_adapter.call_scenario_simulate", return_value=predicted) as simulate,
+    ):
+        app = AppTest.from_file("dashboard/app.py", default_timeout=10).run()
+        rounds = app.selectbox(key="scenario_round")
+        assert "4 强赛（半决赛）" in rounds.options
+        assert "8 强赛（四分之一决赛）" in rounds.options
+        rounds.set_value("semi_finals").run()
+        assert len(app.selectbox(key="scenario_match_semi_finals").options) == 2
+        app.selectbox(key="scenario_round").set_value("final").run()
+        assert app.selectbox(key="scenario_match_final").options == [f"{final['home']} vs {final['away']}"]
+        app.radio(key="scenario_winner_104").set_value(final["away"])
+        app.button(key="scenario_run_btn").click().run()
+        assert not app.exception
+        assert any(m.label == "最可能夺冠" and m.value == final["away"] for m in app.metric)
+        simulate.assert_called_once_with(
+            "104", final["away"], use_llm=False, reference_run_id=result["run_id"],
+        )

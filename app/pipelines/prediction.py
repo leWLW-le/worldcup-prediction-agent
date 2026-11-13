@@ -46,6 +46,19 @@ class PredictionPipeline:
         forced = (
             {request.fixture_id: request.forced_winner} if hasattr(request, "fixture_id") else {}
         )
+        reference_id = getattr(request, "reference_run_id", None)
+        simulation_options = {}
+        if reference_id:
+            reference = self.store.result(reference_id)
+            if not data.group_stage or reference["snapshot_id"] != data.snapshot_id or reference.get("constraints"):
+                raise ValueError("参考签表必须来自同一快照的完整赛事预测。")
+            match = next(
+                (m for m in reference["representative_path"] if m["fixture_id"] == request.fixture_id),
+                None,
+            )
+            if not match or request.forced_winner not in (match["home"], match["away"]):
+                raise ValueError("假设胜者必须是参考签表中该场比赛的参赛球队。")
+            simulation_options["reference"] = {**reference, "fixture_id": request.fixture_id}
 
         def predict(h, a, neutral):
             return self.registry.predict(state, h, a, data.as_of, neutral)
@@ -58,7 +71,10 @@ class PredictionPipeline:
             forced,
             cancelled,
             self.timeout - (time.monotonic() - started),
+            **simulation_options,
         )
+        if reference_id:
+            result["reference_run_id"] = reference_id
         result.update(
             {
                 "schema_version": 3,
@@ -127,6 +143,7 @@ class PredictionPipeline:
                 {},
                 cancelled,
                 self.timeout - (time.monotonic() - started),
+                **simulation_options,
             )
             result["baseline_champion_distribution"] = baseline["champion_distribution"]
             result["probability_change"] = {

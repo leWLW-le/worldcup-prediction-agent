@@ -136,6 +136,7 @@ class PredictionRequest(StrictModel):
 class ScenarioRequest(PredictionRequest):
     fixture_id: str
     forced_winner: str
+    reference_run_id: str | None = None
 
 
 class CompareRequest(StrictModel):

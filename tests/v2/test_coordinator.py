@@ -1,14 +1,18 @@
 import json
 
-from app.agents.task_coordinator import TOOL_MODELS, TaskCoordinator
+import pytest
+
+from app.agents.task_coordinator import TOOL_MODELS, ChatRequest, TaskCoordinator
+from scripts.release_v2 import released_snapshot
 
 
 class ScriptedLLM:
-    def __init__(self, messages):
+    def __init__(self, messages, tool_count=5):
         self.messages = iter(messages)
+        self.tool_count = tool_count
 
     def complete(self, messages, tools):
-        assert len(tools) == 5
+        assert len(tools) == self.tool_count
         return next(self.messages)
 
 
@@ -60,3 +64,78 @@ def test_coordinator_limits_expensive_work(service, snapshot):
     result = TaskCoordinator(service.store, service.pipeline, service.jobs, llm).run("反复预测")
     assert not result["trace"][1]["success"]
     assert len(service.store.results()) == 1
+
+
+@pytest.mark.parametrize("model_calls_tool", [True, False])
+def test_sandbox_button_uses_exact_selection(service, snapshot, model_calls_tool):
+    tool = "run_scenario_workflow"
+    payload = ChatRequest.model_validate({
+        "message": "开始推演",
+        "action": {
+            "snapshot_id": snapshot.snapshot_id,
+            "fixture_id": "sf1",
+            "forced_winner": "A",
+            "simulation_count": 100,
+        },
+    })
+    messages = [call(tool, {"fixture_id": "sf2", "forced_winner": "D"})] if model_calls_tool else []
+    messages.append({"content": "完成"})
+    result = TaskCoordinator(service.store, service.pipeline, service.jobs, ScriptedLLM(messages, 3)).run(
+        payload.message, action=payload.action,
+    )
+    assert result["status"] == "completed"
+    assert bool(result.get("fallback_reason")) is not model_calls_tool
+    computed = result["trace"][0]["result"]
+    assert computed["constraints"] == {"sf1": "A"}
+    assert computed["baseline_champion_distribution"]
+    assert len(service.store.results(kind="scenario")) == 1
+
+
+def test_failed_sandbox_tool_is_reported_without_running_it_twice(service, snapshot, monkeypatch):
+    tool = "run_scenario_workflow"
+    payload = ChatRequest.model_validate({
+        "message": "开始推演",
+        "action": {
+            "snapshot_id": snapshot.snapshot_id,
+            "fixture_id": "sf1",
+            "forced_winner": "A",
+        },
+    })
+    calls = []
+
+    def fail(request, *, synchronous):
+        calls.append(request)
+        return {"status": "failed", "error": "比赛已结束"}
+
+    monkeypatch.setattr(service.jobs, "submit", fail)
+    llm = ScriptedLLM([call(tool, {}), {"content": "推演失败"}], 3)
+    result = TaskCoordinator(service.store, service.pipeline, service.jobs, llm).run(
+        payload.message, action=payload.action,
+    )
+    assert result["trace"] == [{"tool": tool, "success": False, "result": {"error": "比赛已结束"}}]
+    assert len(calls) == 1
+
+
+def test_released_mexico_sandbox_runs_when_model_skips_tool(service):
+    snapshot = released_snapshot()
+    service.store.put_input(snapshot)
+    match = next(
+        match for match in snapshot.group_stage.matches
+        if match.home == "Mexico" and match.away == "South Africa"
+    )
+    payload = ChatRequest.model_validate({
+        "message": "假设墨西哥战胜南非",
+        "action": {
+            "snapshot_id": snapshot.snapshot_id,
+            "fixture_id": match.fixture_id,
+            "forced_winner": "Mexico",
+            "simulation_count": 100,
+        },
+    })
+    result = TaskCoordinator(
+        service.store, service.pipeline, service.jobs, ScriptedLLM([{"content": "完成"}], 3),
+    ).run(payload.message, action=payload.action)
+    assert result["status"] == "completed", result["trace"]
+    scenario = result["trace"][0]["result"]
+    assert scenario["constraints"] == {match.fixture_id: "Mexico"}
+    assert scenario["probability_change"]

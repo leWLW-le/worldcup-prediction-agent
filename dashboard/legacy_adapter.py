@@ -1,6 +1,5 @@
 """Translate V2 results for the unchanged original product components."""
 
-import json
 import os
 import time
 from collections import defaultdict
@@ -12,6 +11,14 @@ from dashboard.api_client import api
 
 # Immutable June 1 input used by the published pre-tournament model replay.
 PRE_TOURNAMENT_SNAPSHOT = "9e4760a6cc97914613b898c9f013370c9750f092c7e4ec5e6e0118612c7131ba"
+SCENARIO_ROUNDS = {
+    "group": "小组赛",
+    "round_of_32": "32 强赛",
+    "round_of_16": "16 强赛",
+    "quarter_finals": "8 强赛（四分之一决赛）",
+    "semi_finals": "4 强赛（半决赛）",
+    "final": "决赛",
+}
 
 
 def actual_bracket(feed):
@@ -126,7 +133,7 @@ def adapt_result(result):
 
 
 @st.cache_data(ttl=30, show_spinner=False)
-def fetch_final_result():
+def fetch_final_result(use_llm=True):
     try:
         results = api("GET", "/results", params={"snapshot_id": PRE_TOURNAMENT_SNAPSHOT})["results"]
         result = next(
@@ -142,11 +149,16 @@ def fetch_final_result():
         if result is None:
             raise RuntimeError("尚无已保存的赛前预测")
         data = adapt_result(result)
-        try:
-            explanation = api("POST", f"/results/{result['run_id']}/explanation", token=_token())
-            data["explanation"].update(content=explanation["text"], source=explanation["source"], fallback_reason=explanation.get("fallback_reason"))
-        except RuntimeError:
-            data["explanation"]["fallback_reason"] = "LLM 解读暂不可用，本次显示模型结果摘要。"
+        if use_llm:
+            try:
+                explanation = api("POST", f"/results/{result['run_id']}/explanation", token=_token())
+                data["explanation"].update(
+                    content=explanation["text"],
+                    source=explanation["source"],
+                    fallback_reason=explanation.get("fallback_reason"),
+                )
+            except RuntimeError:
+                data["explanation"]["fallback_reason"] = "LLM 解读暂不可用，本次显示模型结果摘要。"
         feed = fetch_live_feed()
         data["live_feed"] = feed
         data["bracket_payload"] = actual_bracket(feed)
@@ -243,36 +255,41 @@ def fetch_stage_info():
 
 
 @st.cache_data(ttl=30, show_spinner=False)
-def fetch_scenario_pending_matches():
+def fetch_scenario_pending_matches(use_llm=True):
     try:
-        data = fetch_final_result()["data"]
+        data = fetch_final_result(use_llm=use_llm)["data"]
         snapshots = api("GET", "/tournament-state")["snapshots"]
         snapshot = next(s for s in snapshots if s["snapshot_id"] == data["snapshot_id"])
+        groups = snapshot.get("group_stage") or {}
         matches = [
             {
                 "match_id": m["fixture_id"],
                 "home_team": m["home"],
                 "away_team": m["away"],
-                "stage": "小组赛",
+                "stage": "group",
             }
-            for m in (snapshot.get("group_stage") or {}).get("matches", [])
+            for m in groups.get("matches", [])
             if m["home_score"] is None
         ]
-        matches.extend(
-            {
-                "match_id": m["official_match_id"],
-                "home_team": m["home"],
-                "away_team": m["away"],
-                "stage": "淘汰赛",
-            }
-            for m in snapshot.get("provider_fixtures", [])
-            if m.get("official_match_id") and m["status"] in ("NS", "TBD", "PST")
-        )
+        if groups:
+            completed = groups.get("knockout_winners", {})
+            matches.extend(
+                {
+                    "match_id": m["fixture_id"],
+                    "home_team": m["home"],
+                    "away_team": m["away"],
+                    "stage": m["stage"],
+                    "reference_run_id": data["run_id"],
+                }
+                for m in data.get("representative_path", [])
+                if m["stage"] in SCENARIO_ROUNDS
+                and m["fixture_id"] not in completed
+                and m.get("source") != "observed"
+            )
         return {
             "matches": matches,
             "sandbox_enabled": bool(matches),
             "source": "api",
-            "stage_label": "小组赛",
         }
     except Exception:
         return {"matches": [], "sandbox_enabled": None, "source": "error"}
@@ -304,7 +321,9 @@ def _run(path, body):
 
 def call_agent_api(mode="llm_planner", use_llm=True, refresh_data=False):
     try:
-        if use_llm:
+        if mode not in ("workflow", "llm_planner", "llm_planner_safe", "llm_planner_strict"):
+            raise ValueError(f"未知运行模式：{mode}")
+        if use_llm and mode != "workflow":
             return _planned_workflow(
                 "run_prediction_workflow",
                 {
@@ -324,16 +343,17 @@ def call_agent_api(mode="llm_planner", use_llm=True, refresh_data=False):
         return None
 
 
+def submit_planner_task(message, *, action=None):
+    payload = {"message": message}
+    if action is not None:
+        payload["action"] = action
+    return api("POST", "/coordinator", _token(), json=payload)
+
+
 def _planned_workflow(tool, arguments):
-    response = api(
-        "POST",
-        "/coordinator",
-        _token(),
-        json={
-            "message": "请规划并执行：先查询赛事状态，然后执行一次指定工作流，最后解释本次结果。"
-            "严格使用下列参数；refresh_data=false 表示赛前历史回放，禁止混入实际赛果。"
-            f"工具 {tool}；参数 {json.dumps(arguments, ensure_ascii=False)}"
-        },
+    response = submit_planner_task(
+        f"请调用 {tool} 执行页面提交的任务。根据返回的运行 ID 解读结果。",
+        action=arguments,
     )
     trace = response.get("trace", [])
     st.session_state["coordinator_trace"] = trace
@@ -349,9 +369,27 @@ def _planned_workflow(tool, arguments):
         None,
     )
     if result is None:
-        raise RuntimeError("LLM 规划未完成工作流，请查看任务状态后重试。")
+        failure = next(
+            (
+                step["result"].get("error")
+                for step in reversed(trace)
+                if step["tool"] == tool and not step["success"]
+            ),
+            None,
+        )
+        raise RuntimeError(failure or response.get("error") or "Planner 未执行所选工作流。")
     if not arguments.get("refresh_data") and result.get("snapshot_id") != arguments["snapshot_id"]:
         raise RuntimeError("协调器使用了不同的数据版本，本次结果不用于页面展示。")
+    if tool == "run_scenario_workflow" and result.get("constraints") != {
+        arguments["fixture_id"]: arguments["forced_winner"]
+    }:
+        raise RuntimeError("推演结果与页面选择的比赛或假设胜者不一致。")
+    if tool == "run_scenario_workflow" and result.get("reference_run_id") != arguments.get("reference_run_id"):
+        raise RuntimeError("推演结果使用了不同的参考签表。")
+    if response.get("fallback_reason"):
+        st.session_state["planner_fallback_notice"] = (
+            f"{response['fallback_reason']} 本次已由固定工作流完成。"
+        )
     explanation = next(
         (
             t["result"]
@@ -373,8 +411,8 @@ def _planned_workflow(tool, arguments):
     return result
 
 
-def refresh_real_data():
-    result = call_agent_api(use_llm=True, refresh_data=True)
+def refresh_real_data(use_llm=True):
+    result = call_agent_api(use_llm=use_llm, refresh_data=True)
     if result:
         return {
             "success": True,
@@ -390,28 +428,37 @@ def refresh_real_data():
     return None
 
 
-def call_scenario_simulate(match_id, forced_winner, simulation_count=1000):
+def call_scenario_simulate(
+    match_id, forced_winner, simulation_count=1000, *, use_llm=True, reference_run_id=None
+):
     try:
-        data = fetch_final_result()["data"]
-        result = _planned_workflow(
-            "run_scenario_workflow",
-            {
-                "snapshot_id": data["snapshot_id"],
-                "simulation_count": simulation_count,
-                "seed": 42,
-                "fixture_id": str(match_id),
-                "forced_winner": forced_winner,
-            },
-        )
+        data = fetch_final_result(use_llm=use_llm)["data"]
+        arguments = {
+            "snapshot_id": data["snapshot_id"],
+            "simulation_count": simulation_count,
+            "seed": 42,
+            "fixture_id": str(match_id),
+            "forced_winner": forced_winner,
+        }
         match = next(
             m
-            for m in fetch_scenario_pending_matches()["matches"]
+            for m in fetch_scenario_pending_matches(use_llm=use_llm)["matches"]
             if str(m["match_id"]) == str(match_id)
         )
+        if match.get("reference_run_id") != reference_run_id:
+            raise ValueError("参考签表已更新，请重新选择比赛。")
+        if reference_run_id:
+            arguments["reference_run_id"] = reference_run_id
+        if use_llm:
+            result = _planned_workflow("run_scenario_workflow", arguments)
+        else:
+            result = _run("/scenarios", arguments)
         other = match["away_team"] if forced_winner == match["home_team"] else match["home_team"]
         return {
             "success": True,
             "scenario": {"forced_winner": forced_winner, "forced_loser": other},
+            "champion": result["champion"],
+            "champion_probability": result["champion_probability"],
             "champion_distribution": [
                 {"name": t, "probability": p}
                 for t, p in sorted(
@@ -430,7 +477,15 @@ def call_scenario_simulate(match_id, forced_winner, simulation_count=1000):
                     result["champion_distribution"].items(), key=lambda item: -item[1]
                 )[:10]
             ],
-            "explanation": "与同一数据、模型、次数和种子的重算基线比较。小组赛假设为90分钟获胜，不代表对手已淘汰。",
+            "final_matchup_distribution": [
+                {"matchup": " vs ".join(m["teams"]), "probability": m["probability"]}
+                for m in sorted(result.get("final_matchups", []), key=lambda m: -m["probability"])
+            ],
+            "explanation": (
+                "基线与假设使用同一参考签表，固定该轮之前的赛果。"
+                if reference_run_id else
+                "与同一数据、模型、次数和种子的重算基线比较。小组赛按常规时间获胜推演。"
+            ),
         }
     except Exception as exc:
         return {"success": False, "error": str(exc)}

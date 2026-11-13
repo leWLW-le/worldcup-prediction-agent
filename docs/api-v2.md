@@ -19,6 +19,8 @@
 | POST /api/v2/compare | 对比历史记录 |
 | POST /api/v2/coordinator | LLM 五工具工作流 |
 
+沙盘按轮次列出快照中的小组赛和已保存预测签表里的淘汰赛。淘汰赛情景可在请求中带上同一快照的 `reference_run_id`、`fixture_id` 和 `forced_winner`。基线和假设都沿用该轮之前的模拟赛果。页面展示 `champion` 和 `champion_probability`，它们对应情景中最高的夺冠概率。
+
 预测请求示例：
 ```json
 {"snapshot_id":"替换为实际快照ID","simulation_count":2000,"seed":42}
